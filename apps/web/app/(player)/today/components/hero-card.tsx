@@ -55,8 +55,9 @@ export async function HeroCard({
   /** In place of « Favori du jour »: a past coupon names its day. */
   title?: string;
 }) {
-  const [t, locale, timeZone] = await Promise.all([
+  const [t, bets, locale, timeZone] = await Promise.all([
     getTranslations("today"),
+    getTranslations("betLabels"),
     getLocale(),
     getPlayerTimeZone(),
   ]);
@@ -132,7 +133,7 @@ export async function HeroCard({
                   <span className="text-meta text-muted-foreground">
                     {leg.state === "postponed"
                       ? t("postponed")
-                      : legPickLabel(leg)}
+                      : legPickLabel(leg, bets)}
                   </span>
                 </span>
                 {leg.state === "won" ||
@@ -152,7 +153,7 @@ export async function HeroCard({
       <div className="flex items-baseline justify-between gap-3 border-t border-border pt-3">
         <span className="text-bet font-semibold">
           {single
-            ? legPickLabel(single)
+            ? legPickLabel(single, bets)
             : t("matches", { count: playedLegs(coupon).length })}
         </span>
         <CouponValue coupon={coupon} locale={display} size="hero" />

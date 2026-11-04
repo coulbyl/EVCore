@@ -20,7 +20,7 @@ import type {
   ResultsFrancs,
   ResultsPeriod,
 } from "@/domains/results/types/results";
-import { formatLinePick, formatPickWithTeams } from "@/helpers/fixture";
+import { formatPickWithTeams, type BetLabels } from "@/helpers/fixture";
 import {
   displayLocaleOf,
   formatFrancs,
@@ -56,13 +56,15 @@ function day(date: string, locale: DisplayLocale): string {
 }
 
 /** A bet named with its team, from « PSG – Lens » and its pick. */
-function betOf(label: string, market: string | null, pick: string | null) {
+function betOf(
+  label: string,
+  bet: { market: string | null; pick: string | null },
+  t: BetLabels,
+) {
+  const { market, pick } = bet;
   if (!market || !pick) return null;
   const [home = "", away = ""] = label.split(" – ");
-  return (
-    formatLinePick(pick, market, null) ??
-    formatPickWithTeams(pick, market, { home, away })
-  );
+  return formatPickWithTeams({ pick, market }, { home, away }, t);
 }
 
 /**
@@ -136,9 +138,10 @@ export async function ProductBody({
   locale: DisplayLocale;
   visitor?: boolean;
 }) {
-  const [results, reasons] = await Promise.all([
+  const [results, reasons, bets] = await Promise.all([
     getTranslations("results"),
     getTranslations("couponAbstentions.reasons"),
+    getTranslations("betLabels"),
   ]);
   const name = results(`names.${detail.product}`);
   const played = detail.won + detail.lost;
@@ -237,7 +240,7 @@ export async function ProductBody({
                   key={d.date}
                   date={day(d.date, locale)}
                   outcome={d.outcome}
-                  text={[d.label, betOf(d.label, d.market, d.pick)]
+                  text={[d.label, betOf(d.label, d, bets)]
                     .filter(Boolean)
                     .join(" · ")}
                   odds={
@@ -268,6 +271,7 @@ export async function AiBody({
   locale: DisplayLocale;
   visitor?: boolean;
 }) {
+  const bets = await getTranslations("betLabels");
   // Oldest first for the grid, as the products' days.
   const chronological = [...detail.opinions].reverse();
   const shown = chronological.slice(-90);
@@ -339,7 +343,7 @@ export async function AiBody({
                   key={`${o.date}-${index}`}
                   date={day(o.date, locale)}
                   outcome={o.outcome}
-                  text={[o.label, betOf(o.label, o.market, o.pick)]
+                  text={[o.label, betOf(o.label, o, bets)]
                     .filter(Boolean)
                     .join(" · ")}
                   odds={formatOdds(o.odds, locale)}

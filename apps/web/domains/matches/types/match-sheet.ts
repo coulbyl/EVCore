@@ -25,6 +25,8 @@ export type SheetReading = SheetPick & { fact: string | null };
 
 export type SheetAiOpinion = SheetPick & {
   sameAsReading: boolean;
+  /** Another pick that one final score makes win with our reading. */
+  passesWithReading: boolean;
   /** The AI's text, whole, opened from its pick. */
   speech: string | null;
   /** When it decided, ISO. */

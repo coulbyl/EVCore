@@ -58,6 +58,7 @@ export default async function Page({
 
   const display = displayLocaleOf(await getLocale());
   const teams = { home: sheet.homeTeam, away: sheet.awayTeam };
+  const bets = await getTranslations("betLabels");
   const run = sheet.modelRun;
   const kickoff = new Date(sheet.scheduledAt).toLocaleString(
     display === "en" ? "en-GB" : "fr-FR",
@@ -200,7 +201,7 @@ export default async function Page({
                           className="flex flex-col gap-0.5"
                         >
                           <span className="text-body">
-                            {formatPickWithTeams(pick.pick, pick.market, teams)}
+                            {formatPickWithTeams(pick, teams, bets)}
                           </span>
                           <span className="text-meta text-muted-foreground">
                             {t("line", {

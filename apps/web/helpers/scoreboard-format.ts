@@ -161,6 +161,32 @@ export function formatTime(
   }).format(date);
 }
 
+/**
+ * L'heure d'un coup d'envoi, avec le jour quand ce n'est pas aujourd'hui
+ * dans le fuseau du joueur : « 17:45 », « ven. 06/11 · 17:45 » (04/11 : une
+ * fiche ouverte à J-2 ne disait pas quand).
+ */
+export function formatKickoff(
+  kickoff: Date,
+  at: { now: Date; locale: DisplayLocale; timeZone: string },
+): string {
+  const { now, locale, timeZone } = at;
+  const time = formatTime(kickoff, locale, timeZone);
+  const day = (date: Date) =>
+    new Intl.DateTimeFormat("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone,
+    }).format(date);
+  if (day(kickoff) === day(now)) return time;
+  const weekday = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+    weekday: "short",
+    timeZone,
+  }).format(kickoff);
+  return `${weekday} ${formatShortDate(kickoff, locale, timeZone)} · ${time}`;
+}
+
 /** La date courte des listes : « 28/10 ». Jamais l'année. */
 export function formatShortDate(
   date: Date,

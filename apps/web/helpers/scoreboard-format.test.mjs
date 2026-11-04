@@ -8,6 +8,7 @@ import {
   formatClock,
   formatOdds,
   formatShortDate,
+  formatKickoff,
   formatTime,
   formatWeekdayDay,
   isValidTimeZone,
@@ -147,6 +148,34 @@ describe("formatClock", () => {
     assert.equal(
       formatClock({ kind: "live", minute: null }, labels),
       "En cours",
+    );
+  });
+});
+
+describe("formatKickoff", () => {
+  const kickoff = new Date("2026-11-06T17:45:00Z");
+  const at = (now, locale = "fr", timeZone = "Africa/Abidjan") => ({
+    now: new Date(now),
+    locale,
+    timeZone,
+  });
+  it("gives the time alone on the day of the match", () => {
+    assert.equal(formatKickoff(kickoff, at("2026-11-06T08:00:00Z")), "17:45");
+  });
+  it("adds the day otherwise, in the player's time zone", () => {
+    assert.equal(
+      formatKickoff(kickoff, at("2026-11-04T08:00:00Z")),
+      "ven. 06/11 · 17:45",
+    );
+    assert.equal(
+      formatKickoff(kickoff, at("2026-11-04T08:00:00Z", "en")),
+      "Fri 06/11 · 17:45",
+    );
+    // 23:30 in Abidjan is already the next day in Douala.
+    const late = new Date("2026-11-06T23:30:00Z");
+    assert.equal(
+      formatKickoff(late, at("2026-11-06T20:00:00Z", "fr", "Africa/Douala")),
+      "sam. 07/11 · 00:30",
     );
   });
 });

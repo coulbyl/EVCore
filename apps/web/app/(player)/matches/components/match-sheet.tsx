@@ -21,6 +21,7 @@ import {
   displayLocaleOf,
   formatClock,
   formatOdds,
+  formatKickoff,
   formatShortDate,
   formatTime,
   type DisplayLocale,
@@ -35,6 +36,9 @@ const OTHER_PICKS_SHOWN = 4;
 
 type Translate = Awaited<ReturnType<typeof getTranslations<"matches.sheet">>>;
 
+/** A bet of the sheet in the player's words: « Rennes marque moins de 2,5 buts ». */
+type LabelOf = (pick: SheetPick) => string;
+
 /**
  * The match sheet of the player (06 § 2–4, maquette Fiche), the same on a
  * tap (intercepted route) and on a shared link or a reload (the `@sheet`
@@ -47,9 +51,10 @@ type Translate = Awaited<ReturnType<typeof getTranslations<"matches.sheet">>>;
 export async function MatchSheetView({ id }: { id: string }) {
   // Paused: Matchs is closed and the server would refuse the read.
   if (await activePause()) return null;
-  const [sheet, t, locale, timeZone, session] = await Promise.all([
+  const [sheet, t, bets, locale, timeZone, session] = await Promise.all([
     getMatchSheet(id),
     getTranslations("matches.sheet"),
+    getTranslations("betLabels"),
     getLocale(),
     getPlayerTimeZone(),
     getPlayerSession(),
@@ -60,12 +65,17 @@ export async function MatchSheetView({ id }: { id: string }) {
   const signedIn = session.status === "signed-in";
   const display = displayLocaleOf(locale);
   const muted = sheet.state === "postponed";
+  const labelOf: LabelOf = (pick) => pickLabel(pick, sheet, bets);
 
   const decidedAt = (iso: string) =>
     t("aiDecidedAt", {
       date: formatShortDate(new Date(iso), display, timeZone),
       time: formatTime(new Date(iso), display, timeZone),
     });
+  // The AI's price is today's 1xBet price, not the one it decided on: said
+  // under its date (04/11), the last before kick-off once the match began.
+  const aiOdds =
+    sheet.state === "upcoming" ? t("aiOddsNow") : t("aiOddsKickoff");
 
   return (
     <Sheet
@@ -78,6 +88,7 @@ export async function MatchSheetView({ id }: { id: string }) {
           t={t}
           locale={display}
           timeZone={timeZone}
+          now={new Date()}
           analysisHref={
             signedIn ? `/matches/${sheet.fixtureId}/analysis` : null
           }
@@ -99,6 +110,7 @@ export async function MatchSheetView({ id }: { id: string }) {
                 sheet={sheet}
                 t={t}
                 locale={display}
+                labelOf={labelOf}
                 strong
               />
               {sheet.reading.chance !== null && sheet.state !== "finished" ? (
@@ -144,10 +156,20 @@ export async function MatchSheetView({ id }: { id: string }) {
             <p className="text-body text-muted-foreground">{t("noAi")}</p>
           ) : (
             <>
-              <PickLine pick={sheet.ai} sheet={sheet} t={t} locale={display} />
-              {sheet.ai.sameAsReading ? (
+              <PickLine
+                pick={sheet.ai}
+                sheet={sheet}
+                t={t}
+                locale={display}
+                labelOf={labelOf}
+              />
+              {sheet.ai.sameAsReading || sheet.ai.passesWithReading ? (
                 <p className="text-meta text-muted-foreground">
-                  {t("sameAsReading")}
+                  {t(
+                    sheet.ai.sameAsReading
+                      ? "sameAsReading"
+                      : "passesWithReading",
+                  )}
                 </p>
               ) : null}
               {sheet.ai.speech ? (
@@ -162,15 +184,23 @@ export async function MatchSheetView({ id }: { id: string }) {
                 />
               ) : null}
               <p className="text-meta text-muted-foreground">
-                {decidedAt(sheet.ai.decidedAt)}
+                {sheet.ai.odds !== null
+                  ? `${decidedAt(sheet.ai.decidedAt)} · ${aiOdds}`
+                  : decidedAt(sheet.ai.decidedAt)}
               </p>
             </>
           )}
         </Section>
 
         <Section title={t("form")}>
-          <FormLine team={sheet.home} form={sheet.form.home} t={t} />
-          <FormLine team={sheet.away} form={sheet.form.away} t={t} />
+          <div className="grid grid-cols-[minmax(0,max-content)_1fr] items-center gap-x-3 gap-y-1">
+            <FormLine team={sheet.home} form={sheet.form.home} t={t} />
+            <FormLine team={sheet.away} form={sheet.form.away} t={t} />
+          </div>
+          {sheet.form.home.last.length > 0 ||
+          sheet.form.away.last.length > 0 ? (
+            <FormLegend t={t} />
+          ) : null}
           {sheet.headToHead ? (
             <p className="text-body text-muted-foreground">
               {sheet.headToHead}
@@ -179,7 +209,7 @@ export async function MatchSheetView({ id }: { id: string }) {
         </Section>
 
         {sheet.otherPicks.length > 0 ? (
-          <OtherPicks sheet={sheet} t={t} locale={display} />
+          <OtherPicks sheet={sheet} t={t} locale={display} labelOf={labelOf} />
         ) : null}
       </div>
     </Sheet>
@@ -196,12 +226,14 @@ function SheetHeader({
   t,
   locale,
   timeZone,
+  now,
   analysisHref,
 }: {
   sheet: MatchSheet;
   t: Translate;
   locale: DisplayLocale;
   timeZone: string;
+  now: Date;
   /** Signed-in players: the match's analysis. */
   analysisHref: string | null;
 }) {
@@ -216,7 +248,11 @@ function SheetHeader({
           ? t("halfTime", sheet.halfTimeScore)
           : sheet.state === "finished"
             ? null
-            : formatTime(new Date(sheet.kickoffAt), locale, timeZone);
+            : formatKickoff(new Date(sheet.kickoffAt), {
+                now,
+                locale,
+                timeZone,
+              });
   return (
     <div className="flex flex-col gap-2">
       <p className="flex justify-between gap-3 text-meta text-band-muted">
@@ -258,7 +294,15 @@ function SheetHeader({
  * price. Live, finished or postponed: none (06 § 3). The new markets keep
  * their line, and their player in the label.
  */
-function AddButton({ pick, sheet }: { pick: SheetPick; sheet: MatchSheet }) {
+function AddButton({
+  pick,
+  sheet,
+  labelOf,
+}: {
+  pick: SheetPick;
+  sheet: MatchSheet;
+  labelOf: LabelOf;
+}) {
   if (sheet.state !== "upcoming" || pick.odds === null) return null;
   return (
     <AddToTicket
@@ -267,7 +311,7 @@ function AddButton({ pick, sheet }: { pick: SheetPick; sheet: MatchSheet }) {
         market: pick.market,
         pick: pick.pick,
         line: pick.line,
-        label: pickLabel(pick, sheet),
+        label: labelOf(pick),
         home: sheet.home,
         away: sheet.away,
         kickoffAt: sheet.kickoffAt,
@@ -305,18 +349,20 @@ function PickLine({
   sheet,
   t,
   locale,
+  labelOf,
   strong = false,
 }: {
   pick: SheetPick;
   sheet: MatchSheet;
   t: Translate;
   locale: DisplayLocale;
+  labelOf: LabelOf;
   strong?: boolean;
 }) {
   return (
     <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
       <span className={strong ? "text-bet font-semibold" : "text-bet"}>
-        {pickLabel(pick, sheet)}
+        {labelOf(pick)}
       </span>
       <span className="flex items-center gap-3">
         {pick.odds !== null ? (
@@ -325,7 +371,7 @@ function PickLine({
           </span>
         ) : null}
         <Mark result={pick.result} t={t} />
-        <AddButton pick={pick} sheet={sheet} />
+        <AddButton pick={pick} sheet={sheet} labelOf={labelOf} />
       </span>
     </p>
   );
@@ -341,7 +387,11 @@ function Mark({ result, t }: { result: SheetPick["result"]; t: Translate }) {
   return null;
 }
 
-/** Five results, oldest first, and the days of rest (06 § 2). */
+/**
+ * Five results, oldest first, and the days of rest (06 § 2): two cells of
+ * the form's grid, the team's whole name (04/11: « Olympiakos Pir… » with
+ * room left) and its marks, aligned with the other team's.
+ */
 function FormLine({
   team,
   form,
@@ -354,37 +404,64 @@ function FormLine({
   const count = (outcome: SheetTeamForm["last"][number]) =>
     form.last.filter((o) => o === outcome).length;
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <span className="w-28 shrink-0 truncate text-body font-medium">
-        {team.name}
+    <>
+      <span className="text-body font-medium break-words">{team.name}</span>
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {form.last.length > 0 ? (
+          <span
+            role="img"
+            aria-label={t("formSummary", {
+              won: count("won"),
+              drawn: count("drawn"),
+              lost: count("lost"),
+            })}
+            className="flex items-center gap-1"
+          >
+            {form.last.map((outcome, index) => (
+              <ResultMark
+                key={index}
+                kind={
+                  outcome === "won"
+                    ? "won"
+                    : outcome === "lost"
+                      ? "lost"
+                      : "void"
+                }
+                size="sm"
+              />
+            ))}
+          </span>
+        ) : null}
+        {form.restDays !== null ? (
+          <span className="text-meta text-muted-foreground">
+            {t("rest", { days: form.restDays })}
+          </span>
+        ) : null}
       </span>
-      {form.last.length > 0 ? (
-        <span
-          role="img"
-          aria-label={t("formSummary", {
-            won: count("won"),
-            drawn: count("drawn"),
-            lost: count("lost"),
-          })}
-          className="flex items-center gap-1"
-        >
-          {form.last.map((outcome, index) => (
-            <ResultMark
-              key={index}
-              kind={
-                outcome === "won" ? "won" : outcome === "lost" ? "lost" : "void"
-              }
-              size="sm"
-            />
-          ))}
+    </>
+  );
+}
+
+/**
+ * What the marks mean, in short and visible (04/11): the form's marks are
+ * the result signs of the whole app, here a match's result.
+ */
+function FormLegend({ t }: { t: Translate }) {
+  const items = [
+    ["won", t("formLegend.won")],
+    ["lost", t("formLegend.lost")],
+    ["void", t("formLegend.drawn")],
+  ] as const;
+  return (
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted-foreground">
+      {items.map(([kind, word]) => (
+        <span key={kind} className="flex items-center gap-1">
+          <ResultMark kind={kind} size="sm" />
+          {word}
         </span>
-      ) : null}
-      {form.restDays !== null ? (
-        <span className="text-meta text-muted-foreground">
-          {t("rest", { days: form.restDays })}
-        </span>
-      ) : null}
-    </div>
+      ))}
+      <span>{t("formLegend.scope")}</span>
+    </p>
   );
 }
 
@@ -400,10 +477,12 @@ function OtherPicks({
   sheet,
   t,
   locale,
+  labelOf,
 }: {
   sheet: MatchSheet;
   t: Translate;
   locale: DisplayLocale;
+  labelOf: LabelOf;
 }) {
   const finished = sheet.state === "finished";
   const line = (pick: SheetPick) => (
@@ -411,7 +490,7 @@ function OtherPicks({
       key={`${pick.market}|${pick.pick}|${pick.line ?? ""}`}
       className="flex items-baseline justify-between gap-3 py-2"
     >
-      <span className="text-body">{pickLabel(pick, sheet)}</span>
+      <span className="text-body">{labelOf(pick)}</span>
       <span className="flex items-center gap-2 text-body">
         {!finished && pick.chance !== null ? (
           <ChanceShort probability={pick.chance} />
@@ -422,7 +501,7 @@ function OtherPicks({
           </span>
         ) : null}
         {finished ? <Mark result={pick.result} t={t} /> : null}
-        <AddButton pick={pick} sheet={sheet} />
+        <AddButton pick={pick} sheet={sheet} labelOf={labelOf} />
       </span>
     </li>
   );

@@ -4,6 +4,7 @@ import {
   formatPickForDisplayFr,
 } from "@evcore/analysis-core";
 import type { FixturePickSnapshot } from "@/domains/fixture/types/fixture";
+import type messages from "@/messages/fr.json";
 
 type Locale = "fr" | "en";
 
@@ -102,26 +103,37 @@ export function formatPickForDisplay(pick: string, market: string): string {
 }
 
 /**
+ * The translator of the `betLabels` messages (getTranslations, useTranslations
+ * or createTranslator): every bet a player reads is worded there, in his
+ * language, never here.
+ */
+export type BetLabels = (
+  key: BetLabelKey,
+  values?: Record<string, string | number>,
+) => string;
+
+type BetLabelKey = keyof (typeof messages)["betLabels"];
+
+/**
  * Un pari sur un marché à ligne en colonne (corners, lot 6) : « Plus de 9,5
  * corners ». Null pour un autre marché : l'appelant garde son libellé.
  */
 export function formatLinePick(
-  pick: string,
-  market: string,
-  line: number | null,
+  bet: { pick: string; market: string; line: number | null },
+  t: BetLabels,
 ): string | null {
+  const { pick, market, line } = bet;
   if (line === null || market !== "CORNERS") return null;
-  const value = line.toLocaleString("fr-FR");
-  if (pick === "OVER") return `Plus de ${value} corners`;
-  if (pick === "UNDER") return `Moins de ${value} corners`;
+  if (pick === "OVER") return t("cornersOver", { line });
+  if (pick === "UNDER") return t("cornersUnder", { line });
   return null;
 }
 
 /**
  * Les marchés relevés depuis le 03/11 (corners d'équipe, corners 1X2,
  * cartons, buteurs, tirs d'un joueur, 1X2 à une minute) et le total de
- * corners, en clair avec l'équipe ou le joueur : « Arsenal : plus de 4,5
- * corners », « Saka marque », « Saka : au moins 2 tirs cadrés », « Arsenal
+ * corners, en clair avec l'équipe ou le joueur : « Arsenal obtient plus de
+ * 4,5 corners », « Saka marque », « Saka cadre au moins 2 tirs », « Arsenal
  * mène après 30 minutes ». La ligne telle que le book la cote, jamais
  * arrondie. Null pour un autre marché, ou quand le pari ne se lit pas (un
  * joueur sans nom, une ligne absente) : l'appelant garde son libellé.
@@ -134,160 +146,181 @@ export function formatStatPick(
     player?: string | null;
   },
   teams: { home: string; away: string },
+  t: BetLabels,
 ): string | null {
   const { market, pick } = bet;
   const line = bet.line ?? null;
   const player = bet.player ?? null;
-  const number = (value: number) => value.toLocaleString("fr-FR");
-  const overUnder = (unit: string): string | null => {
-    if (line === null) return null;
-    if (pick === "OVER") return `plus de ${number(line)} ${unit}`;
-    if (pick === "UNDER") return `moins de ${number(line)} ${unit}`;
-    return null;
-  };
-  const capital = (text: string | null) =>
-    text === null ? null : `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+  const side = (code: string): string | null =>
+    code === "HOME" ? teams.home : code === "AWAY" ? teams.away : null;
 
   switch (market) {
     case "CORNERS":
-      return formatLinePick(pick, market, line);
+      return formatLinePick({ pick, market, line }, t);
     case "CARDS":
-      return capital(overUnder("cartons"));
+      if (line === null) return null;
+      if (pick === "OVER") return t("cardsOver", { line });
+      if (pick === "UNDER") return t("cardsUnder", { line });
+      return null;
     case "CORNERS_HOME":
     case "CORNERS_AWAY": {
-      const label = overUnder("corners");
+      if (line === null) return null;
       const team = market === "CORNERS_HOME" ? teams.home : teams.away;
-      return label === null ? null : `${team} : ${label}`;
-    }
-    case "CORNERS_1X2":
-      if (pick === "HOME") return `Plus de corners pour ${teams.home}`;
-      if (pick === "AWAY") return `Plus de corners pour ${teams.away}`;
-      if (pick === "DRAW") return "Autant de corners pour les deux équipes";
+      if (pick === "OVER") return t("teamCornersOver", { team, line });
+      if (pick === "UNDER") return t("teamCornersUnder", { team, line });
       return null;
+    }
+    case "CORNERS_1X2": {
+      if (pick === "DRAW") return t("sameCorners");
+      const team = side(pick);
+      return team === null ? null : t("moreCorners", { team });
+    }
     case "MINUTE_1X2": {
       if (line === null) return null;
-      const after = `après ${number(line)} minutes`;
-      if (pick === "HOME") return `${teams.home} mène ${after}`;
-      if (pick === "AWAY") return `${teams.away} mène ${after}`;
-      if (pick === "DRAW") return `Égalité ${after}`;
-      return null;
+      if (pick === "DRAW") return t("levelAfter", { minute: line });
+      const team = side(pick);
+      return team === null ? null : t("leadsAfter", { team, minute: line });
     }
     case "GOAL_SCORER_ANYTIME":
-      return player === null ? null : `${player} marque`;
+      return player === null ? null : t("scorer", { player });
     case "GOAL_SCORER_FIRST":
-      if (pick === "NONE") return "Aucun buteur";
-      return player === null ? null : `${player} marque le premier but`;
+      if (pick === "NONE") return t("noScorer");
+      return player === null ? null : t("firstScorer", { player });
     case "PLAYER_SHOTS":
-    case "PLAYER_SHOTS_ON_TARGET": {
+    case "PLAYER_SHOTS_ON_TARGET":
       if (player === null || line === null) return null;
-      const words = market === "PLAYER_SHOTS" ? ["tir"] : ["tir", "cadré"];
-      const shots = words
-        .map((word) => (line >= 2 ? `${word}s` : word))
-        .join(" ");
-      return `${player} : au moins ${number(line)} ${shots}`;
-    }
+      return t(market === "PLAYER_SHOTS" ? "shots" : "shotsOnTarget", {
+        player,
+        line,
+      });
     default:
       return null;
   }
 }
 
+/** « OVER_2_5 » → { over: true, line: 2.5 }; the bare OVER/UNDER is 2.5. */
+function overUnderOf(code: string): { over: boolean; line: number } | null {
+  if (code === "OVER" || code === "UNDER") {
+    return { over: code === "OVER", line: 2.5 };
+  }
+  const match = /^(OVER|UNDER)_(\d+)_(\d+)$/.exec(code);
+  if (!match) return null;
+  return {
+    over: match[1] === "OVER",
+    line: Number(`${match[2]}.${match[3]}`),
+  };
+}
+
 /**
  * Le pari en clair, avec le nom des équipes : « Victoire Arsenal », « Burnley
- * ou nul », « Arsenal n'encaisse pas ». Le joueur lit un pari, pas un canal
- * (décision du 2026-10-27, docs/audits/2026-10-27/DECISIONS.md) : « Domicile »
- * l'obligeait à relier le mot à l'équipe de la ligne au-dessus, et Victoire
- * et Nul, deux canaux du même marché 1X2, se distinguent ici par l'issue.
- * Sans nom d'équipe, ou pour un marché sans équipe, retombe sur
- * formatPickForDisplay.
+ * ou nul », « Arsenal n'encaisse pas », « Rennes marque moins de 2,5 buts ».
+ * Le joueur lit un pari, pas un canal (décision du 2026-10-27,
+ * docs/audits/2026-10-27/DECISIONS.md) : « Domicile » l'obligeait à relier
+ * le mot à l'équipe de la ligne au-dessus, et Victoire et Nul, deux canaux du
+ * même marché 1X2, se distinguent ici par l'issue. Les lignes telles que le
+ * book les cote, jamais arrondies. Sans nom d'équipe, ou pour un marché sans
+ * équipe, retombe sur formatPickForDisplay.
  */
 export function formatPickWithTeams(
-  pick: string,
-  market: string,
+  bet: { pick: string; market: string },
   teams: { home: string; away: string } | null,
+  t: BetLabels,
 ): string {
+  const { pick, market } = bet;
   if (!teams) return formatPickForDisplay(pick, market);
   const p = pick.includes(" ") ? pick.split(" ").slice(1).join("_") : pick;
   const { home, away } = teams;
-  const side = (code: string): string | null =>
+  const side = (code: string | undefined): string | null =>
     code === "HOME" ? home : code === "AWAY" ? away : null;
-  // « plus de 1,5 but », « plus de 2,5 buts » : singulier sous 2.
-  const goals = (code: string, suffix = ""): string | null => {
-    const label = formatGenericOverUnderPick(
-      code === "OVER" ? "OVER_2_5" : code === "UNDER" ? "UNDER_2_5" : code,
-    );
-    if (!label) return null;
-    const line = Number(label.replace(/^\D+/, ""));
-    const unit = line < 2 ? "but" : "buts";
-    return `${label.replace(".", ",")} ${unit}${suffix}`;
+  const goals = (
+    code: string,
+    keys: [BetLabelKey, BetLabelKey],
+  ): string | null => {
+    const ou = overUnderOf(code);
+    return ou ? t(ou.over ? keys[0] : keys[1], { line: ou.line }) : null;
   };
 
   switch (market) {
     case "ONE_X_TWO":
-    case "MATCH_WINNER":
-      if (p === "DRAW") return "Match nul";
-      return side(p)
-        ? `Victoire ${side(p)}`
-        : formatPickForDisplay(pick, market);
+    case "MATCH_WINNER": {
+      if (p === "DRAW") return t("draw");
+      const team = side(p);
+      return team ? t("win", { team }) : formatPickForDisplay(pick, market);
+    }
     case "DOUBLE_CHANCE":
-      if (p === "1X") return `${home} ou nul`;
-      if (p === "X2") return `${away} ou nul`;
+      if (p === "1X") return t("teamOrDraw", { team: home });
+      if (p === "X2") return t("teamOrDraw", { team: away });
       // « A ou B » read as a doubt between two teams: it is « no draw ».
-      if (p === "12") return "Pas de match nul";
+      if (p === "12") return t("noDraw");
       break;
-    case "DRAW_NO_BET":
-      if (side(p)) return `${side(p)}, remboursé si nul`;
+    case "DRAW_NO_BET": {
+      const team = side(p);
+      if (team) return t("drawNoBet", { team });
       break;
-    case "TO_WIN_EITHER_HALF":
-      if (side(p)) return `${side(p)} gagne une mi-temps`;
+    }
+    case "TO_WIN_EITHER_HALF": {
+      const team = side(p);
+      if (team) return t("winsAHalf", { team });
       break;
-    case "FIRST_HALF_WINNER":
-      if (p === "DRAW") return "Égalité à la pause";
-      if (side(p)) return `${side(p)} mène à la pause`;
+    }
+    case "FIRST_HALF_WINNER": {
+      if (p === "DRAW") return t("levelAtHalf");
+      const team = side(p);
+      if (team) return t("leadsAtHalf", { team });
       break;
+    }
     case "CLEAN_SHEET_HOME":
     case "CLEAN_SHEET_AWAY": {
       const team = market.endsWith("HOME") ? home : away;
-      if (p === "YES") return `${team} n'encaisse pas`;
-      if (p === "NO") return `${team} encaisse au moins un but`;
+      if (p === "YES") return t("cleanSheet", { team });
+      if (p === "NO") return t("concedes", { team });
       break;
     }
     case "WIN_TO_NIL_HOME":
     case "WIN_TO_NIL_AWAY": {
       const team = market.endsWith("HOME") ? home : away;
-      if (p === "YES") return `${team} gagne sans encaisser`;
-      if (p === "NO") return `${team} ne gagne pas sans encaisser`;
+      if (p === "YES") return t("winToNil", { team });
+      if (p === "NO") return t("noWinToNil", { team });
       break;
     }
     case "TEAM_TOTAL_HOME":
     case "TEAM_TOTAL_AWAY": {
       const team = market.endsWith("HOME") ? home : away;
-      // The 0,5 line in words; the others keep the bookmaker's wording
-      // (« Total équipe : moins de 2,5 »), the one the player looks for.
-      if (p === "OVER_0_5") return `${team} marque`;
-      if (p === "UNDER_0_5") return `${team} ne marque pas`;
-      const label = goals(p);
-      if (label)
-        return `${team} : ${label.charAt(0).toLowerCase()}${label.slice(1)}`;
+      // A sentence, never « Rennes : moins de 2,5 buts », which read like
+      // the match's own total just below it (04/11). The 0,5 line in words.
+      if (p === "OVER_0_5") return t("teamScores", { team });
+      if (p === "UNDER_0_5") return t("teamNoScore", { team });
+      const ou = overUnderOf(p);
+      if (ou) {
+        return t(ou.over ? "teamOver" : "teamUnder", { team, line: ou.line });
+      }
       break;
     }
     case "BTTS":
-      if (p === "YES") return "Les deux équipes marquent";
-      if (p === "NO") return "Au moins une équipe ne marque pas";
+      if (p === "YES") return t("bttsYes");
+      if (p === "NO") return t("bttsNo");
       break;
     case "OVER_UNDER":
     case "OVER_UNDER_25": {
-      const label = goals(p);
+      const label = goals(p, ["over", "under"]);
       if (label) return label;
       break;
     }
     case "OVER_UNDER_HT": {
-      const label = goals(p, " à la pause");
+      const label = goals(p, ["overAtHalf", "underAtHalf"]);
       if (label) return label;
       break;
     }
     case "CORRECT_SCORE": {
       const score = /^(\d+)[:-](\d+)$/.exec(p);
-      if (score) return `${home} ${score[1]}–${score[2]} ${away}`;
+      if (score) {
+        return t("correctScore", {
+          home,
+          away,
+          homeGoals: score[1] ?? "",
+          awayGoals: score[2] ?? "",
+        });
+      }
       break;
     }
     case "RESULT_TOTAL_GOALS":
@@ -295,23 +328,36 @@ export function formatPickWithTeams(
       const match = /^(HOME|DRAW|AWAY)_(.+)$/.exec(p);
       if (!match) break;
       const [, code = "", rest = ""] = match;
-      const result = code === "DRAW" ? "Match nul" : `Victoire ${side(code)}`;
-      if (rest === "YES") return `${result} et les deux équipes marquent`;
-      if (rest === "NO") return `${result} et une équipe ne marque pas`;
-      const label = goals(rest);
-      if (label)
-        return `${result} et ${label.charAt(0).toLowerCase()}${label.slice(1)}`;
+      const team = side(code);
+      const result = team ? t("win", { team }) : t("draw");
+      if (rest === "YES") return t("resultBttsYes", { result });
+      if (rest === "NO") return t("resultBttsNo", { result });
+      const ou = overUnderOf(rest);
+      if (ou) {
+        return t(ou.over ? "resultOver" : "resultUnder", {
+          result,
+          line: ou.line,
+        });
+      }
       break;
     }
     case "HALF_TIME_FULL_TIME": {
       const [ht, ft] = p.split("_");
-      const atHalf = (code: string | undefined) =>
-        code === "DRAW" ? "égalité" : code ? `${side(code)} devant` : null;
-      const atEnd = (code: string | undefined) =>
-        code === "DRAW" ? "nul" : code ? `victoire ${side(code)}` : null;
-      if (atHalf(ht) && atEnd(ft)) {
-        return `${atHalf(ht)} à la pause, ${atEnd(ft)} à la fin`;
-      }
+      const halfTeam = side(ht);
+      const endTeam = side(ft);
+      const half =
+        ht === "DRAW"
+          ? t("halfLevel")
+          : halfTeam
+            ? t("halfAhead", { team: halfTeam })
+            : null;
+      const end =
+        ft === "DRAW"
+          ? t("endDraw")
+          : endTeam
+            ? t("endWin", { team: endTeam })
+            : null;
+      if (half && end) return t("halfTimeFullTime", { half, end });
       break;
     }
   }

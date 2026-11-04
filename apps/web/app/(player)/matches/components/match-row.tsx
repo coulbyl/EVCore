@@ -25,13 +25,14 @@ function searchOf(item: MatchItem): string {
  * competition, one reading on the right, « Victoire Arsenal · 1,45 · 7 sur
  * 10 »: the 1xBet odds the player will look for, then the chance.
  */
-export function MatchRow({
+export async function MatchRow({
   item,
   locale,
 }: {
   item: MatchItem & { reading: MatchReading };
   locale: DisplayLocale;
 }) {
+  const bets = await getTranslations("betLabels");
   return (
     <MatchLink item={item}>
       <TeamPair item={item} />
@@ -39,7 +40,7 @@ export function MatchRow({
         title={<MatchTitle item={item} />}
         side={
           <>
-            <span className="min-w-0">{readingLabel(item)}</span>
+            <span className="min-w-0">{readingLabel(item, bets)}</span>
             {/* The odds alone: the chance is told on the sheet. */}
             <span className="score shrink-0 text-bet font-semibold whitespace-nowrap">
               {formatOdds(item.reading.odds, locale)}
@@ -57,7 +58,7 @@ export function MatchRow({
  * postponed match: « Rep. », « reporté » under the competition, its reading
  * « Remboursé » in grey.
  */
-export function SettledMatchRow({
+export async function SettledMatchRow({
   item,
   labels,
 }: {
@@ -70,6 +71,7 @@ export function SettledMatchRow({
     postponedMeta: string;
   };
 }) {
+  const bets = await getTranslations("betLabels");
   const postponed = item.state === "postponed";
   const refunded = postponed || item.reading.result === "void";
   return (
@@ -99,7 +101,7 @@ export function SettledMatchRow({
             <span className="text-muted-foreground">{labels.refunded}</span>
           ) : (
             <>
-              <span>{readingLabel(item)}</span>
+              <span>{readingLabel(item, bets)}</span>
               {item.reading.result === "won" ||
               item.reading.result === "lost" ? (
                 <ResultMark

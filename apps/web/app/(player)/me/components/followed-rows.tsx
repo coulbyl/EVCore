@@ -23,9 +23,10 @@ export async function FollowedRows({
   coupons: readonly TodayCoupon[];
   label: string;
 }) {
-  const [t, me, locale, timeZone] = await Promise.all([
+  const [t, me, bets, locale, timeZone] = await Promise.all([
     getTranslations("today"),
     getTranslations("me"),
+    getTranslations("betLabels"),
     getLocale(),
     getPlayerTimeZone(),
   ]);
@@ -60,7 +61,7 @@ export async function FollowedRows({
             title={t(`products.${coupon.product}`)}
             meta={
               single
-                ? `${single.home.name} – ${single.away.name} · ${legPickLabel(single)}`
+                ? `${single.home.name} – ${single.away.name} · ${legPickLabel(single, bets)}`
                 : t("matches", { count: playedLegs(coupon).length })
             }
             value={<CouponValue coupon={coupon} locale={display} size="row" />}

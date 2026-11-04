@@ -11,6 +11,7 @@ import {
   ledsOf,
   type Chance,
 } from "@/helpers/scoreboard-format";
+import type { BetLabels } from "@/helpers/fixture";
 import { legPickLabel } from "../../(player)/today/components/today-constants";
 
 /**
@@ -60,6 +61,11 @@ export async function renderShareImage(): Promise<ImageResponse> {
     locale: "fr",
     messages,
     namespace: "landing",
+  });
+  const bets = createTranslator({
+    locale: "fr",
+    messages,
+    namespace: "betLabels",
   });
   const hero = today?.hero ?? null;
   const date = today
@@ -130,6 +136,7 @@ export async function renderShareImage(): Promise<ImageResponse> {
             hero.chance !== null ? chanceLine(hero.chance, chanceText) : null
           }
           matchesLabel={(count) => t("matches", { count })}
+          bets={bets}
         />
       ) : (
         <div
@@ -198,11 +205,13 @@ function HeroBlock({
   product,
   chance,
   matchesLabel,
+  bets,
 }: {
   hero: PublicHero;
   product: string;
   chance: ChanceLine | null;
   matchesLabel: (count: number) => string;
+  bets: BetLabels;
 }) {
   const single = hero.legs.length === 1 ? hero.legs[0] : undefined;
   const hidden = hero.legs.length - SHOWN_LEGS;
@@ -248,7 +257,7 @@ function HeroBlock({
         }}
       >
         <div style={{ display: "flex" }}>
-          {single ? legPickLabel(single) : matchesLabel(hero.legs.length)}
+          {single ? legPickLabel(single, bets) : matchesLabel(hero.legs.length)}
         </div>
         {hero.odds !== null ? (
           <div style={{ display: "flex", fontSize: 56, fontWeight: 800 }}>
