@@ -202,9 +202,6 @@ test.describe("Une feuille ouverte depuis une feuille la remplace", () => {
       !testInfo.project.name.startsWith("desktop"),
       "la barre est inerte sous une feuille modale",
     );
-    // TicketBar's link is still a plain link (the ticket's files, bloc A
-    // of 04/11): it must become a SheetLink.
-    test.fixme(true, "TicketBar → SheetLink");
     const sheet = await openMatchFromList(page);
     await sheet
       .getByRole("button", { name: /^Ajouter à mon ticket – / })

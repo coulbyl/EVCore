@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { SheetLink } from "../sheet/sheet-link";
 import { ChevronRight, X } from "lucide-react";
 import { clsx } from "clsx";
 import {
@@ -184,7 +185,7 @@ export function TicketView({ locale }: { locale: DisplayLocale }) {
       ) : null}
 
       {hero ? (
-        <Link
+        <SheetLink
           href={`/today/coupon/${hero.couponId}`}
           className="mt-3 flex min-h-13 items-center gap-3 border-b border-border text-body font-medium focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
         >
@@ -205,7 +206,7 @@ export function TicketView({ locale }: { locale: DisplayLocale }) {
             strokeWidth={2}
             className="size-[1.125rem] shrink-0 text-icon-subtle"
           />
-        </Link>
+        </SheetLink>
       ) : null}
     </div>
   );

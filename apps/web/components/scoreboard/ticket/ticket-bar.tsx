@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
+import { SheetLink } from "../sheet/sheet-link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Ticket } from "lucide-react";
 import { formatOdds, type DisplayLocale } from "@/helpers/scoreboard-format";
@@ -66,7 +66,7 @@ export default function TicketBar({
     <>
       {/* Keeps the end of the list clear of the bar. */}
       <div aria-hidden className="h-15 lg:hidden" />
-      <Link
+      <SheetLink
         href="/ticket"
         aria-label={t("open")}
         className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 flex min-h-15 items-center gap-2 whitespace-nowrap bg-band px-4 sm:gap-3 text-band-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-led-on lg:sticky lg:bottom-4 lg:mx-4 lg:rounded-[0.875rem] lg:px-5"
@@ -123,7 +123,7 @@ export default function TicketBar({
           strokeWidth={2}
           className="size-[1.125rem] shrink-0 text-band-muted"
         />
-      </Link>
+      </SheetLink>
     </>
   );
 }
