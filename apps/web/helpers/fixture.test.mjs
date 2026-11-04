@@ -137,3 +137,12 @@ test("the other bets, in French and in English", () => {
     "Saka has at least 1 shot on target",
   );
 });
+
+test("a bet without the teams' names reads its sides, in both languages", () => {
+  const sides = (market, pick, locale) =>
+    formatPickWithTeams({ market, pick }, null, bets(locale));
+  assert.equal(sides("ONE_X_TWO", "HOME", "fr"), "Victoire Domicile");
+  assert.equal(sides("ONE_X_TWO", "AWAY", "en"), "Away win");
+  assert.equal(sides("ASIAN_HANDICAP", "HOME", "en"), "Home");
+  assert.equal(sides("ODD_EVEN", "YES", "fr"), "Oui");
+});

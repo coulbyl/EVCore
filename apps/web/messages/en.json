@@ -1367,6 +1367,10 @@
     "firstScorer": "{player} scores the first goal",
     "noScorer": "No goalscorer",
     "shots": "{player} has at least {line, number} {line, plural, one {shot} other {shots}}",
-    "shotsOnTarget": "{player} has at least {line, number} {line, plural, one {shot} other {shots}} on target"
+    "shotsOnTarget": "{player} has at least {line, number} {line, plural, one {shot} other {shots}} on target",
+    "homeSide": "Home",
+    "awaySide": "Away",
+    "yes": "Yes",
+    "no": "No"
   }
 }

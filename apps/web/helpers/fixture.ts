@@ -1,7 +1,6 @@
 import {
   formatGenericOverUnderPick,
   formatMarketForDisplayFr,
-  formatPickForDisplayFr,
 } from "@evcore/analysis-core";
 import type { FixturePickSnapshot } from "@/domains/fixture/types/fixture";
 import type messages from "@/messages/fr.json";
@@ -98,10 +97,6 @@ export function formatMarketForDisplay(
   );
 }
 
-export function formatPickForDisplay(pick: string, market: string): string {
-  return formatPickForDisplayFr(pick, market);
-}
-
 /**
  * The translator of the `betLabels` messages (getTranslations, useTranslations
  * or createTranslator): every bet a player reads is worded there, in his
@@ -113,6 +108,13 @@ export type BetLabels = (
 ) => string;
 
 type BetLabelKey = keyof (typeof messages)["betLabels"];
+
+type Teams = { home: string; away: string };
+
+/** The team a HOME or AWAY code names; null for any other code. */
+function sideOf(code: string | undefined, teams: Teams): string | null {
+  return code === "HOME" ? teams.home : code === "AWAY" ? teams.away : null;
+}
 
 /**
  * Un pari sur un marché à ligne en colonne (corners, lot 6) : « Plus de 9,5
@@ -145,14 +147,13 @@ export function formatStatPick(
     line?: number | null;
     player?: string | null;
   },
-  teams: { home: string; away: string },
+  teams: Teams,
   t: BetLabels,
 ): string | null {
   const { market, pick } = bet;
   const line = bet.line ?? null;
   const player = bet.player ?? null;
-  const side = (code: string): string | null =>
-    code === "HOME" ? teams.home : code === "AWAY" ? teams.away : null;
+  const side = (code: string) => sideOf(code, teams);
 
   switch (market) {
     case "CORNERS":
@@ -219,19 +220,20 @@ function overUnderOf(code: string): { over: boolean; line: number } | null {
  * le mot à l'équipe de la ligne au-dessus, et Victoire et Nul, deux canaux du
  * même marché 1X2, se distinguent ici par l'issue. Les lignes telles que le
  * book les cote, jamais arrondies. Sans nom d'équipe, ou pour un marché sans
- * équipe, retombe sur formatPickForDisplay.
+ * équipe, les côtés (« Domicile ») ; un pari qu'aucun cas ne lit retombe
+ * sur otherPick, traduit lui aussi.
  */
 export function formatPickWithTeams(
   bet: { pick: string; market: string },
-  teams: { home: string; away: string } | null,
+  named: Teams | null,
   t: BetLabels,
 ): string {
   const { pick, market } = bet;
-  if (!teams) return formatPickForDisplay(pick, market);
+  // Without the teams' names, the sides' (« Victoire Domicile »).
+  const teams = named ?? { home: t("homeSide"), away: t("awaySide") };
   const p = pick.includes(" ") ? pick.split(" ").slice(1).join("_") : pick;
   const { home, away } = teams;
-  const side = (code: string | undefined): string | null =>
-    code === "HOME" ? home : code === "AWAY" ? away : null;
+  const side = (code: string | undefined) => sideOf(code, teams);
   const goals = (
     code: string,
     keys: [BetLabelKey, BetLabelKey],
@@ -245,7 +247,8 @@ export function formatPickWithTeams(
     case "MATCH_WINNER": {
       if (p === "DRAW") return t("draw");
       const team = side(p);
-      return team ? t("win", { team }) : formatPickForDisplay(pick, market);
+      if (team) return t("win", { team });
+      break;
     }
     case "DOUBLE_CHANCE":
       if (p === "1X") return t("teamOrDraw", { team: home });
@@ -361,7 +364,20 @@ export function formatPickWithTeams(
       break;
     }
   }
-  return formatPickForDisplay(pick, market);
+  return otherPick(p, teams, t);
+}
+
+/**
+ * A pick no case above words, in the player's language too: a side, a
+ * draw, yes or no; any other code as it is, its words spaced.
+ */
+function otherPick(p: string, teams: Teams, t: BetLabels): string {
+  const team = sideOf(p, teams);
+  if (team) return team;
+  if (p === "DRAW") return t("draw");
+  if (p === "YES") return t("yes");
+  if (p === "NO") return t("no");
+  return p.replace(/_/g, " ");
 }
 
 export function formatDiagnosticPickForDisplay(

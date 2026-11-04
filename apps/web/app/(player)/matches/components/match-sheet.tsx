@@ -184,9 +184,8 @@ export async function MatchSheetView({ id }: { id: string }) {
                 />
               ) : null}
               <p className="text-meta text-muted-foreground">
-                {sheet.ai.odds !== null
-                  ? `${decidedAt(sheet.ai.decidedAt)} · ${aiOdds}`
-                  : decidedAt(sheet.ai.decidedAt)}
+                {decidedAt(sheet.ai.decidedAt)}
+                {sheet.ai.odds !== null ? ` · ${aiOdds}` : null}
               </p>
             </>
           )}
@@ -420,13 +419,7 @@ function FormLine({
             {form.last.map((outcome, index) => (
               <ResultMark
                 key={index}
-                kind={
-                  outcome === "won"
-                    ? "won"
-                    : outcome === "lost"
-                      ? "lost"
-                      : "void"
-                }
+                kind={outcome === "drawn" ? "void" : outcome}
                 size="sm"
               />
             ))}

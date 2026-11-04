@@ -1367,6 +1367,10 @@
     "firstScorer": "{player} marque le premier but",
     "noScorer": "Aucun buteur",
     "shots": "{player} tire au moins {line, number} fois",
-    "shotsOnTarget": "{player} cadre au moins {line, number} {line, plural, one {tir} other {tirs}}"
+    "shotsOnTarget": "{player} cadre au moins {line, number} {line, plural, one {tir} other {tirs}}",
+    "homeSide": "Domicile",
+    "awaySide": "Extérieur",
+    "yes": "Oui",
+    "no": "Non"
   }
 }
