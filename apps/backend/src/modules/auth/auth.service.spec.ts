@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterEach, beforeEach } from 'vitest';
 import { Prisma } from '@evcore/db';
 import {
   BadRequestException,
@@ -222,6 +222,17 @@ describe('AuthService.login', () => {
 
 describe('AuthService login with an authenticator app', () => {
   const secret = otp.generateSecret();
+
+  // A code is generated then verified a few milliseconds later: on a real
+  // clock, crossing a 30-second step in between failed the test now and
+  // then. The clock is frozen mid-step (only Date: promises and timers run).
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-04T12:00:15Z'));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
   const totpRow = () => ({
     ...USER,
     totpVerified: true,
