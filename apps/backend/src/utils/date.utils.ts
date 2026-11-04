@@ -124,7 +124,8 @@ export function activeSeasons(
   return Array.from({ length: count }, (_, i) => current - (count - 1 - i));
 }
 
-const WEEK_DAY_MS = 24 * 60 * 60 * 1000;
+/** One day in milliseconds. */
+export const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** « 2026-10-19 » : le lundi de la semaine passée, en UTC. */
 export function previousIsoWeek(now: Date): string {
@@ -134,7 +135,7 @@ export function previousIsoWeek(now: Date): string {
     now.getUTCDate(),
   );
   const sinceMonday = (new Date(today).getUTCDay() + 6) % 7;
-  return new Date(today - (sinceMonday + 7) * WEEK_DAY_MS)
+  return new Date(today - (sinceMonday + 7) * DAY_MS)
     .toISOString()
     .slice(0, 10);
 }

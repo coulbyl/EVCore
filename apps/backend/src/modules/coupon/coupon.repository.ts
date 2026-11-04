@@ -269,11 +269,9 @@ export class CouponRepository {
       awayScore: number | null;
       homeHtScore: number | null;
       awayHtScore: number | null;
-      /** Corners des deux équipes (stats de match) ; null s'il en manque une. */
-      totalCorners: number | null;
     }[]
   > {
-    const fixtures = await this.prisma.client.fixture.findMany({
+    return this.prisma.client.fixture.findMany({
       where: { id: { in: [...ids] } },
       select: {
         id: true,
@@ -283,19 +281,8 @@ export class CouponRepository {
         awayScore: true,
         homeHtScore: true,
         awayHtScore: true,
-        fixtureStatistics: {
-          where: { type: 'corner_kicks' },
-          select: { value: true },
-        },
       },
     });
-    return fixtures.map(({ fixtureStatistics, ...fixture }) => ({
-      ...fixture,
-      totalCorners:
-        fixtureStatistics.length === 2
-          ? fixtureStatistics.reduce((sum, s) => sum + Number(s.value), 0)
-          : null,
-    }));
   }
 
   /**

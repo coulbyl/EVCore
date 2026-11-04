@@ -48,8 +48,16 @@ function harness(input: {
       },
     ],
   });
-  const findMarketPrices = vi.fn(({ fixtureId }: { fixtureId: string }) =>
-    Promise.resolve(input.marketRows?.[fixtureId] ?? []),
+  const findMarketPrices = vi.fn(
+    ({ fixtures }: { fixtures: readonly { fixtureId: string }[] }) =>
+      Promise.resolve(
+        fixtures.flatMap(({ fixtureId }) =>
+          (input.marketRows?.[fixtureId] ?? []).map((row) => ({
+            ...row,
+            fixtureId,
+          })),
+        ),
+      ),
   );
   const findFacts = vi.fn().mockResolvedValue(input.facts ?? new Map());
   const findPlayableQuotes = vi.fn().mockResolvedValue(
@@ -320,7 +328,12 @@ describe('TicketService.quote, the new markets (corners, cards, scorers, shots, 
       [{ fixtureId: id(3), market: Market.ONE_X_TWO, pick: 'HOME' }],
       { operatorOnly: true },
     );
-    expect(findMarketPrices).toHaveBeenCalledTimes(2);
+    // One read for both matches, each in its own window.
+    expect(findMarketPrices).toHaveBeenCalledTimes(1);
+    expect(findMarketPrices.mock.calls[0]?.[0].fixtures).toEqual([
+      expect.objectContaining({ fixtureId: id(1) }),
+      expect.objectContaining({ fixtureId: id(2) }),
+    ]);
     // The odds of every open bet; the chance unknown with the scorer's.
     expect(quote.totals).toEqual({ legCount: 3, odds: 7.838, chance: null });
   });

@@ -1,8 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import {
-  resolveStatMarketBetStatus,
-  type MatchFacts,
-} from '@evcore/analysis-core';
+import type { MatchFacts } from '@evcore/analysis-core';
 import { resolveSelectionFinalResult } from '@modules/betting-engine/channel-selection-settlement';
 import Decimal from 'decimal.js';
 import {
@@ -11,18 +8,23 @@ import {
   PlayableOddsRepository,
   playableQuoteKey,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
-import { STAT_MARKET_SETTLEMENT } from '@modules/coupon/coupon.constants';
+import { settleFactLeg } from '@modules/coupon/fact-leg-settlement';
 import { MatchFactsRepository } from '@modules/fixture-events/match-facts.repository';
 import { VerifiedTicketService } from '@modules/verified-ticket/verified-ticket.service';
-import { SHEET_PRICES_LOOKBACK_DAYS } from '@config/screens.constants';
-import { isSheetNewMarket, quoteNewMarketPick } from './match-sheet-markets';
+import {
+  isSheetNewMarket,
+  quoteNewMarketPick,
+  sheetPriceWindow,
+  type SheetNewMarket,
+} from './match-sheet-markets';
 import { MatchesRepository } from './matches.repository';
-import { resultOf } from './matches-reading';
+import { groupBy, resultOf } from './matches-reading';
 import { TodayService } from './today.service';
 import type { TicketLegDto } from './dto/ticket-quote.dto';
 import type { TicketQuote, TicketQuoteLeg } from './ticket.types';
 
-const DAY_MS = 86_400_000;
+/** A bet of the new markets, priced and settled on the match facts. */
+type FactLeg = TicketLegDto & { market: SheetNewMarket };
 
 /**
  * « Mon ticket » priced now (refonte 07 § 3–4). Every bet is read at its
@@ -56,50 +58,63 @@ export class TicketService {
     if (new Set(ids).size !== ids.length) {
       throw new BadRequestException('One bet per match.');
     }
-    const mainLegs = input.legs
-      .filter((leg) => !isSheetNewMarket(leg.market))
-      .map(({ fixtureId, market, pick }) => ({ fixtureId, market, pick }));
+    // The main markets go to the 1xBet quote, the new markets to every
+    // book's prices and, once finished, to the match facts.
+    const mainLegs: TicketLegDto[] = [];
+    const factLegs: FactLeg[] = [];
+    for (const leg of input.legs) {
+      if (isSheetNewMarket(leg.market))
+        factLegs.push({ ...leg, market: leg.market });
+      else mainLegs.push(leg);
+    }
     const [fixtures, quotes, hero] = await Promise.all([
       this.matches.findTicketFixtures(ids),
       mainLegs.length > 0
-        ? this.playableOdds.findPlayableQuotes(mainLegs, { operatorOnly: true })
+        ? this.playableOdds.findPlayableQuotes(
+            mainLegs.map(({ fixtureId, market, pick }) => ({
+              fixtureId,
+              market,
+              pick,
+            })),
+            { operatorOnly: true },
+          )
         : Promise.resolve(new Map<string, PlayableQuote>()),
       this.today.heroOfDay(input.day ? new Date(input.day) : now, now),
     ]);
     const fixtureOf = new Map(fixtures.map((f) => [f.id, f]));
-    const newLegs = input.legs.filter((leg) => isSheetNewMarket(leg.market));
-    const { rowsOf, factsOf } = await this.readNewMarkets(newLegs, fixtureOf);
+    const { rowsOf, factsOf } = await this.readNewMarkets({
+      legs: factLegs,
+      fixtureOf,
+      now,
+    });
 
     const legs = input.legs.map((leg): TicketQuoteLeg => {
       const fixture = fixtureOf.get(leg.fixtureId);
       const line = leg.line ?? null;
-      const priced = isSheetNewMarket(leg.market)
-        ? quoteNewMarketPick({
-            market: leg.market,
-            pick: leg.pick,
-            line,
-            rows: rowsOf.get(leg.fixtureId) ?? [],
-          })
-        : null;
-      const quote = isSheetNewMarket(leg.market)
-        ? null
-        : quotes.get(playableQuoteKey(leg));
+      let price: Pick<TicketQuoteLeg, 'odds' | 'fair'>;
+      if (isSheetNewMarket(leg.market)) {
+        const priced = quoteNewMarketPick({
+          market: leg.market,
+          pick: leg.pick,
+          line,
+          rows: rowsOf.get(leg.fixtureId) ?? [],
+        });
+        price = { odds: priced?.odds ?? null, fair: priced?.chance ?? null };
+      } else {
+        const quote = quotes.get(playableQuoteKey(leg));
+        price = {
+          odds: quote?.operatorOdds ?? null,
+          fair: quote?.operatorFairProbability ?? null,
+        };
+      }
       return {
         fixtureId: leg.fixtureId,
         market: leg.market,
         pick: leg.pick,
         line,
         kickoffAt: fixture?.scheduledAt.toISOString() ?? null,
-        state: !fixture
-          ? 'unknown'
-          : fixture.status === 'POSTPONED' || fixture.status === 'CANCELLED'
-            ? 'postponed'
-            : fixture.status !== 'SCHEDULED' ||
-                fixture.scheduledAt.getTime() <= now.getTime()
-              ? 'started'
-              : 'open',
-        odds: priced?.odds ?? quote?.operatorOdds ?? null,
-        fair: priced ? priced.chance : (quote?.operatorFairProbability ?? null),
+        state: stateOf(fixture, now),
+        ...price,
         ...settlementOf(leg, fixture, {
           facts: factsOf.get(leg.fixtureId) ?? null,
           now,
@@ -147,54 +162,61 @@ export class TicketService {
   }
 
   /**
-   * The new markets' bets need every book's prices on their match (one read
-   * per match, bounded as the sheet bounds it) and, once it is finished,
-   * its facts.
+   * The new markets' bets need every book's prices on their match while it
+   * is still to play (one read for every match, each bounded as the sheet
+   * bounds it) and, once it is finished, its facts.
    */
-  private async readNewMarkets(
-    legs: readonly TicketLegDto[],
-    fixtureOf: ReadonlyMap<string, TicketFixture>,
-  ): Promise<{
+  private async readNewMarkets(input: {
+    legs: readonly FactLeg[];
+    fixtureOf: ReadonlyMap<string, TicketFixture>;
+    now: Date;
+  }): Promise<{
     rowsOf: Map<string, MarketPriceRow[]>;
     factsOf: Map<string, MatchFacts>;
   }> {
-    const markets = new Map<string, Set<string>>();
-    for (const leg of legs) {
-      if (!fixtureOf.has(leg.fixtureId)) continue;
-      const set = markets.get(leg.fixtureId) ?? new Set<string>();
-      set.add(leg.market);
-      markets.set(leg.fixtureId, set);
-    }
-    const finished = [...markets.keys()].filter(
-      (id) => fixtureOf.get(id)?.status === 'FINISHED',
+    const withFixture = input.legs.flatMap((leg) => {
+      const fixture = input.fixtureOf.get(leg.fixtureId);
+      return fixture ? [{ leg, fixture }] : [];
+    });
+    const open = withFixture.filter(
+      ({ fixture }) => stateOf(fixture, input.now) === 'open',
     );
+    const finished = withFixture
+      .filter(({ fixture }) => fixture.status === 'FINISHED')
+      .map(({ fixture }) => fixture.id);
     const [rows, factsOf] = await Promise.all([
-      Promise.all(
-        [...markets].map(async ([fixtureId, wanted]) => {
-          const kickoff = (fixtureOf.get(fixtureId) as TicketFixture)
-            .scheduledAt;
-          const found = await this.playableOdds.findMarketPrices({
-            fixtureId,
-            markets: [...wanted],
-            kickoff,
-            since: new Date(
-              kickoff.getTime() - SHEET_PRICES_LOOKBACK_DAYS * DAY_MS,
-            ),
-          });
-          return [fixtureId, found] as const;
-        }),
-      ),
+      this.playableOdds.findMarketPrices({
+        fixtures: open.map(({ fixture }) =>
+          sheetPriceWindow(fixture.id, fixture.scheduledAt),
+        ),
+        markets: [...new Set(open.map(({ leg }) => leg.market))],
+      }),
       finished.length > 0
         ? this.matchFacts.findFacts(finished)
         : Promise.resolve(new Map<string, MatchFacts>()),
     ]);
-    return { rowsOf: new Map(rows), factsOf };
+    return { rowsOf: groupBy(rows, (row) => row.fixtureId), factsOf };
   }
 }
 
 type TicketFixture = Awaited<
   ReturnType<MatchesRepository['findTicketFixtures']>
 >[number];
+
+/** Open until kick-off; a postponed or cancelled match leaves the figures. */
+function stateOf(
+  fixture: TicketFixture | undefined,
+  now: Date,
+): TicketQuoteLeg['state'] {
+  if (!fixture) return 'unknown';
+  if (fixture.status === 'POSTPONED' || fixture.status === 'CANCELLED') {
+    return 'postponed';
+  }
+  return fixture.status !== 'SCHEDULED' ||
+    fixture.scheduledAt.getTime() <= now.getTime()
+    ? 'started'
+    : 'open';
+}
 
 /**
  * A bet of the ticket once its match is over (07 § 6), by the rules that
@@ -223,23 +245,16 @@ export function settlementOf(
   }
   const score = { home: fixture.homeScore, away: fixture.awayScore };
   if (isSheetNewMarket(leg.market)) {
-    const status =
-      context.facts === null
-        ? null
-        : resolveStatMarketBetStatus({
-            market: leg.market,
-            pick: leg.pick,
-            line: leg.line ?? null,
-            facts: context.facts,
-          });
     // Unknown is not lost: we wait, then refund as the coupons do.
-    const graceOver =
-      context.now.getTime() - fixture.scheduledAt.getTime() >=
-      STAT_MARKET_SETTLEMENT.graceDays * DAY_MS;
-    return {
-      result: status === null ? (graceOver ? 'void' : null) : resultOf(status),
-      score,
-    };
+    const status = settleFactLeg({
+      market: leg.market,
+      pick: leg.pick,
+      line: leg.line ?? null,
+      facts: context.facts,
+      kickoff: fixture.scheduledAt,
+      now: context.now,
+    });
+    return { result: status === null ? null : resultOf(status), score };
   }
   const status = resolveSelectionFinalResult(
     { market: leg.market, pick: leg.pick },
