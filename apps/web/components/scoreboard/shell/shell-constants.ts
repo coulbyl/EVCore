@@ -60,6 +60,11 @@ export const ADMIN_SECTIONS: readonly {
   { key: "settings", href: "/admin/settings", icon: Settings },
 ] as const;
 
+/** An admin section's address (the console's home for an unknown key). */
+export function adminSectionHref(key: AdminSectionKey): string {
+  return ADMIN_SECTIONS.find((s) => s.key === key)?.href ?? "/admin";
+}
+
 /**
  * An admin's bar on a phone: its four screens, then « Plus » for the rest
  * (Exploitation, Réglages and the player's tabs). The rail shows them all.

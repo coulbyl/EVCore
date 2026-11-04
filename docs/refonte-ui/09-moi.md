@@ -158,22 +158,22 @@ Elle est dans l'en-tête de chaque onglet, pas dans Moi, mais elle mène au mêm
 ```
 
 - **Quatre sortes** et pas plus : la matinée, la semaine, une réponse de l'équipe, une annonce. Chaque ligne mène quelque part : Aujourd'hui, Résultats (Ta semaine), Messages, ou l'annonce.
-- **Pas d'onglets** Toutes / Non lues / Annonces / Alertes : la liste est courte (une à deux lignes par jour), l'onglet ne sert plus. Le badge de la cloche compte les non-lues ; ouvrir la liste ne marque rien, toucher une ligne la marque.
+- ~~**Pas d'onglets** Toutes / Non lues / Annonces / Alertes : la liste est courte (une à deux lignes par jour), l'onglet ne sert plus.~~ _Revu le 04/11 à la demande de l'utilisateur : filtres Toutes / Non lues · N / Lues pour tous, Tout / Joueur / Alertes techniques pour l'admin (seule exception à la règle d'une rangée), « Tout marquer comme lu » limité au filtre affiché ; filtrage côté serveur, choix gardé dans l'adresse._ Le badge de la cloche compte les non-lues ; ouvrir la liste ne marque rien, toucher une ligne la marque.
 - **Les alertes d'exploitation** (ROI, suspension, ETL, ML) ne sont jamais envoyées au joueur ; elles vivent dans l'admin.
 - **Une annonce importante** peut aussi s'afficher une fois en haut d'Aujourd'hui, refermable ([02](02-les-4-onglets.md) § 1).
 
 ## 7. Les états
 
-| État | Ce qu'on montre |
-| --- | --- |
-| **Aucun coupon suivi** | « Suis ton premier coupon · Aujourd'hui › » à la place de la liste ; bilan absent. |
-| **Coupon suivi en cours, match commencé** | La ligne dit « En cours » ; la feuille montre les jambes commencées. |
-| **Coupon suivi réglé ce soir** | Il passe dans Réglés dès le dernier match, avec sa pastille ; le bilan se met à jour sans attendre le matin. |
-| **Coupon suivi remboursé** | « Remboursé », en gris, hors bilan gagné/perdu, compté à part. |
-| **Messages, aucune réponse encore** | Le fil avec la réponse automatique en gris ; pas de compteur. |
-| **Pause active** | Moi reste ouvert ; Jeu responsable affiche la date de retour et « Prolonger » ; Mes coupons suivis se lisent. |
-| **E-mail non vérifié** | Une ligne sous l'e-mail, « Vérifie ton e-mail › », et les notifications par e-mail grisées. |
-| **Chargement, hors ligne, erreur** | Mêmes règles que [04](04-aujourdhui-en-detail.md) § 5 ; hors ligne, les coupons suivis vus en dernier restent lisibles. |
+| État                                      | Ce qu'on montre                                                                                                         |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Aucun coupon suivi**                    | « Suis ton premier coupon · Aujourd'hui › » à la place de la liste ; bilan absent.                                      |
+| **Coupon suivi en cours, match commencé** | La ligne dit « En cours » ; la feuille montre les jambes commencées.                                                    |
+| **Coupon suivi réglé ce soir**            | Il passe dans Réglés dès le dernier match, avec sa pastille ; le bilan se met à jour sans attendre le matin.            |
+| **Coupon suivi remboursé**                | « Remboursé », en gris, hors bilan gagné/perdu, compté à part.                                                          |
+| **Messages, aucune réponse encore**       | Le fil avec la réponse automatique en gris ; pas de compteur.                                                           |
+| **Pause active**                          | Moi reste ouvert ; Jeu responsable affiche la date de retour et « Prolonger » ; Mes coupons suivis se lisent.           |
+| **E-mail non vérifié**                    | Une ligne sous l'e-mail, « Vérifie ton e-mail › », et les notifications par e-mail grisées.                             |
+| **Chargement, hors ligne, erreur**        | Mêmes règles que [04](04-aujourdhui-en-detail.md) § 5 ; hors ligne, les coupons suivis vus en dernier restent lisibles. |
 
 ## 8. Ce qu'il faut construire
 

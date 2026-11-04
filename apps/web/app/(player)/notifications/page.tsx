@@ -6,8 +6,21 @@ import { SubpageBand } from "@/components/scoreboard/shell/subpage-band";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
 import {
   getNotifications,
-  type PlayerNotification,
+  getUnreadCount,
 } from "@/domains/notifications/use-cases/get-notifications";
+import {
+  FEED_KINDS,
+  FEED_STATUSES,
+  feedHref,
+  hrefOf,
+  parseFeedFilter,
+  type FeedFilter,
+  type FeedKind,
+  type FeedStatus,
+} from "@/domains/notifications/helpers/notification-feed";
+import { adminSectionHref } from "@/components/scoreboard/shell/shell-constants";
+import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
+import { ChipGroup } from "@/components/scoreboard/ui/chip-group";
 import {
   displayLocaleOf,
   formatShortDate,
@@ -16,6 +29,8 @@ import {
 import { RichText } from "@/components/scoreboard/ui/rich-text";
 import { plainTextOf } from "@/helpers/plain-text";
 import { NotificationLink } from "./components/notification-link";
+import { MarkAllRead } from "./components/mark-all-read";
+import { UnreadDrawn } from "./components/unread-drawn";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("playerNotifications");
@@ -26,20 +41,32 @@ const PAGE = 30;
 const MAX_PAGES = 5;
 const INTL: Record<string, string> = { fr: "fr-FR", en: "en-GB" };
 
-/** Where each of the four kinds leads (09 § 6); an announcement shows here. */
-function hrefOf(notification: PlayerNotification): string | null {
-  switch (notification.type) {
-    case "MORNING_BRIEF":
-      return "/today";
-    case "WEEKLY_STATEMENT":
-      return "/results/week";
-    case "FOLLOWED_SETTLED":
-      return "/me?tab=settled";
-    case "SUPPORT_MESSAGE":
-      return "/me/messages";
-    default:
-      return null;
-  }
+const STATUS_LABELS = {
+  all: "statusAll",
+  unread: "statusUnread",
+  read: "statusRead",
+} as const satisfies Record<FeedStatus, string>;
+
+const KIND_LABELS = {
+  all: "kindAll",
+  player: "kindPlayer",
+  technical: "kindTechnical",
+} as const satisfies Record<FeedKind, string>;
+
+/**
+ * The unread of the kind shown: the chip's count and « tout marquer ». The
+ * « Non lues » list counts them already, and with no kind the badge's
+ * count is the same set (already read for the layout); a read list has
+ * none to count.
+ */
+async function unreadOf(
+  filter: FeedFilter,
+  list: Promise<{ total: number }>,
+): Promise<number> {
+  if (filter.status === "read") return 0;
+  if (filter.status === "unread") return (await list).total;
+  if (filter.kind === "all") return (await getUnreadCount()) ?? 0;
+  return (await getNotifications("unread", filter.kind, 1)).total;
 }
 
 /**
@@ -49,22 +76,54 @@ function hrefOf(notification: PlayerNotification): string | null {
  * non-lues en gras avec leur point ; toucher une ligne la marque lue et
  * mène où elle parle. Les alertes d'exploitation ne viennent jamais ici
  * (le serveur ne les sert qu'à l'admin).
+ *
+ * Filtres demandés le 04/11 (09 § 6 disait « pas d'onglets ») : Toutes ·
+ * Non lues · Lues pour tous, et pour l'admin, dont la cloche reçoit aussi
+ * les alertes techniques, Tout · Joueur · Alertes techniques. Le serveur
+ * filtre (jamais une page filtrée dans le navigateur) et le compte des non
+ * lues de la puce est celui de la même requête.
  */
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ more?: string }>;
+  searchParams: Promise<{ more?: string; status?: string; kind?: string }>;
 }) {
-  const [t, shell, params, locale, timeZone] = await Promise.all([
+  const [t, shell, params, locale, timeZone, session] = await Promise.all([
     getTranslations("playerNotifications"),
     getTranslations("shell"),
     searchParams,
     getLocale(),
     getPlayerTimeZone(),
+    getPlayerSession(),
   ]);
+  const admin =
+    session.status === "signed-in" && session.session.user.role === "ADMIN";
+  const filter = parseFeedFilter(params, admin);
   const display = displayLocaleOf(locale);
   const pages = Math.min(MAX_PAGES, 1 + Math.max(0, Number(params.more) || 0));
-  const { data, total } = await getNotifications(PAGE * pages);
+  const list = getNotifications(filter.status, filter.kind, PAGE * pages);
+  // The badge's count (read once for the layout too): the list is drawn
+  // with it, and redrawn when it moves (UnreadDrawn).
+  const [{ data, total }, unreadTotal, badge] = await Promise.all([
+    list,
+    unreadOf(filter, list),
+    getUnreadCount(),
+  ]);
+  const statusChips = FEED_STATUSES.map((status) => ({
+    key: status,
+    label:
+      status === "unread" && unreadTotal > 0
+        ? t("statusUnreadCount", { count: unreadTotal })
+        : t(STATUS_LABELS[status]),
+    href: feedHref({ ...filter, status }),
+    active: filter.status === status,
+  }));
+  const kindChips = FEED_KINDS.map((kind) => ({
+    key: kind,
+    label: t(KIND_LABELS[kind]),
+    href: feedHref({ ...filter, kind }),
+    active: filter.kind === kind,
+  }));
 
   const dayOf = (date: Date) =>
     new Intl.DateTimeFormat("en-CA", { timeZone }).format(date);
@@ -89,18 +148,41 @@ export default async function Page({
 
   return (
     <>
+      {badge !== null ? (
+        <UnreadDrawn count={badge} render={crypto.randomUUID()} />
+      ) : null}
       <SubpageBand
         title={t("title")}
         back={{ href: "/today", label: shell("tabs.today") }}
       />
       <div className="flex flex-col px-4 pb-4 lg:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+          <ChipGroup label={t("filterStatus")} items={statusChips} />
+          {unreadTotal > 0 ? (
+            <MarkAllRead kind={filter.kind} label={t("markAllRead")} />
+          ) : null}
+        </div>
+        {/* An admin's bell also holds the technical alerts (ETL, stats,
+            engine): a second row of chips, the admin's only. */}
+        {admin ? (
+          <ChipGroup
+            label={t("filterKind")}
+            items={kindChips}
+            className="pb-2"
+          />
+        ) : null}
         {data.length === 0 ? (
-          <p className="py-6 text-body text-muted-foreground">{t("empty")}</p>
+          <p className="py-6 text-body text-muted-foreground">
+            {emptyText(filter, t)}
+          </p>
         ) : (
           <ul aria-label={t("title")} className="divide-y divide-border">
             {data.map((notification) => {
               const { day, time } = when(notification.createdAt);
-              const href = hrefOf(notification);
+              const href = hrefOf(notification.type, adminSectionHref);
+              // A row that leads somewhere shows two lines: a technical
+              // alert's list of raw ids is read whole on its admin screen.
+              const clamp = href !== null;
               const unread = !notification.isRead;
               const body = (
                 <>
@@ -130,8 +212,8 @@ export default async function Page({
                       linkable={!href}
                       phrasing
                       className={
-                        href
-                          ? "line-clamp-2 text-meta text-muted-foreground"
+                        clamp
+                          ? "line-clamp-2 break-words text-meta text-muted-foreground"
                           : "text-meta text-muted-foreground"
                       }
                     />
@@ -163,7 +245,7 @@ export default async function Page({
         )}
         {data.length < total && pages < MAX_PAGES ? (
           <Link
-            href={`/notifications?more=${pages}`}
+            href={feedHref(filter, pages)}
             scroll={false}
             className="flex min-h-11 items-center text-body font-medium underline-offset-4 hover:underline"
           >
@@ -179,4 +261,14 @@ export default async function Page({
       </div>
     </>
   );
+}
+
+function emptyText(
+  filter: FeedFilter,
+  t: (key: "empty" | "emptyUnread" | "emptyRead" | "emptyTechnical") => string,
+): string {
+  if (filter.status === "unread") return t("emptyUnread");
+  if (filter.status === "read") return t("emptyRead");
+  if (filter.kind === "technical") return t("emptyTechnical");
+  return t("empty");
 }

@@ -1977,6 +1977,27 @@ const ADMIN_NOTIFICATIONS = [
     false,
     null,
   ],
+  [
+    "n7",
+    "XG_UNAVAILABLE_REPORT",
+    "Stats Sync — 20 fixtures sans xG (2026)",
+    "20 fixtures marquées xgUnavailable : 1380001, 1380002, 1380003, 1380004, 1380005, 1380006, 1380007, 1380008, 1380009, 1380010, 1380011, 1380012, 1380013, 1380014, 1380015, 1380016, 1380017, 1380018, 1380019, 1380020",
+    -30,
+    true,
+    null,
+  ],
+];
+
+/**
+ * notification.service.ts, categoryOf: what a player's bell can hold is
+ * « player », the rest « technical » (an admin's bell only).
+ */
+const PLAYER_NOTIFICATION_TYPES = [
+  "ANNOUNCEMENT_PUBLISHED",
+  "MORNING_BRIEF",
+  "WEEKLY_STATEMENT",
+  "FOLLOWED_SETTLED",
+  "SUPPORT_MESSAGE",
 ];
 
 const NOTIFICATIONS = [
@@ -1993,6 +2014,7 @@ const NOTIFICATIONS = [
       ? lastMondayAt(8).toISOString()
       : todayAt(hours),
   isRead,
+  category: PLAYER_NOTIFICATION_TYPES.includes(type) ? "player" : "technical",
 }));
 
 const MATCH_DECISIONS = [
@@ -2922,15 +2944,34 @@ function route(method, url, cookie = "") {
   if (path.startsWith("/bet-slips")) return [200, []];
   if (path.startsWith("/audit")) return [200, EMPTY_AUDIT];
   if (path.startsWith("/predictions")) return [200, []];
+  // The mock never marks anything read: both reads answer the same count.
+  const unreadNotifications = NOTIFICATIONS.filter((n) => !n.isRead).length;
   if (path.startsWith("/notifications/unread-count"))
-    return [200, { count: NOTIFICATIONS.filter((n) => !n.isRead).length }];
+    return [200, { count: unreadNotifications }];
+  if (path === "/notifications/read-all" && method === "POST")
+    return [200, { unread: unreadNotifications }];
+  if (/^\/notifications\/[^/]+\/read$/.test(path))
+    return [200, { unread: unreadNotifications }];
   if (path.startsWith("/notifications")) {
-    // Le filtre ?type= du vrai backend (point de la semaine de l'Accueil).
-    const type = new URLSearchParams(url.split("?")[1] ?? "").get("type");
-    const data = type
-      ? NOTIFICATIONS.filter((n) => n.type === type)
-      : NOTIFICATIONS;
-    return [200, { data, total: data.length, limit: 20, offset: 0 }];
+    // Les filtres du vrai backend : ?type= (point de la semaine de
+    // l'Accueil), ?status= et ?category= (écran Notifications), filtrés ici
+    // comme là-bas, avant la page.
+    const query = new URLSearchParams(url.split("?")[1] ?? "");
+    const type = query.get("type");
+    const status = query.get("status");
+    const category = query.get("category");
+    const data = NOTIFICATIONS.filter(
+      (n) =>
+        (!type || n.type === type) &&
+        (status !== "unread" || !n.isRead) &&
+        (status !== "read" || n.isRead) &&
+        (!category || n.category === category),
+    );
+    const limit = Number(query.get("limit") ?? 20);
+    return [
+      200,
+      { data: data.slice(0, limit), total: data.length, limit, offset: 0 },
+    ];
   }
   // Listes de l'accueil admin : `{}` faisait planter EngineHealthCard.
   if (

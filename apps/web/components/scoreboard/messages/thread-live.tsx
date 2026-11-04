@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { playerFetch } from "@/lib/api/player-fetch";
+import { refreshUnread } from "@/domains/notifications/use-unread-count";
 
 /** The team answers within hours: a look every minute is plenty. */
 const REFRESH_MS = 60_000;
@@ -24,9 +25,13 @@ export function ThreadLive({
 
   useEffect(() => {
     if (unread) {
-      playerFetch(readPath, { method: "POST" }).catch(() => {
-        // Read state is a convenience: the thread still shows.
-      });
+      // The team's replies leave the bell with the thread read: its
+      // badge, drawn before this read, is read again once it is written.
+      playerFetch(readPath, { method: "POST" })
+        .then(() => refreshUnread())
+        .catch(() => {
+          // Read state is a convenience: the thread still shows.
+        });
     }
   }, [unread, readPath]);
 

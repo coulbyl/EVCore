@@ -239,6 +239,14 @@ test.describe("Fiche du match", () => {
 
     const others = sheet.getByRole("region", { name: "Autres paris" });
     await expect(others.getByRole("listitem")).toHaveCount(4);
+    // The chance in short next to the price (04/11), the app's rounding:
+    // 0,18 → « 1/6 », 0,52 → « 5/10 ».
+    await expect(
+      others.getByRole("listitem").filter({ hasText: "5,20" }),
+    ).toContainText("1/6");
+    await expect(
+      others.getByRole("listitem").filter({ hasText: "Plus de 2,5 buts" }),
+    ).toContainText("5/10");
     await others.getByText("Tous les 6").click();
     await expect(
       others.getByText("Au moins une équipe ne marque pas"),
@@ -293,6 +301,7 @@ test.describe("Fiche du match", () => {
     ).toBeVisible();
     const others = sheet.getByRole("region", { name: "Autres paris" });
     await expect(others).not.toContainText("5,20");
+    await expect(others).not.toContainText("1/6");
     await expect(
       others
         .getByRole("listitem")

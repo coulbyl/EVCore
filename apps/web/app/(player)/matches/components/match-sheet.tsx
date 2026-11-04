@@ -6,6 +6,7 @@ import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 import { Sheet } from "@/components/scoreboard/sheet/sheet";
 import { activePause } from "@/components/scoreboard/states/paused-screen";
 import { ChanceFigure } from "@/components/scoreboard/ui/chance-figure";
+import { ChanceShort } from "@/components/scoreboard/ui/chance-short";
 import { ResultMark } from "@/components/scoreboard/ui/result-mark";
 import { AddToTicket } from "@/components/scoreboard/ticket/add-to-ticket";
 import { getMatchSheet } from "@/domains/matches/use-cases/get-match-sheet";
@@ -299,7 +300,8 @@ function Section({
 
 /**
  * A bet with its price, « Victoire Arsenal 1,65 », and its mark once
- * the match is over. Its chance is told once, under our reading only.
+ * the match is over. Its chance is written out under our reading;
+ * « Autres paris » gives it in short next to the price (04/11).
  */
 function PickLine({
   pick,
@@ -392,8 +394,10 @@ function FormLine({
 /**
  * The main 1xBet lines, the engine's other picks by market chance, then the
  * new markets (corners, cards, scorers, shots, minute), with their price
- * only (06 § 2); once the match is over, what landed, without the price
- * (06 § 3), nothing while it is not known.
+ * and, before the match, their chance in short, « 8/10 » (06 § 2, 04/11:
+ * it helps compare 1,24 and 3,67); an unknown chance shows nothing. Once
+ * the match is over, what landed, without price nor chance (06 § 3),
+ * nothing while it is not known.
  */
 function OtherPicks({
   sheet,
@@ -412,6 +416,9 @@ function OtherPicks({
     >
       <span className="text-body">{pickLabel(pick, sheet)}</span>
       <span className="flex items-center gap-2 text-body">
+        {!finished && pick.chance !== null ? (
+          <ChanceShort probability={pick.chance} />
+        ) : null}
         {!finished && pick.odds !== null ? (
           <span className="score font-semibold">
             {formatOdds(pick.odds, locale)}

@@ -22,3 +22,14 @@ export function toNumber(value: unknown): number {
   }
   return 0;
 }
+
+/** A string field of a JSON payload (a notification's), or null. */
+export function stringField(
+  payload: Prisma.JsonValue | null,
+  key: string,
+): string | null {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload))
+    return null;
+  const value = payload[key];
+  return typeof value === 'string' ? value : null;
+}
