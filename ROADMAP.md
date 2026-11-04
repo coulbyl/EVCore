@@ -36,7 +36,7 @@ Livré récemment :
 | 11-03         | #302             | Phase 5 : Combiné du jour départagé par la marge (`engine-combo-v2`) ; TEAM_TOTAL 1,45–1,80 rejoué, rien d'expédié ; plafond IA reporté                                                  |
 
 Produits joueur en ligne : Pari sûr du jour (FAVOURITE 1,20–1,35), Combiné du
-jour (ENGINE, 3 jambes < 1,50), coupon cote 2, chasseurs (BTTS, Nul, Score
+jour (ENGINE, 2 jambes 1,20–1,50), coupon cote 2, chasseurs (BTTS, Nul, Score
 exact, Corners, Nul à la mi-temps), Combiné IA 4–10, Avis IA (VANTAGE v6).
 Détail : [EVCORE.md](EVCORE.md).
 

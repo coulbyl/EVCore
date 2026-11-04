@@ -1,171 +1,46 @@
 # AGENTS.md
 
-Instructions pour les agents de code (Codex/assistants automatisés) dans ce repo.
+**[CLAUDE.md](CLAUDE.md) is the single source of rules for this repo; read it
+first.** It holds the measured results that override older intuitions, the
+database rules, the coding conventions and the hard constraints. The product
+as it exists today is described in [EVCORE.md](EVCORE.md), the current state
+and open work in [ROADMAP.md](ROADMAP.md). Do not copy rules from CLAUDE.md
+into this file: copies drift.
 
-## Football analysis skills
+## Skills
 
-For forecast, ranking and calibration work, read
-`.agents/skills/evcore-forecast-audit/SKILL.md`. For coupon composition or
-settlement review, read `.agents/skills/evcore-coupon-review/SKILL.md`.
-For offline odds-math diagnostics, read `.agents/skills/betting/SKILL.md`.
-Keep `@evcore/analysis-core` as the production source of truth and respect
-point-in-time replay. These skills guide development/audit agents; the EVA
-and VANTAGE runtime does not automatically load them. See
-`docs/ai-analysis-skills.md` for scope, sources and validation.
+Project skills live in `.agents/skills/<name>/SKILL.md`. Read the matching one
+before the work it covers:
 
-## Secrets & fichiers `.env`
+| Skill                                 | Use it for                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------- |
+| `evcore-forecast-audit`               | Forecasts, ranking, calibration, model-market divergence (point-in-time replay) |
+| `evcore-coupon-review`                | Coupon composition, candidate ranking, settlement review                        |
+| `betting`                             | Offline odds maths: de-vig, EV, independent parlays                             |
+| `shadcn`                              | Any shadcn/ui work (see the shadcn section of CLAUDE.md)                        |
+| `nextjs-app-router-patterns`          | Next.js App Router work                                                         |
+| `nestjs-best-practices`               | NestJS modules, DI, security                                                    |
+| `playwright-best-practices`           | Playwright e2e tests in `apps/web/e2e`                                          |
+| `turborepo`                           | `turbo.json`, task pipelines, caching                                           |
+| `impeccable`, `web-design-guidelines` | UI design, critique and audit                                                   |
 
-- Ne jamais lire, parser, afficher, ni copier le contenu de fichiers secrets:
-  - `.env`
-  - `.env.*` (ex: `.env.local`, `.env.production`, etc.)
-  - tout fichier contenant des credentials/tokens
-- Exception autorisée: `.env.example` (template non secret) peut être lu/modifié.
-- Si une action semble nécessiter un secret, demander explicitement à l'utilisateur la valeur à fournir, sans ouvrir les fichiers secrets.
-- Ne jamais inclure de secret dans un commit, log, test snapshot, ou sortie terminal.
+`@evcore/analysis-core` stays the production source of truth. These skills
+guide development and audit agents; the VANTAGE runtime does not load them.
+Scope, sources and validation: [docs/ai-analysis-skills.md](docs/ai-analysis-skills.md).
 
-## next.js
+Before touching settlement, results, follows or a scheduled job, and before
+any PR to main, read [docs/review-expectations.md](docs/review-expectations.md).
 
-Next.js ships version-matched documentation inside the next package, allowing AI coding agents to reference accurate, up-to-date APIs and patterns. An AGENTS.md file at the root of your project directs agents to these bundled docs instead of their training data.
+## Secrets
+
+Never read, print or copy `.env` / `.env.*` (only `.env.example` is allowed).
+Ask the user for a secret value instead of opening a secret file.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
 # Next.js: ALWAYS read docs before coding
 
-Before any Next.js work:
-
-1. Identify the feature involved.
-2. Read the relevant doc in `node_modules/next/dist/docs/`.
-3. Follow the bundled docs over model memory if they differ.
-
-Use the local Next.js docs as the source of truth for:
-
-- App Router
-- Server vs Client Components
-- data fetching and caching
-- routing and navigation
-- metadata
-- middleware
-- configuration
+Before any Next.js work, read the relevant doc in `node_modules/next/dist/docs/`
+and follow it over model memory if they differ.
 
 <!-- END:nextjs-agent-rules -->
-
-## shadcn/ui
-
-<!-- BEGIN:shadcn-agent-rules -->
-
-# shadcn/ui: ALWAYS check project context before coding
-
-Before any shadcn/ui work:
-
-1. Read `.agents/skills/shadcn/SKILL.md`.
-2. Run `pnpm dlx shadcn@latest info --json` to inspect the current project context.
-3. Run `pnpm dlx shadcn@latest docs <component>` for every component you plan to add, modify, or compose.
-4. Prefer existing shadcn components and built-in variants over custom markup.
-
-Follow these rules:
-
-- Use semantic tokens and component variants instead of raw Tailwind colors.
-- Use `gap-*` instead of `space-x-*` / `space-y-*`.
-- Use existing shadcn composition patterns before building custom wrappers.
-- Never overwrite existing shadcn components blindly; preview updates with `--dry-run` and `--diff`.
-
-<!-- END:shadcn-agent-rules -->
-
-## TanStack Table
-
-<!-- BEGIN:tanstack-table-agent-rules -->
-
-# TanStack Table: ALWAYS align with repo patterns before coding
-
-Before any TanStack Table work:
-
-1. Inspect current table usage in this repo and the surrounding feature UI.
-2. Read the relevant TanStack Table documentation for the feature being implemented.
-3. Design the table API around reusable column definitions and feature flags, not one-off page markup.
-
-Use TanStack Table for:
-
-- sorting
-- column visibility
-- expandable rows
-- pagination
-- responsive table-to-card fallbacks
-
-Do not:
-
-- rebuild sorting or row state manually with ad hoc React state if TanStack already provides the model
-- mix business logic into cell renderers when it belongs in selectors, formatters, or feature components
-- hardcode mobile/desktop table variants separately when one shared table model can drive both
-
-<!-- END:tanstack-table-agent-rules -->
-
-## ESLint — règles critiques
-
-### Backend (`--max-warnings 0`)
-
-Zéro tolérance. Tout warning est une erreur et bloque le build CI.
-
-- **`max-params`** — maximum **3 paramètres** par fonction ou méthode NestJS. Si 4+ sont nécessaires, regrouper en un objet options :
-
-  ```ts
-  // ✗ interdit
-  async findItems(channel: string, market: string, from: Date, to: Date)
-
-  // ✓ correct
-  async findItems(opts: { channel: string; market: string; from: Date; to: Date })
-  ```
-
-- **`no-unused-vars`** — supprimer tout import ou variable déclaré mais non utilisé avant de committer.
-
-### Frontend web (`--max-warnings 3`)
-
-2 warnings pré-existants autorisés dans `page-shell.tsx` (balises `<img>`). Ne pas en ajouter.
-
-- **`no-unused-vars`** — même règle : supprimer les imports inutilisés immédiatement, pas au commit.
-
-### Règle générale
-
-Toujours lancer `pnpm lint` avant chaque commit. Si le lint échoue, corriger avant de committer — ne jamais bypasser avec `--no-verify`.
-
-## Shared components — extraction propre
-
-Quand un bouton + drawer (ou bouton + modal) sont utilisés sur plusieurs pages :
-
-- Créer un composant auto-contenu dans `apps/web/components/` qui gère son propre état `open`
-- Les pages n'exposent qu'un `<MonBoutonDrawer />` sans props de state
-- Le composant partagé utilise `useIsMobile()` et tout autre hook nécessaire en interne
-
-Exemple : `IndicesDrawerButton` encapsule le bouton, le `useState(open)`, `useIsMobile()` et le `Drawer` — la page ne gère rien.
-
-## React page component structure
-
-When a `*-page-client.tsx` file contains more than one or two internal function components, extract each into its own file in the collocated `components/` directory.
-
-**Split pattern:**
-
-| File                                   | Contains                                                              |
-| -------------------------------------- | --------------------------------------------------------------------- |
-| `*-constants.ts`                       | Shared constants + pure utility functions — no JSX, no `"use client"` |
-| `result-badge.tsx`, `pick-card.tsx`, … | One component per file                                                |
-| `*-page-client.tsx`                    | Data fetching hooks + routing state + layout only                     |
-
-**Rules:**
-
-- Add `"use client"` only to files that use hooks or browser APIs
-- Each file imports only what it directly uses — no barrel re-exports
-- Shared display logic (color maps, format helpers) goes in a `*-constants.ts` sibling
-- Page-scoped components → collocated `components/` folder
-- Cross-page components → `apps/web/components/`
-
-node_modules/next/dist/docs/
-├── 01-app/
-│ ├── 01-getting-started/
-│ ├── 02-guides/
-│ └── 03-api-reference/
-├── 02-pages/
-├── 03-architecture/
-└── index.mdx
-
-## Review expectations
-
-Before touching settlement, the bankroll, slip results or a scheduled job, and before any PR to main, read `docs/review-expectations.md`: rules drawn from real review findings (replay-safe money writes, counts and amounts over the same set, unknown is not zero, late arrivals in dated jobs, Decimal products, repository rule in touched services).
