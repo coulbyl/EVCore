@@ -274,8 +274,16 @@ describe('NotificationService — list & mark read', () => {
       makePush(),
     );
 
-    await service.markRead('notif-id-1', 'user-1');
+    vi.mocked(prisma.client.notification.count).mockResolvedValue(4);
 
+    const result = await service.markRead({
+      notificationId: 'notif-id-1',
+      userId: 'user-1',
+      role: UserRole.OPERATOR,
+    });
+
+    // The badge's new count comes back with the read: no second request.
+    expect(result).toEqual({ unread: 4 });
     expect(prisma.client.userNotificationRead.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
@@ -299,7 +307,11 @@ describe('NotificationService — list & mark read', () => {
       makePush(),
     );
 
-    await service.markRead('notif-id-1', 'user-1');
+    await service.markRead({
+      notificationId: 'notif-id-1',
+      userId: 'user-1',
+      role: UserRole.OPERATOR,
+    });
 
     expect(prisma.client.notification.updateMany).toHaveBeenCalledWith({
       where: { id: 'notif-id-1', userId: 'user-1' },
@@ -503,7 +515,11 @@ describe('NotificationService — messages retirés et un seul état « lu »', 
       makePush(),
     );
 
-    await service.markRead('notif-1', 'user-1');
+    await service.markRead({
+      notificationId: 'notif-1',
+      userId: 'user-1',
+      role: UserRole.OPERATOR,
+    });
 
     expect(prisma.client.announcementRead.createMany).toHaveBeenCalledWith({
       data: [{ userId: 'user-1', announcementId: 'ann-1' }],
@@ -678,12 +694,20 @@ describe('NotificationService — the badge, the list and « tout marquer comme 
       { id: 'ann-1' },
     ] as never);
 
+    vi.mocked(prisma.client.notification.count).mockResolvedValue(2);
+
     const result = await serviceWith(prisma).markAllRead({
       userId: 'user-1',
       role: UserRole.ADMIN,
+      category: 'technical',
     });
 
-    expect(result).toEqual({ marked: 5 });
+    // The badge's count after the read, every kind (not only « technical »).
+    expect(result).toEqual({ unread: 2 });
+    const badgeWhere = whereOf(prisma.client.notification.count) as {
+      AND: unknown[];
+    };
+    expect(badgeWhere.AND[1]).toEqual({});
     expect(prisma.client.userNotificationRead.createMany).toHaveBeenCalledWith({
       data: [
         { userId: 'user-1', notificationId: 'b1' },
@@ -708,7 +732,7 @@ describe('NotificationService — the badge, the list and « tout marquer comme 
       category: 'player',
     });
 
-    expect(result).toEqual({ marked: 0 });
+    expect(result).toEqual({ unread: 0 });
     expect(
       prisma.client.userNotificationRead.createMany,
     ).not.toHaveBeenCalled();

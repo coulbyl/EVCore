@@ -56,13 +56,16 @@ export class NotificationController {
     );
   }
 
-  /** « Tout marquer comme lu » (the screen's kind filter in the query). */
+  /**
+   * « Tout marquer comme lu » (the screen's kind filter in the query);
+   * answers the badge's new count.
+   */
   @Post('read-all')
   @HttpCode(200)
   markAllRead(
     @Query() query: NotificationReadAllDto,
     @CurrentSession() session: AuthSession,
-  ): Promise<{ marked: number }> {
+  ): Promise<{ unread: number }> {
     return this.notificationService.markAllRead({
       userId: session.user.id,
       role: session.user.role,
@@ -70,12 +73,17 @@ export class NotificationController {
     });
   }
 
+  /** Marks one row read; answers the badge's new count. */
   @Patch(':id/read')
-  @HttpCode(204)
+  @HttpCode(200)
   markRead(
     @Param('id') id: string,
     @CurrentSession() session: AuthSession,
-  ): Promise<void> {
-    return this.notificationService.markRead(id, session.user.id);
+  ): Promise<{ unread: number }> {
+    return this.notificationService.markRead({
+      notificationId: id,
+      userId: session.user.id,
+      role: session.user.role,
+    });
   }
 }

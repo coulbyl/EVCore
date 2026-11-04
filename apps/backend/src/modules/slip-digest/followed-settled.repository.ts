@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { NotificationType, type Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { stringField } from '@utils/prisma.utils';
 
 /** One leg of a followed coupon settled in the evening, with its follower. */
 export type FollowedSettledRow = {
@@ -89,17 +90,9 @@ export class FollowedSettledRepository {
     });
     return new Set(
       rows.flatMap((row) => {
-        const couponId = couponIdOf(row.payload);
+        const couponId = stringField(row.payload, 'couponProposalId');
         return row.userId && couponId ? [`${row.userId}:${couponId}`] : [];
       }),
     );
   }
-}
-
-function couponIdOf(payload: Prisma.JsonValue | null): string | null {
-  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
-    const id = payload.couponProposalId;
-    return typeof id === 'string' ? id : null;
-  }
-  return null;
 }

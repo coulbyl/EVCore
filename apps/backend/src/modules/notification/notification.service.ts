@@ -12,6 +12,7 @@ import type { OpsLightRedProps } from '@evcore/transactional';
 import { PushService } from '@modules/push/push.service';
 import { PUSH_POLICY } from '@config/push.constants';
 import { NOTIFICATION_BELL_WINDOW_DAYS } from '@config/notification.constants';
+import { stringField } from '@utils/prisma.utils';
 import { NotificationRepository } from './notification.repository';
 import type {
   NotificationCategory,
@@ -82,12 +83,8 @@ function announcementIdOfRow(row: {
   type: NotificationType;
   payload: Prisma.JsonValue | null;
 }): string | null {
-  const { type, payload } = row;
-  if (type !== NotificationType.ANNOUNCEMENT_PUBLISHED) return null;
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload))
-    return null;
-  const id = payload.announcementId;
-  return typeof id === 'string' ? id : null;
+  if (row.type !== NotificationType.ANNOUNCEMENT_PUBLISHED) return null;
+  return stringField(row.payload, 'announcementId');
 }
 
 /**
@@ -398,15 +395,16 @@ export class NotificationService {
    * « Tout marquer comme lu », within the screen's filter (the technical
    * alerts alone, for instance): the same set the list shows unread, so
    * the badge drops by what the list showed. Replayable — a second pass
-   * finds nothing left to mark. Returns how many were marked.
+   * finds nothing left to mark. Returns the badge's new count (all kinds),
+   * so the bell needs no second read.
    */
   async markAllRead(filter: {
     userId: string;
     role: UserRole;
     category?: NotificationCategory;
-  }): Promise<{ marked: number }> {
+  }): Promise<{ unread: number }> {
     const unread = this.feedWhere({ ...filter, status: 'unread' });
-    const [broadcasts, personal] = await Promise.all([
+    await Promise.all([
       this.markBroadcastsReadWhere(filter.userId, {
         AND: [unread, { userId: null }],
       }),
@@ -414,7 +412,16 @@ export class NotificationService {
         AND: [unread, { userId: filter.userId }],
       }),
     ]);
-    return { marked: broadcasts + personal };
+    return this.unreadAfterRead(filter.userId, filter.role);
+  }
+
+  /** The badge's count once a read is written (`unreadCount`'s set). */
+  private async unreadAfterRead(
+    userId: string,
+    role: UserRole,
+  ): Promise<{ unread: number }> {
+    const { count } = await this.unreadCount(userId, role);
+    return { unread: count };
   }
 
   /** The broadcasts matching `where` become read, announcements with them. */
@@ -434,7 +441,20 @@ export class NotificationService {
     return broadcasts.length;
   }
 
-  async markRead(notificationId: string, userId: string): Promise<void> {
+  /** Marks one row read; returns the badge's new count, like markAllRead. */
+  async markRead(input: {
+    notificationId: string;
+    userId: string;
+    role: UserRole;
+  }): Promise<{ unread: number }> {
+    await this.markOneRead(input.notificationId, input.userId);
+    return this.unreadAfterRead(input.userId, input.role);
+  }
+
+  private async markOneRead(
+    notificationId: string,
+    userId: string,
+  ): Promise<void> {
     const notification = await this.repository.findReadTarget(notificationId);
     if (!notification) return;
     if (notification.userId) {
