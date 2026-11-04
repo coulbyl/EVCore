@@ -9,6 +9,7 @@ import {
 import {
   ApiFootballFixturesByIdsResponseSchema,
   FixtureByIdDetailsSchema,
+  droppedCount,
   FixtureByIdIdentitySchema,
   FixtureByIdStatisticsSchema,
 } from '../schemas/fixture-full.schema';
@@ -67,6 +68,8 @@ export type StatsSyncBatchResult = {
     synced: number;
     // Zod or team mismatch: nothing written, left pending.
     rejected: number;
+    // Invalid events, lineups or player blocks left out of written matches.
+    dropped: number;
     // Missing, failed or rejected — what the events backfill counts.
     failedExternalIds: number[];
   };
@@ -259,6 +262,7 @@ export class StatsSyncWorker {
         written: 0,
         synced: 0,
         rejected: 0,
+        dropped: 0,
         failedExternalIds: [],
       },
       calls: 0,
@@ -467,6 +471,14 @@ export class StatsSyncWorker {
       tally.details.rejected++;
       tally.details.failedExternalIds.push(externalId);
       return;
+    }
+    const dropped = droppedCount(details.data);
+    if (dropped > 0) {
+      logger.warn(
+        { externalId, dropped: details.data.dropped },
+        'Invalid events/lineups/players left out — the rest is written',
+      );
+      tally.details.dropped += dropped;
     }
 
     let written: Awaited<ReturnType<FixtureEventsService['persistDetails']>>;

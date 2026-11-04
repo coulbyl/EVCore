@@ -13,9 +13,14 @@ import { TeamStatisticsSchema } from './stats.schema';
 //    rejects the whole call, nothing is written;
 // 2. per match, its identity and team statistics — the same rule as
 //    /fixtures/statistics (exactly two teams);
-// 3. per match, its events, lineups and player statistics together
-//    (`FixtureByIdDetailsSchema`): a failure rejects the three, never part
-//    of them.
+// 3. per match, its events, lineups and player statistics
+//    (`FixtureByIdDetailsSchema`): each event, each team's lineup and each
+//    team's player block is validated alone. An invalid one is left out and
+//    counted in `dropped` (the workers log it), never the match: a single
+//    null the API sends on one event (a VAR check without a detail, 03/11)
+//    otherwise cost the match all its scorers, lineups and player
+//    statistics. The payload is still validated in full — element by
+//    element — and a block missing or not an array rejects the three.
 // Many fields come back null (rating, grid, shots, a player's id on a
 // cancelled goal), and a person the API does not know has id 0 (measured on
 // 15 of 40 matches, 03/11): the schemas accept both, the writers treat
@@ -127,14 +132,47 @@ const TeamPlayersSchema = z.object({
   ),
 });
 
-export const FixtureByIdDetailsSchema = z.object({
-  events: z.array(FixtureEventSchema),
-  lineups: z.array(FixtureLineupSchema),
-  players: z.array(TeamPlayersSchema),
-});
+// An array whose elements are validated one by one: the invalid ones are
+// left out and counted, never the array.
+function eachValid<T extends z.ZodType>(item: T) {
+  return z.array(z.unknown()).transform((elements) => {
+    const kept: z.output<T>[] = [];
+    let dropped = 0;
+    for (const element of elements) {
+      const parsed = item.safeParse(element);
+      if (parsed.success) kept.push(parsed.data);
+      else dropped++;
+    }
+    return { kept, dropped };
+  });
+}
+
+export const FixtureByIdDetailsSchema = z
+  .object({
+    events: eachValid(FixtureEventSchema),
+    lineups: eachValid(FixtureLineupSchema),
+    players: eachValid(TeamPlayersSchema),
+  })
+  .transform(({ events, lineups, players }) => ({
+    events: events.kept,
+    lineups: lineups.kept,
+    players: players.kept,
+    // Elements left out as invalid, per block.
+    dropped: {
+      events: events.dropped,
+      lineups: lineups.dropped,
+      players: players.dropped,
+    },
+  }));
+
+/** How many events, lineups and player blocks were left out as invalid. */
+export function droppedCount(details: FixtureByIdDetails): number {
+  const { events, lineups, players } = details.dropped;
+  return events + lineups + players;
+}
 
 export type FixtureByIdIdentity = z.infer<typeof FixtureByIdIdentitySchema>;
-export type FixtureByIdDetails = z.infer<typeof FixtureByIdDetailsSchema>;
+export type FixtureByIdDetails = z.output<typeof FixtureByIdDetailsSchema>;
 export type ApiFixtureEvent = z.infer<typeof FixtureEventSchema>;
 export type ApiFixtureLineup = z.infer<typeof FixtureLineupSchema>;
 export type ApiTeamPlayers = z.infer<typeof TeamPlayersSchema>;

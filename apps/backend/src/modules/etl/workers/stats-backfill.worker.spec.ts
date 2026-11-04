@@ -54,7 +54,13 @@ function batch(overrides: Partial<StatsSyncBatchResult>): StatsSyncBatchResult {
     statisticsUnavailable: 0,
     xgUnavailableIds: [],
     failedExternalIds: [],
-    details: { written: 0, synced: 0, rejected: 0, failedExternalIds: [] },
+    details: {
+      written: 0,
+      synced: 0,
+      rejected: 0,
+      dropped: 0,
+      failedExternalIds: [],
+    },
     calls: 0,
     rejectedCalls: 0,
     abortReason: null,
@@ -290,6 +296,7 @@ describe('StatsBackfillWorker', () => {
       written: 0,
       synced: 0,
       rejected: 0,
+      dropped: 0,
       failedExternalIds: [],
       ...overrides,
     });
