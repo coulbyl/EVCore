@@ -193,7 +193,7 @@ describe("computePoissonMarkets", () => {
 
 describe("computeCorrectScoreMatrix", () => {
   it("returns a (maxGoals+1)^2 grid whose cells sum to ≈ 1", () => {
-    const matrix = computeCorrectScoreMatrix(1.6, 1.1, 6);
+    const matrix = computeCorrectScoreMatrix(1.6, 1.1, { maxGoals: 6 });
     expect(Object.keys(matrix)).toHaveLength(49);
     const total = Object.values(matrix).reduce(
       (acc, p) => acc + p.toNumber(),
@@ -204,7 +204,7 @@ describe("computeCorrectScoreMatrix", () => {
 
   it("each cell equals the product of the marginal goal probabilities", () => {
     const { distHome, distAway } = buildPoissonDistributions(1.6, 1.1, 6);
-    const matrix = computeCorrectScoreMatrix(1.6, 1.1, 6);
+    const matrix = computeCorrectScoreMatrix(1.6, 1.1, { maxGoals: 6 });
     expect(matrix["1:0"]!.toNumber()).toBeCloseTo(
       (distHome[1] ?? 0) * (distAway[0] ?? 0),
       10,
@@ -214,7 +214,7 @@ describe("computeCorrectScoreMatrix", () => {
   it("is coherent with the 1X2 vector (summing cells by outcome)", () => {
     const lh = 1.7;
     const la = 1.2;
-    const matrix = computeCorrectScoreMatrix(lh, la, 6);
+    const matrix = computeCorrectScoreMatrix(lh, la, { maxGoals: 6 });
     let home = 0;
     for (const [score, p] of Object.entries(matrix)) {
       const [h, a] = score.split(":").map(Number);

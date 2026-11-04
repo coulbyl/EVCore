@@ -48,7 +48,9 @@ export function decideCorrectScore(context: StrategyContext): StrategyDecision {
   // selection still requires a real price (unchanged below); this only
   // means a rejection for missing odds no longer also throws away the
   // model's read.
-  const matrix = computeCorrectScoreMatrix(lambdaHome, lambdaAway);
+  const matrix = computeCorrectScoreMatrix(lambdaHome, lambdaAway, {
+    rho: context.scoreDependenceRho,
+  });
   const modal = Object.entries(matrix).reduce<{
     scoreline: string;
     probability: Decimal;

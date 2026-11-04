@@ -57,6 +57,9 @@ export type StrategyContext = {
   // in legacy/test contexts that don't set them.
   lambdaHome?: number;
   lambdaAway?: number;
+  // Dixon-Coles ρ behind `probabilities` when the market grid applied a
+  // per-league dependence (market-grid.config.ts); absent = independent.
+  scoreDependenceRho?: number;
   evaluatedMarkets: EvaluatedMarket[];
   odds: FullOddsSnapshot | null;
   signals: ContextSignals;

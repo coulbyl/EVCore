@@ -61,3 +61,29 @@ export const MARKET_GRID_LAMBDA_MAX = 5;
 
 /** Goals per side in the grid, the same truncation as computePoissonMarkets. */
 export const MARKET_GRID_MAX_GOALS = 10;
+
+/**
+ * Dixon-Coles dependence ρ of the market grid, per competition (sub-model D
+ * of lot ML-2, docs/audits/2026-11-04/ML2A-DEPENDANCE-BUTS.md). Output of
+ * `pnpm --filter @evcore/backtest-core backtest:goal-dependence`, to re-fit
+ * like LEAGUE_STRENGTH_MAP: a competition's ρ is its maximum-likelihood ρ on
+ * the market grids of its past fixtures, shrunk towards the global ρ, and a
+ * competition below the script's minimum of fixtures reads the global ρ.
+ */
+export const MARKET_GRID_RHO: {
+  global: number;
+  byCompetition: Readonly<Record<string, number>>;
+} = {
+  global: 0,
+  byCompetition: {},
+};
+
+/** ρ of a competition's market grid (the global ρ when it has none). */
+export function marketGridRho(
+  competitionCode: string | null | undefined,
+): number {
+  if (!competitionCode) return MARKET_GRID_RHO.global;
+  return (
+    MARKET_GRID_RHO.byCompetition[competitionCode] ?? MARKET_GRID_RHO.global
+  );
+}
