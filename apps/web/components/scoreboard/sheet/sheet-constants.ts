@@ -44,3 +44,23 @@ export const FOCUSABLE_SELECTOR = [
  * coquille marque son contenu, sa barre d'onglets et sa colonne gauche.
  */
 export const SHEET_INERT_ATTRIBUTE = "data-sheet-inert";
+
+/**
+ * Les adresses qui s'ouvrent en feuille : une par route interceptée de la
+ * fente `@sheet` (`(.)matches/[id]`, `(.)ticket`, …), tenues à jour par
+ * `app/(player)/@sheet/sheet-slot.test.mjs`.
+ */
+const SHEET_PATHS: readonly RegExp[] = [
+  /^\/matches\/[^/]+$/,
+  /^\/today\/coupon\/[^/]+$/,
+  /^\/results\/coupon\/[^/]+$/,
+  /^\/results\/[^/]+$/,
+  /^\/ticket$/,
+  /^\/me\/help\/[^/]+$/,
+  /^\/dev\/components\/sheet$/,
+];
+
+/** Cette adresse (chemin seul, sans requête) s'ouvre-t-elle en feuille ? */
+export function isSheetPath(pathname: string): boolean {
+  return SHEET_PATHS.some((pattern) => pattern.test(pathname));
+}
