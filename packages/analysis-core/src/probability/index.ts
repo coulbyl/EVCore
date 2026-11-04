@@ -86,6 +86,7 @@ export {
   fitLeagueStrengths,
   crossLeagueLambdaFactors,
 } from "./league-strength";
+export { getLeagueStrengths } from "./league-strength-map";
 export {
   type ResolveEffectiveTeamStatsInput,
   EUROPEAN_COMPETITION_CODE_SET,

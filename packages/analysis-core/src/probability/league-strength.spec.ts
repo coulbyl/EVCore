@@ -6,6 +6,7 @@ import {
   type LeagueStrengthObservation,
 } from "./league-strength";
 import { deriveLambdas } from "./match-stats";
+import { getLeagueStrengths } from "./league-strength-map";
 
 const obs = (
   homeLeague: string | null,
@@ -141,5 +142,34 @@ describe("deriveLambdas with crossLeagueFactors", () => {
     });
     expect(scaled.home).toBeCloseTo(base.home * 1.2, 12);
     expect(scaled.away).toBeCloseTo(base.away * 0.8, 12);
+  });
+});
+
+describe("getLeagueStrengths", () => {
+  it("puts the Big-5 above the small leagues and every factor inside the bound", () => {
+    const s = getLeagueStrengths();
+    expect(s.PL!).toBeGreaterThan(s.GRE1!);
+    expect(s.L1!).toBeGreaterThan(s.EST1!);
+    for (const home of Object.keys(s)) {
+      for (const away of Object.keys(s)) {
+        const f = crossLeagueLambdaFactors({
+          homeLeague: home,
+          awayLeague: away,
+          strengths: s,
+        });
+        expect(f.home).toBeLessThanOrEqual(LEAGUE_STRENGTH_MAX_FACTOR + 1e-12);
+        expect(f.home * f.away).toBeCloseTo(1, 12);
+      }
+    }
+  });
+
+  it("gives Rennes – Olympiakos (L1 / GRE1) 1.235 / 0.810", () => {
+    const f = crossLeagueLambdaFactors({
+      homeLeague: "L1",
+      awayLeague: "GRE1",
+      strengths: getLeagueStrengths(),
+    });
+    expect(f.home).toBeCloseTo(Math.exp(0.211), 3);
+    expect(f.away).toBeCloseTo(Math.exp(-0.211), 3);
   });
 });

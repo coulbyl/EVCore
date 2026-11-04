@@ -68,6 +68,7 @@ import { FriModelService } from './fri-model/fri-model.service';
 import { ChannelDecisionService } from './channel-decision.service';
 import { OddsSnapshotLoader } from './pricing/odds-snapshot.loader';
 import { BetSettlementService } from './settlement/bet-settlement.service';
+import { TeamLeagueRepository } from './team-league.repository';
 import {
   blendTeamStats,
   buildLambdaConfig,
@@ -129,6 +130,7 @@ export class BettingEngineService {
   private readonly friModelService: FriModelService;
   private readonly oddsLoader: OddsSnapshotLoader;
   private readonly betSettlement: BetSettlementService;
+  private readonly teamLeagues: TeamLeagueRepository;
 
   // eslint-disable-next-line max-params -- Explicit service injection keeps scoring dependencies transparent.
   constructor(
@@ -149,7 +151,13 @@ export class BettingEngineService {
     // Shadow-only /predictions cross-check; unit tests omit it → shadow null.
     @Optional()
     private readonly shadowPredictionsService?: ShadowPredictionsService,
+    // National league of each side in a European fixture (league strength);
+    // unit tests omit it and fall back to one built on the mocked client.
+    @Optional()
+    teamLeagueRepository?: TeamLeagueRepository,
   ) {
+    this.teamLeagues =
+      teamLeagueRepository ?? new TeamLeagueRepository(this.prisma);
     this.friModelService = friModelService ?? new FriModelService(this.prisma);
     this.oddsLoader = oddsLoader ?? new OddsSnapshotLoader(this.prisma);
     this.betSettlement =
@@ -175,13 +183,15 @@ export class BettingEngineService {
     return calcEV(probability, odds);
   }
 
-  // eslint-disable-next-line max-params
-  computeFromTeamStats(
-    homeStats: TeamStatsInput,
-    awayStats: TeamStatsInput,
-    weights?: FeatureWeights,
-    competitionCode?: string | null,
-  ): MatchComputation {
+  computeFromTeamStats(input: {
+    homeStats: TeamStatsInput;
+    awayStats: TeamStatsInput;
+    weights?: FeatureWeights;
+    competitionCode?: string | null;
+    // National leagues of the two sides, European fixtures only.
+    leagues?: { home: string | null; away: string | null } | null;
+  }): MatchComputation {
+    const { homeStats, awayStats, weights, competitionCode, leagues } = input;
     const features = buildMatchupFeatures(homeStats, awayStats);
     const deterministicScore = this.calculateDeterministicScore(
       features,
@@ -190,7 +200,7 @@ export class BettingEngineService {
     const lambda = deriveLambdas(
       homeStats,
       awayStats,
-      buildLambdaConfig(competitionCode),
+      buildLambdaConfig(competitionCode, leagues),
     );
     // 1X2: empirical blend toward team win/draw rates. O/U: shrinkage toward
     // the league base rate for data-poor leagues where the measured
@@ -452,8 +462,23 @@ export class BettingEngineService {
     // domestic form when the European sample is absent or thin.
     let effectiveHomeStats: TeamStatsInput | null = homeStats;
     let effectiveAwayStats: TeamStatsInput | null = awayStats;
+    // League strength (docs/audits/2026-11-04/FORCE-CHAMPIONNATS.md): the
+    // domestic lines blended below were measured in leagues of different
+    // levels; buildLambdaConfig turns the two leagues into λ factors.
+    let leagues: { home: string | null; away: string | null } | null = null;
 
     if (isEuropeanCompetition(competitionCode)) {
+      const [homeLeague, awayLeague] = await Promise.all([
+        this.teamLeagues.findDomesticLeagueCode({
+          teamId: fixture.homeTeamId,
+          beforeDate: fixture.scheduledAt,
+        }),
+        this.teamLeagues.findDomesticLeagueCode({
+          teamId: fixture.awayTeamId,
+          beforeDate: fixture.scheduledAt,
+        }),
+      ]);
+      leagues = { home: homeLeague, away: awayLeague };
       const [homeCross, awayCross] = await Promise.all([
         this.findCrossCompStats({
           teamId: fixture.homeTeamId,
@@ -630,12 +655,13 @@ export class BettingEngineService {
       lambda: baselineLambda,
       probabilities: baselineProbabilities,
       rawProbabilities,
-    } = this.computeFromTeamStats(
-      effectiveHomeStats,
-      effectiveAwayStats,
+    } = this.computeFromTeamStats({
+      homeStats: effectiveHomeStats,
+      awayStats: effectiveAwayStats,
       weights,
       competitionCode,
-    );
+      leagues,
+    });
 
     // H2H v2.0 (docs/archive/h2h-service-v2-plan.md §4, scope large): the favorite is
     // defined from the pre-correction 1X2 probabilities (no circularity),
@@ -1079,6 +1105,15 @@ export class BettingEngineService {
       shadow_h2h_scoreline_confidence: shadowH2hScoreline.confidence,
       shadow_congestion: shadowCongestion,
       congestion_correction_applied: congestionCorrectionApplied,
+      league_strength:
+        leagues === null
+          ? null
+          : {
+              homeLeague: leagues.home,
+              awayLeague: leagues.away,
+              ...(buildLambdaConfig(competitionCode, leagues)
+                .crossLeagueFactors ?? { home: 1, away: 1 }),
+            },
       shadow_lineups: null,
       shadow_injuries: null,
       homeDrawRate: effectiveHomeStats

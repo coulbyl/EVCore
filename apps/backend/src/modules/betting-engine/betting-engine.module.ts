@@ -13,6 +13,7 @@ import { H2HService } from './h2h.service';
 import { CongestionService } from './congestion.service';
 import { FriModelService } from './fri-model/fri-model.service';
 import { ChannelDecisionRepository } from './channel-decision.repository';
+import { TeamLeagueRepository } from './team-league.repository';
 import { VantageHistoryRepository } from './vantage-history.repository';
 import { ChannelDecisionService } from './channel-decision.service';
 import { OddsSnapshotLoader } from './pricing/odds-snapshot.loader';
@@ -42,6 +43,7 @@ import { BetSettlementService } from './settlement/bet-settlement.service';
     OddsClosingLineRepository,
     PlayableOddsRepository,
     BetSettlementService,
+    TeamLeagueRepository,
   ],
   exports: [
     BettingEngineService,
