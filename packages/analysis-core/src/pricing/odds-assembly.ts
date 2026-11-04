@@ -39,16 +39,22 @@ export type RawOddsRow = {
   awayOdds: DecimalLike | null;
 };
 
-// Bookmaker preference order when several offer the same market at the same
-// snapshot timestamp. Lower rank wins (sharpest book first).
+// Bookmaker preference order, sharpest book first. The market grid reads its
+// prices from the head of this list (MARKET_GRID_BOOKMAKERS).
+export const BOOKMAKER_PREFERENCE: readonly string[] = [
+  "Pinnacle",
+  "Bet365",
+  "Unibet",
+  "Marathonbet",
+  "Bwin",
+  "MarketAvg",
+];
+
+// Rank when several books offer the same market at the same snapshot
+// timestamp. Lower rank wins; a book outside the list ranks last.
 export function bookmakerRank(bookmaker: string): number {
-  if (bookmaker === "Pinnacle") return 0;
-  if (bookmaker === "Bet365") return 1;
-  if (bookmaker === "Unibet") return 2;
-  if (bookmaker === "Marathonbet") return 3;
-  if (bookmaker === "Bwin") return 4;
-  if (bookmaker === "MarketAvg") return 5;
-  return 6;
+  const rank = BOOKMAKER_PREFERENCE.indexOf(bookmaker);
+  return rank === -1 ? BOOKMAKER_PREFERENCE.length : rank;
 }
 
 // The 8 sparse OVER_UNDER lines (bare 2.5 + 1.5/3.5/4.5), each an independent

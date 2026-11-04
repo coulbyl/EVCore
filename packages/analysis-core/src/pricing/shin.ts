@@ -90,6 +90,29 @@ function solveZ(weights: readonly number[]): number | null {
 }
 
 /**
+ * Fair 1X2 of one book's snapshot by Shin's method, `null` when an odds is
+ * missing, at or below 1, or the book has no margin.
+ */
+export function shinOneXTwo(odds: {
+  home: { toString(): string } | null;
+  draw: { toString(): string } | null;
+  away: { toString(): string } | null;
+}): { home: Decimal; draw: Decimal; away: Decimal } | null {
+  if (odds.home === null || odds.draw === null || odds.away === null) {
+    return null;
+  }
+  const fair = shinProbabilities([
+    { pick: "HOME", odds: new Decimal(odds.home.toString()) },
+    { pick: "DRAW", odds: new Decimal(odds.draw.toString()) },
+    { pick: "AWAY", odds: new Decimal(odds.away.toString()) },
+  ]);
+  const home = fair?.get("HOME");
+  const draw = fair?.get("DRAW");
+  const away = fair?.get("AWAY");
+  return home && draw && away ? { home, draw, away } : null;
+}
+
+/**
  * Double chance from the 1X2 group of the same book and snapshot: its three
  * outcomes overlap (each result is covered twice), so Shin applies to 1X2
  * and each pair adds up. `null` without a complete 1X2.

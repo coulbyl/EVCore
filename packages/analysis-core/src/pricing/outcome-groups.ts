@@ -51,6 +51,20 @@ function overUnderGroup(pick: string): OutcomeGroup | null {
   return { picks: [`OVER${suffix}`, `UNDER${suffix}`], outcomeTotal: 1 };
 }
 
+/**
+ * Côté et ligne d'un choix de total (`OVER_1_5` → OVER, 1.5) ; les clés nues
+ * `OVER` / `UNDER` sont la ligne 2.5. `null` hors marché de total.
+ */
+export function overUnderPickLine(
+  pick: string,
+): { side: "OVER" | "UNDER"; line: number } | null {
+  const match = OVER_UNDER_PICK.exec(pick);
+  if (!match) return null;
+  const side = match[1] as "OVER" | "UNDER";
+  const line = match[2] ? Number(match[2].slice(1).replace("_", ".")) : 2.5;
+  return { side, line };
+}
+
 // Résultat × total sur UNE ligne : six issues exclusives et exhaustives.
 function resultTotalGoalsGroup(pick: string): OutcomeGroup | null {
   const match = RESULT_TOTAL_GOALS_PICK.exec(pick);
