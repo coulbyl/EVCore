@@ -92,6 +92,8 @@ SaaS, multi-tenant, API interne. Rien de commencé.
 
 Ordre décidé le 04/11 : [docs/plan-2026-11-04.md](docs/plan-2026-11-04.md) — 1. le 15-todo, 2. le moteur (force des championnats, puis ML), 3. les produits datés, 4. plus tard.
 
+Fait le 04/11, étape 2 (premier lot) : force des championnats sur λ en coupe d'Europe ([FORCE-CHAMPIONNATS.md](docs/audits/2026-11-04/FORCE-CHAMPIONNATS.md)) — `LEAGUE_STRENGTH_MAP` à ré-ajuster chaque juillet avec `backtest:league-strength`. Suite : lots ML-1 → ML-4.
+
 ### Plan stratégies — phase 4 (après mesure)
 
 Source : [docs/plan-strategies-2026-11-03.md](docs/plan-strategies-2026-11-03.md).

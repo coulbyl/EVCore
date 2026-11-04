@@ -823,3 +823,20 @@ plus basse d'abord) : 847 jours sur 889, cote 2,40, 39,7 % ± 3,3 gagnés pour
 40,3 % annoncés, retour 0,950 ± 0,079 au prix Pinnacle, ~0,90 chez 1xBet,
 pire série 12 jours. Livré (`HUNTER_HT_DRAW`, #299). Source :
 [CHASSEUR-NUL-MT.md](audits/2026-11-04/CHASSEUR-NUL-MT.md).
+
+## 2026-11-04 — Force des championnats en coupe d'Europe
+
+### Un facteur de niveau par championnat rapproche-t-il le 1X2 européen du marché ?
+
+**Verdict : ouvert (expédié).** Hypothèse posée avant les données par
+[ESTIMATION-LOIN-DU-MARCHE.md](audits/2026-11-04/ESTIMATION-LOIN-DU-MARCHE.md) :
+les λ européens mélangent des xG nationaux sans niveau. Une log-force par
+championnat (Poisson pénalisé, λ du moteur en décalage, σ 0,2, ≥ 10 matchs),
+ajustée sur les saisons antérieures seulement, rejouée avec la chaîne de
+production sur 1 564 matchs avec clôture Pinnacle : Brier 1X2 −0,030
+[−0,039 ; −0,021], meilleur sur 3 saisons sur 3, résidu contre Pinnacle
+0,076 → 0,046, plafonnés 46 % → 32 %, aucun type de match dégradé
+(« Big-5 reçoit petit » −0,084). Pas un avantage : réalisé − Pinnacle des
+retenus +0,008 ± 0,026. Expédié (`LEAGUE_STRENGTH_MAP`, à ré-ajuster chaque
+juillet). Source :
+[FORCE-CHAMPIONNATS.md](audits/2026-11-04/FORCE-CHAMPIONNATS.md).
