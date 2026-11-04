@@ -4,6 +4,7 @@ import type { MarketPriceRow } from '@modules/betting-engine/pricing/playable-od
 import {
   newMarketPicksOf,
   pricedPlayerIds,
+  quoteNewMarketPick,
   resultOf,
 } from './match-sheet-markets';
 
@@ -87,7 +88,7 @@ describe('newMarketPicksOf', () => {
       settle: BEFORE,
     });
     expect(keys(picks)).toEqual(['CORNERS/OVER/9.5', 'CORNERS/UNDER/9.5']);
-    expect(picks[0]).toMatchObject({ odds: 1.9, player: null, addable: false });
+    expect(picks[0]).toMatchObject({ odds: 1.9, player: null });
     const [over, under] = picks;
     expect((over?.chance ?? 0) + (under?.chance ?? 0)).toBeCloseTo(1, 3);
     expect(picks.every((p) => p.result === null)).toBe(true);
@@ -399,6 +400,66 @@ describe('resultOf (after the match)', () => {
         market: 'CORNERS_1X2',
         row: { pick: 'HOME', line: null },
         settle: { finished: false, facts: facts() },
+      }),
+    ).toBeNull();
+  });
+});
+
+describe('quoteNewMarketPick (« Mon ticket »)', () => {
+  it('the first book pricing the whole group, its chance with its price', () => {
+    const rows = [
+      // 1xBet prices the over alone: no chance there.
+      row('CARDS', 'OVER', { line: 4.5, odds: 1.95 }),
+      row('CARDS', 'OVER', { line: 4.5, odds: 1.9, book: 'Pinnacle' }),
+      row('CARDS', 'UNDER', { line: 4.5, odds: 1.9, book: 'Pinnacle' }),
+    ];
+    expect(
+      quoteNewMarketPick({ market: 'CARDS', pick: 'OVER', line: 4.5, rows }),
+    ).toEqual({ odds: 1.9, chance: 0.5 });
+    // Without Pinnacle's pair, 1xBet's price without a chance.
+    expect(
+      quoteNewMarketPick({
+        market: 'CARDS',
+        pick: 'OVER',
+        line: 4.5,
+        rows: rows.slice(0, 1),
+      }),
+    ).toEqual({ odds: 1.95, chance: null });
+  });
+
+  it('a minute 1X2 on its own minute; nothing for a line not priced', () => {
+    const rows = [
+      ...['HOME', 'DRAW', 'AWAY'].map((pick, n) =>
+        row('MINUTE_1X2', pick, {
+          line: 30,
+          odds: [3.5, 1.6, 5][n] ?? 0,
+          book: 'Betano',
+        }),
+      ),
+      row('MINUTE_1X2', 'DRAW', { line: 60, odds: 2.4, book: 'Betano' }),
+    ];
+    const draw30 = quoteNewMarketPick({
+      market: 'MINUTE_1X2',
+      pick: 'DRAW',
+      line: 30,
+      rows,
+    });
+    expect(draw30?.odds).toBe(1.6);
+    expect(draw30?.chance).toBeGreaterThan(0.5);
+    expect(
+      quoteNewMarketPick({
+        market: 'MINUTE_1X2',
+        pick: 'DRAW',
+        line: 60,
+        rows,
+      }),
+    ).toEqual({ odds: 2.4, chance: null });
+    expect(
+      quoteNewMarketPick({
+        market: 'MINUTE_1X2',
+        pick: 'DRAW',
+        line: 15,
+        rows,
       }),
     ).toBeNull();
   });

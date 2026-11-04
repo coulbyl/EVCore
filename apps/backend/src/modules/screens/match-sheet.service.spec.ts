@@ -210,7 +210,6 @@ describe('MatchSheetService', () => {
       pick: 'HOME',
       line: null,
       player: null,
-      addable: true,
       odds: 1.65,
       chance: 0.7,
       result: null,
@@ -238,7 +237,6 @@ describe('MatchSheetService', () => {
       pick: 'DRAW',
       line: null,
       player: null,
-      addable: true,
       odds: 3.4,
       chance: 0.27,
       result: null,
@@ -439,7 +437,6 @@ describe('MatchSheetService', () => {
       pick: 'HOME',
       line: null,
       player: null,
-      addable: true,
       odds: 1.65,
       chance: 0.58,
       result: null,
@@ -471,7 +468,7 @@ describe('MatchSheetService, the new markets in « Autres paris »', () => {
     },
   ];
 
-  it('follow the main lines with their price, never addable, names read once', async () => {
+  it('follow the main lines with their price, names read once', async () => {
     const { service, squads, matchFacts } = harness({
       marketRows: rows,
       playerNames: new Map([[9, 'Bukayo Saka']]),
@@ -484,7 +481,7 @@ describe('MatchSheetService, the new markets in « Autres paris »', () => {
       'CORNERS_1X2/AWAY',
       'GOAL_SCORER_ANYTIME/P9',
     ]);
-    expect(added[0]).toMatchObject({ odds: 1.6, result: null, addable: false });
+    expect(added[0]).toMatchObject({ odds: 1.6, result: null });
     expect(added[3]).toEqual({
       market: 'GOAL_SCORER_ANYTIME',
       pick: 'P9',
@@ -493,7 +490,6 @@ describe('MatchSheetService, the new markets in « Autres paris »', () => {
       odds: 2.1,
       chance: null,
       result: null,
-      addable: false,
     });
     expect(squads.findDisplayNames).toHaveBeenCalledWith([9]);
     // Before the end, no facts are read.

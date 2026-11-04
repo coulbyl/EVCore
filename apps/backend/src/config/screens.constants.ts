@@ -200,6 +200,9 @@ export const SCREEN_READS_MAX_KEYS = 500;
 // « Vérifie ton ticket » (refonte 07 § 4): one call per opening of the sheet
 // or change of the ticket, a few a minute at most for a player.
 export const TICKET_QUOTE_RATE_LIMIT = { limit: 60, ttlMs: 60_000 } as const;
+// The largest line a bet of the ticket may carry: the 90th minute of a
+// minute's 1X2 and the corners' lines sit well under it.
+export const TICKET_LINE_MAX = 200;
 
 // The landing on a day without a hero (decided 31/10, a marketing call):
 // the last hero that won within this many days, labelled as such, its form

@@ -23,12 +23,6 @@ export type SheetPick = {
   chance: number | null;
   /** Once the match is over: did it land; null while unknown. */
   result: 'won' | 'lost' | 'void' | null;
-  /**
-   * « Mon ticket » can take it: priced at 1xBet and settled on the score.
-   * Not the markets of SHEET_NEW_MARKETS: the ticket keeps no line, prices
-   * at 1xBet only and settles on the score alone.
-   */
-  addable: boolean;
 };
 
 /** « Notre lecture »: the same pick as the list, with its fact. */

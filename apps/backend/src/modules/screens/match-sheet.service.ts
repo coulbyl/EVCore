@@ -356,19 +356,18 @@ function pair(
 }
 
 /**
- * A pick of the markets « Mon ticket » takes (the reading, the AI's, the
- * main lines and the engine's others): no line, no player, addable. The new
- * markets are not (match-sheet-markets.ts).
+ * A pick of the main markets (the reading, the AI's, the main lines and the
+ * engine's others): no line, no player. The new markets carry theirs
+ * (match-sheet-markets.ts).
  */
 function mainPick(
   key: Key,
-): Pick<SheetPick, 'market' | 'pick' | 'line' | 'player' | 'addable'> {
+): Pick<SheetPick, 'market' | 'pick' | 'line' | 'player'> {
   return {
     market: key.market,
     pick: key.pick,
     line: null,
     player: null,
-    addable: true,
   };
 }
 

@@ -87,7 +87,6 @@ export function newMarketPicksOf(input: {
         odds: row.odds,
         chance,
         result: resultOf({ market, row, settle: input.settle }),
-        addable: false,
       });
     }
   }
@@ -283,6 +282,93 @@ function shotLines(
     .sort(nearer)
     .slice(0, SHEET_PLAYER_SHOTS_SHOWN)
     .map((row) => ({ row, chance: null }));
+}
+
+/** The over/under markets of SHEET_NEW_MARKETS, read on a pair. */
+const OVER_UNDER_MARKETS: ReadonlySet<string> = new Set([
+  'CORNERS',
+  'CORNERS_HOME',
+  'CORNERS_AWAY',
+  'CARDS',
+]);
+
+/** The 1X2 markets of SHEET_NEW_MARKETS, read on their three outcomes. */
+const RESULT_MARKETS: ReadonlySet<string> = new Set([
+  'CORNERS_1X2',
+  'MINUTE_1X2',
+]);
+
+/**
+ * The frequencies of one book's group on one line, as the sheet reads
+ * them: the over/under pair, the three outcomes of a 1X2; null for the
+ * scorers and the shots (no complete group) or a group incomplete.
+ */
+function groupFair(
+  market: string,
+  group: readonly MarketPriceRow[],
+): Map<string, Decimal> | null {
+  if (OVER_UNDER_MARKETS.has(market)) {
+    const over = group.find((row) => row.pick === 'OVER');
+    const under = group.find((row) => row.pick === 'UNDER');
+    return over && under ? fairOf([over, under]) : null;
+  }
+  if (RESULT_MARKETS.has(market)) {
+    const outcomes = group.filter((row) =>
+      (RESULT_PICKS as readonly string[]).includes(row.pick),
+    );
+    return isComplete(outcomes) ? fairOf(outcomes) : null;
+  }
+  return null;
+}
+
+/**
+ * A bet of the new markets priced again (« Mon ticket »), from the same
+ * prices and by the same rules as the sheet: at the first book (1xBet,
+ * then SHEET_OTHER_BOOKMAKERS) that prices this pick on this line with
+ * its whole group, else at the first that prices the pick alone. Odds and
+ * chance from the same book and the same quote (review-expectations § 6);
+ * null when no book prices it.
+ */
+export function quoteNewMarketPick(input: {
+  market: SheetNewMarket;
+  pick: string;
+  line: number | null;
+  rows: readonly MarketPriceRow[];
+}): { odds: number; chance: number | null } | null {
+  const { market, pick, line } = input;
+  const onLine = input.rows.filter(
+    (row) =>
+      row.market === market &&
+      (row.line === null || line === null
+        ? row.line === line
+        : Number(row.line) === Number(line)),
+  );
+  const priced = onLine.filter((row) => row.pick === pick);
+  const chances = new Map(
+    priced.map((row) => [
+      row.bookmaker,
+      chanceOf(
+        groupFair(
+          market,
+          onLine.filter((other) => other.bookmaker === row.bookmaker),
+        ),
+        pick,
+      ),
+    ]),
+  );
+  const whole = [...chances].filter(([, chance]) => chance !== null);
+  const book = bookFirst(
+    (whole.length > 0 ? whole : [...chances]).map(([name]) => name),
+  );
+  const row = priced.find((r) => r.bookmaker === book);
+  return row
+    ? { odds: row.odds, chance: chances.get(row.bookmaker) ?? null }
+    : null;
+}
+
+/** A market of SHEET_NEW_MARKETS. */
+export function isSheetNewMarket(market: string): market is SheetNewMarket {
+  return (SHEET_NEW_MARKETS as readonly string[]).includes(market);
 }
 
 /**
