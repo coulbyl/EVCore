@@ -43,8 +43,3 @@
 - [ ] `evaluatedMarkets` / `EvaluatedMarket` dans le contexte de stratégie : plus aucun canal ne le lit depuis VALUE/SAFE en phase 2 ; candidat au nettoyage.
 - [ ] Enum `NotificationType` sans `CALIBRATION_ALERT` (`packages/db/prisma/schema.prisma`) : l'alerte de calibration reste dans `features.calibration_alert` (lu par la fiche), sans notification (`docs/archive/etl-renforcement-coherence.md`). Migration à décider ; les valeurs mortes (`SUBSCRIPTION_*`, `ML_MODEL_*`) sont conservées volontairement.
 - [ ] Images de déploiement trop lentes : 9 min 22 s dont 6 min 24 s sur le serveur (28/10). À optimiser une fois les lots en cours finis.
-
-## À décider
-
-- [ ] La passe quotidienne écrit encore le coupon prix 5–15 (`UNIQUE`, `composeByPrice`) et le coupon long du moteur (`LONG`), absents de l'écran Aujourd'hui (`coupon-daily-generation.service.ts`) : couper ces passes ou les garder pour la mesure par jambe.
-- [ ] `docker-compose.yml` (dev) passe encore `GROQ_MODEL` au vantage-worker, variable retirée.

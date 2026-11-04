@@ -279,14 +279,8 @@ export {
 // retiré aussi côté frontend.
 
 /**
- * Politique du compositeur déterministe par le prix.
- *
- * Il vise la MÊME cote que la politique LLM (5–15, 5 jambes) : deux
- * générateurs qui ne visent pas la même chose ne sont pas comparables, et les
- * faire tourner en parallèle n'aurait alors aucun intérêt.
- */
-/**
- * Valeur écrite dans `coupon_proposal.signalWindowDays` par le compositeur.
+ * Valeur écrite dans `coupon_proposal.signalWindowDays` par les passes
+ * PRICE_COMPOSER et ENGINE.
  *
  * Zéro, parce que ce générateur n'a pas de fenêtre de signal — et parce que la
  * colonne n'en décrit plus une depuis 2026-08-22 (38 = passe du soir du LLM,
@@ -301,11 +295,10 @@ export const PRICE_COMPOSER_SIGNAL_WINDOW_DAYS = 0;
  * gros favori à domicile dont la cote d'analyse tombe dans 1,10–1,35 — voir
  * FAVOURITE_COUPON_CLASS dans @evcore/analysis-core pour la mesure).
  *
- * Il tourne dans la même passe que le compositeur par le prix, sur le même
- * vivier (`evaluated_pick` du lendemain), et s'enregistre comme proposition
- * PRICE_COMPOSER avec sa propre bande cible : la clé unique de
- * `coupon_proposal` porte `targetOddsMin`/`targetOddsMax`, donc il coexiste
- * avec le coupon long 5–15 sans migration.
+ * Il lit le vivier du lendemain (`evaluated_pick`) et s'enregistre comme
+ * proposition PRICE_COMPOSER avec sa propre bande cible : la clé unique de
+ * `coupon_proposal` porte `targetOddsMin`/`targetOddsMax`, donc chaque classe
+ * coexiste avec les autres sans migration.
  */
 export const FAVOURITE_POLICY = {
   version: 'favourite-v2',
@@ -378,11 +371,6 @@ export const CORNERS_HUNTER_POLICY = {
  * compétition est celle de la pastille de confiance : 90 jours glissants,
  * mêmes seuils que le tableau de bord.
  */
-export const ENGINE_LONG_POLICY = {
-  version: 'engine-long-v1',
-  pass: 'engine-long',
-} as const;
-
 export const ENGINE_COMBO_POLICY = {
   // v2 (2026-11-03) : départage par la marge 1xBet à chance égale
   // (COMBO_CONFIG.marginTieBreak) ; les jambes se comparent par version.
@@ -399,38 +387,6 @@ export const ENGINE_COMBO_POLICY = {
     'CONSENSUS',
     'CONTRARIAN',
   ],
-} as const;
-
-export const PRICE_COMPOSER_POLICY = {
-  version: 'price-composer-5-15-v1',
-  /**
-   * Jambes minimales dans une cellule (marché × tranche) avant de la juger,
-   * puis dans un marché entier. Calés sur le backtest du 2026-09-16 : à
-   * 300 jambes, la borne basse du marché Double Chance atteignait 1,0932 — le
-   * marché entier paraissait rentable sur son seul historique récent.
-   */
-  minCellLegs: 400,
-  minMarketLegs: 2_000,
-  /**
-   * Aucune jambe n'est créditée d'un retour attendu supérieur à 1.
-   *
-   * Résultat, pas précaution : sur 1,67 M de jambes réglées, les 17 marchés
-   * coûtent de 4,4 % à 12,2 % et aucun n'est positif. Une estimation au-dessus
-   * de 1 est un accident de fenêtre, et un compositeur qui maximise le retour
-   * attendu se rue exactement dessus.
-   */
-  maxCreditedReturn: 1,
-  /**
-   * Plancher de refus, sur le retour attendu du coupon entier.
-   *
-   * À 0, le compositeur propose dès que la cible est atteignable. C'est
-   * délibéré au démarrage : le plafond mesuré aujourd'hui est 0,9616, donc un
-   * plancher à 1 refuserait chaque jour et n'apprendrait rien. Il devient le
-   * bouton à remonter dès qu'un marché assez peu taxé entre dans le vivier —
-   * l'Asian Handicap est le seul candidat mesuré.
-   */
-  minExpectedReturn: 0,
-  maxPerCompetition: 3,
 } as const;
 
 /**

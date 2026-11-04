@@ -2,9 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CouponSource, StrategyChannel } from '@evcore/db';
 import {
   COMBO_COUPON_CLASS,
-  LONG_COUPON_CLASS,
   composeEngineCombo,
-  composeEngineLong,
   type CalibrationCell,
   type ComboCandidate,
   type CouponClass,
@@ -16,7 +14,7 @@ import {
   operatorPrice,
   playableAtOperator,
 } from '../betting-engine/pricing/playable-odds.filter';
-import { ENGINE_COMBO_POLICY, ENGINE_LONG_POLICY } from './coupon.constants';
+import { ENGINE_COMBO_POLICY } from './coupon.constants';
 import { startOfUtcDay } from '@utils/date.utils';
 
 export type EngineComboGenerationOutcome =
@@ -45,13 +43,6 @@ export const ENGINE_COMBO_PROFILE: EngineCouponProfile = {
   compose: composeEngineCombo,
   policy: ENGINE_COMBO_POLICY,
   label: 'Combiné',
-};
-
-export const ENGINE_LONG_PROFILE: EngineCouponProfile = {
-  couponClass: LONG_COUPON_CLASS,
-  compose: composeEngineLong,
-  policy: ENGINE_LONG_POLICY,
-  label: 'Coupon long',
 };
 
 /**

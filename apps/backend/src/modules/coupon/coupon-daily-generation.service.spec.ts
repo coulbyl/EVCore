@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CouponDailyGenerationService } from './coupon-daily-generation.service';
-import type { CouponPriceGenerationService } from './coupon-price-generation.service';
 import type { CouponFavouriteGenerationService } from './coupon-favourite-generation.service';
 import type { CouponDoubleGenerationService } from './coupon-double-generation.service';
 import type { CouponEngineComboGenerationService } from './coupon-engine-combo-generation.service';
@@ -31,9 +30,6 @@ function makeHarness(loadFails = false) {
     fillForDate: vi.fn().mockResolvedValue({ legs: 3, withFact: 2 }),
   } as unknown as CouponLegFactService;
   const service = new CouponDailyGenerationService(
-    {
-      generateForDate: vi.fn().mockResolvedValue(ok),
-    } as unknown as CouponPriceGenerationService,
     {
       generateForDate: vi.fn().mockResolvedValue(ok),
     } as unknown as CouponFavouriteGenerationService,

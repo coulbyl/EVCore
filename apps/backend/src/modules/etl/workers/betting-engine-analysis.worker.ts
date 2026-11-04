@@ -31,12 +31,7 @@ export class BettingEngineAnalysisWorker extends WorkerHost {
 
     logger.info(result, 'Betting engine daily analysis complete');
 
-    // The LLM coupon pipeline stays on its own scheduler in
-    // apps/vantage-worker, 45 minutes after the 17:00 horizon pass that
-    // composes every coupon of the day (COUPON_SCHEDULE in
-    // packages/analysis-core, ENV-PROD § 3).
-    //
-    // The price composer is CHAINED here instead of getting its own cron, and
+    // The daily coupon passes are CHAINED here instead of getting their own cron, and
     // deliberately so: it reads the `evaluatedPicks` this very analysis just
     // wrote. A second cron would have to guess how long the analysis takes on
     // a heavy day, and would compose from an empty or half-written pool
@@ -53,7 +48,7 @@ export class BettingEngineAnalysisWorker extends WorkerHost {
     // Its failure must never fail the analysis: the analysis is what feeds
     // every channel, the coupon is one consumer among them.
     if (date !== formatDateUtc(tomorrowUtc())) {
-      logger.info({ date }, 'Price composer skipped: not tomorrow');
+      logger.info({ date }, 'Daily coupon passes skipped: not tomorrow');
       return;
     }
     // Le pari sûr du jour (favori à domicile 1,10–1,35, une jambe) lit le

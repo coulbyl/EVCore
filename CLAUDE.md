@@ -32,7 +32,7 @@ Coupons are composed by the backend (`apps/backend/src/modules/coupon`, classes 
 - `ENGINE`: Combiné du jour (`COMBO`, 2 legs 1.20–1.50 from the engine's calibrated picks, `engine-combo-v2` breaks ties on the 1xBet margin) and the Chasseur Score exact (`HUNTER_SCORE`).
 - `LLM`: no longer written — the LLM combo was cut on 2026-11-03; old rows stay for history.
 
-The daily pass still writes the price coupon 5–15 (`UNIQUE` via `composeByPrice`) and the engine long coupon (`LONG`); neither is on the player's Today screen. Compare products **per leg**, never by coupon ROI.
+The price coupon 5–15 (`UNIQUE`) and the engine long coupon (`LONG`) are no longer written since 2026-11-04; their old rows stay visible to admins in Résultats. Compare products **per leg**, never by coupon ROI.
 
 Read [EVCORE.md](EVCORE.md) for the current product specification before making any architectural decision (the original v1 spec is archived in `docs/archive/EVCORE-spec-v1.md`, history only).
 Check [ROADMAP.md](ROADMAP.md) for the current state and the open work before adding or modifying any feature.

@@ -8,14 +8,8 @@ import {
   Prisma,
   StrategyChannel,
 } from '@evcore/db';
-import {
-  POOL_EXCLUDED_MARKETS,
-  UNIFIED_COUPON_CLASS,
-} from '@evcore/analysis-core';
-import {
-  PRICE_COMPOSER_POLICY,
-  PRICE_COMPOSER_SIGNAL_WINDOW_DAYS,
-} from './coupon.constants';
+import { POOL_EXCLUDED_MARKETS } from '@evcore/analysis-core';
+import { PRICE_COMPOSER_SIGNAL_WINDOW_DAYS } from './coupon.constants';
 import { PrismaService } from '@/prisma.service';
 import { startOfUtcDay } from '@utils/date.utils';
 
@@ -85,14 +79,6 @@ function calibrationAlertedFixtureIds(from: Date, to: Date): Prisma.Sql {
           END
   `;
 }
-
-export type MarketCostCell = {
-  market: string;
-  band: string;
-  legCount: number;
-  meanPayout: number;
-  payoutVariance: number;
-};
 
 export type EngineComboCandidateRow = {
   fixtureId: string;
@@ -410,44 +396,6 @@ export class CouponRepository {
   }
 
   /**
-   * Coût mesuré de chaque cellule (marché × tranche de cote).
-   *
-   * Lit `evaluated_pick`, qui règle contre le score tout ce que le moteur a
-   * envisagé — retenus comme rejetés. Le vivier du compositeur sort de la même
-   * vue : calibrer sur un espace et composer dans un autre donnerait des coûts
-   * qui ne s'appliquent à rien.
-   *
-   * `won IS NULL` sur une rencontre terminée n'est un remboursement que pour
-   * un Draw No Bet sur match nul : il rapporte exactement la mise. Pour tout
-   * autre marché, NULL veut dire « non réglable » — score de mi-temps absent,
-   * ou marché sans règle de règlement dans la vue (handicap asiatique,
-   * corners, cartons, …). Les compter comme remboursés leur donnerait un coût
-   * nul et le compositeur les préférerait à tout le reste.
-   */
-  async findMarketCostCalibration(
-    before: Date,
-  ): Promise<readonly MarketCostCell[]> {
-    return this.prisma.client.$queryRaw<MarketCostCell[]>`
-      WITH settled AS (
-        SELECT market,
-               ${Prisma.raw(ODDS_BAND_SQL)} AS band,
-               CASE WHEN won IS NULL THEN 1 WHEN won THEN odds ELSE 0 END AS payout
-        FROM public.evaluated_pick
-        WHERE "fixtureStatus" = 'FINISHED'
-          AND "scheduledAt" < ${before}
-          AND (won IS NOT NULL OR market = 'DRAW_NO_BET')
-      )
-      SELECT market,
-             band,
-             count(*)::int              AS "legCount",
-             avg(payout)::float         AS "meanPayout",
-             coalesce(var_pop(payout), 0)::float AS "payoutVariance"
-      FROM settled
-      GROUP BY market, band
-    `;
-  }
-
-  /**
    * Écrit la proposition du compositeur et ses jambes en une transaction.
    *
    * `source` fait partie de la clé unique : l'upsert ne peut donc jamais
@@ -481,12 +429,9 @@ export class CouponRepository {
       /** Fréquence de Shin chez 1xBet, du même relevé que operatorOdds. */
       operatorFairProbability?: number | null;
     }[];
-    /**
-     * Profil écrit dans la clé unique et dans `reasoning.policyVersion`. Par
-     * défaut le coupon long 5–15 du compositeur ; le pari sûr du jour passe
-     * sa propre bande (FAVOURITE_COUPON_CLASS) et sa propre version.
-     */
-    profile?: {
+    /** Profil écrit dans la clé unique et dans `reasoning.policyVersion` :
+     * la bande et la version de la classe qui compose. */
+    profile: {
       targetOddsMin: number;
       targetOddsMax: number;
       policyVersion: string;
@@ -496,11 +441,7 @@ export class CouponRepository {
       legCanal?: StrategyChannel;
     };
   }): Promise<{ proposalId: string; created: boolean }> {
-    const profile = input.profile ?? {
-      targetOddsMin: UNIFIED_COUPON_CLASS.targetOddsMin,
-      targetOddsMax: UNIFIED_COUPON_CLASS.targetOddsMax,
-      policyVersion: PRICE_COMPOSER_POLICY.version,
-    };
+    const { profile } = input;
     const key = {
       forDate: startOfUtcDay(input.forDate),
       source: profile.source ?? CouponSource.PRICE_COMPOSER,
@@ -596,15 +537,13 @@ export class CouponRepository {
     candidateCount: number;
     reason?: string;
     proposalId?: string;
-    /** Par défaut la passe du compositeur 5–15 ; le pari sûr passe la sienne. */
-    pass?: { name: string; policyVersion: string };
+    pass: { name: string; policyVersion: string };
   }): Promise<void> {
     await this.prisma.client.couponGenerationAttempt.create({
       data: {
         forDate: startOfUtcDay(input.forDate),
-        policyVersion:
-          input.pass?.policyVersion ?? PRICE_COMPOSER_POLICY.version,
-        pass: input.pass?.name ?? 'price-composer',
+        policyVersion: input.pass.policyVersion,
+        pass: input.pass.name,
         outcome: input.outcome,
         candidateCount: input.candidateCount,
         reason: input.reason ?? null,

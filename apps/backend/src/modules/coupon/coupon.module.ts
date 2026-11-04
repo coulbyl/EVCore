@@ -6,7 +6,6 @@ import { CouponRepository } from './coupon.repository';
 import { CouponFollowRepository } from './coupon-follow.repository';
 import { CouponSettlementService } from './coupon-settlement.service';
 import { CouponService } from './coupon.service';
-import { CouponPriceGenerationService } from './coupon-price-generation.service';
 import { CouponFavouriteGenerationService } from './coupon-favourite-generation.service';
 import { CouponHunterGenerationService } from './coupon-hunter-generation.service';
 import { CouponPricedPoolService } from './coupon-priced-pool.service';
@@ -42,7 +41,6 @@ import { ProductWeekService } from './product-day/product-week.service';
     PlayableOddsRepository,
     CouponSettlementService,
     CouponService,
-    CouponPriceGenerationService,
     CouponFavouriteGenerationService,
     CouponPricedPoolService,
     CouponDoubleGenerationService,
@@ -61,7 +59,6 @@ import { ProductWeekService } from './product-day/product-week.service';
     ProductWeekService,
     CouponSettlementService,
     CouponRepository,
-    CouponPriceGenerationService,
     CouponFavouriteGenerationService,
     CouponDailyGenerationService,
   ],

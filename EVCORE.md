@@ -77,10 +77,9 @@ gagnants à cote 1,26 sur 86 jours ; Combiné à deux jambes 71 % à cote 1,55
 sur 115 jours (`docs/audits/2026-10-28/SELECTIONS-LAISSEES.md`) ; Combiné IA
 gagné environ un jour sur trois à cote ~5,2 (`docs/audits/2026-11-03/COMBINE-IA-4-10.md`).
 
-La passe quotidienne écrit encore le coupon prix 5–15 (`UNIQUE`,
-`composeByPrice`) et le coupon long moteur (`LONG`), hors de l'écran
-Aujourd'hui. Le combiné LLM a été coupé le 2026-11-03 (source `LLM` gardée
-pour l'historique).
+Le coupon prix 5–15 (`UNIQUE`) et le coupon long moteur (`LONG`) ne sont plus
+écrits depuis le 2026-11-04, et le combiné LLM a été coupé le 2026-11-03 :
+leurs anciens coupons restent visibles des admins dans Résultats.
 
 L'écran Décisions montre « Notre sélection » par match (les canaux du moteur
 calibrés sur la compétition) ; la fiche de match expose toutes les données
