@@ -1,5 +1,4 @@
 import { useTranslations } from "next-intl";
-import { cn } from "@evcore/ui/cn";
 import { chanceOf, type Chance } from "@/helpers/scoreboard-format";
 import { spokenOf, type Translate } from "./chance-figure";
 
@@ -9,24 +8,13 @@ import { spokenOf, type Translate } from "./chance-figure";
  * diodes, en petit et en gris ; lue « 1 chance sur 6 ». Une probabilité
  * illisible n'affiche rien.
  */
-export function ChanceShort({
-  probability,
-  className,
-}: {
-  probability: number;
-  className?: string;
-}) {
+export function ChanceShort({ probability }: { probability: number }) {
   const t = useTranslations("scoreboard.chance");
   const chance = chanceOf(probability);
   if (!chance) return null;
 
   return (
-    <span
-      className={cn(
-        "score text-meta whitespace-nowrap text-muted-foreground",
-        className,
-      )}
-    >
+    <span className="score text-meta whitespace-nowrap text-muted-foreground">
       <span aria-hidden>{written(chance, t)}</span>
       <span className="sr-only">{spokenOf(chance, t)}</span>
     </span>
