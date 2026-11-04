@@ -18,10 +18,7 @@ import {
   type FeedKind,
   type FeedStatus,
 } from "@/domains/notifications/helpers/notification-feed";
-import {
-  ADMIN_SECTIONS,
-  type AdminSectionKey,
-} from "@/components/scoreboard/shell/shell-constants";
+import { adminSectionHref } from "@/components/scoreboard/shell/shell-constants";
 import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
 import { ChipGroup } from "@/components/scoreboard/ui/chip-group";
 import {
@@ -54,10 +51,6 @@ const KIND_LABELS = {
   player: "kindPlayer",
   technical: "kindTechnical",
 } as const satisfies Record<FeedKind, string>;
-
-function adminHref(section: AdminSectionKey): string {
-  return ADMIN_SECTIONS.find((s) => s.key === section)?.href ?? "/admin";
-}
 
 /**
  * The unread of the kind shown: the chip's count and « tout marquer ». The
@@ -179,7 +172,7 @@ export default async function Page({
           <ul aria-label={t("title")} className="divide-y divide-border">
             {data.map((notification) => {
               const { day, time } = when(notification.createdAt);
-              const href = hrefOf(notification, adminHref);
+              const href = hrefOf(notification.type, adminSectionHref);
               // A row that leads somewhere shows two lines: a technical
               // alert's list of raw ids is read whole on its admin screen.
               const clamp = href !== null;

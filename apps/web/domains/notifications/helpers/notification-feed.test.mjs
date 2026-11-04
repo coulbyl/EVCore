@@ -8,6 +8,7 @@ import {
   newerReading,
   parseFeedFilter,
 } from "./notification-feed.ts";
+import { adminSectionHref } from "../../../components/scoreboard/shell/shell-constants.ts";
 
 describe("parseFeedFilter", () => {
   it("reads the status and, for an admin, the kind", () => {
@@ -48,17 +49,15 @@ describe("feedQuery and feedHref", () => {
 });
 
 describe("hrefOf", () => {
-  const adminHref = (section) => `/admin/${section}`;
   it("leads a technical alert to its admin screen", () => {
-    const technical = (type) =>
-      hrefOf({ type, category: "technical" }, adminHref);
+    const technical = (type) => hrefOf(type, adminSectionHref);
     assert.equal(technical("ETL_FAILURE"), "/admin/exploitation");
     assert.equal(technical("XG_UNAVAILABLE_REPORT"), "/admin/exploitation");
     assert.equal(technical("MARKET_SUSPENSION"), "/admin/engine");
     assert.equal(technical("SLIPS_SETTLED_DIGEST"), null);
   });
   it("leads a player's row where it is about; an announcement stays here", () => {
-    const player = (type) => hrefOf({ type, category: "player" }, adminHref);
+    const player = (type) => hrefOf(type, adminSectionHref);
     assert.equal(player("MORNING_BRIEF"), "/today");
     assert.equal(player("SUPPORT_MESSAGE"), "/me/messages");
     assert.equal(player("ANNOUNCEMENT_PUBLISHED"), null);

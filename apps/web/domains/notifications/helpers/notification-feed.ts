@@ -1,3 +1,5 @@
+import type { AdminSectionKey } from "@/components/scoreboard/shell/shell-constants";
+
 /**
  * What the Notifications screen filters on, kept in its address so a
  * filter survives a reload and « Voir plus »: the read status for everyone,
@@ -43,8 +45,6 @@ export function feedHref(filter: FeedFilter, more = 0): string {
   return search ? `/notifications?${search}` : "/notifications";
 }
 
-import type { AdminSectionKey } from "@/components/scoreboard/shell/shell-constants";
-
 /** The backend's NotificationView.category: what a player's bell can hold, or not. */
 export type NotificationCategory = "player" | "technical";
 
@@ -69,19 +69,17 @@ const ADMIN_SECTION_OF: Partial<Record<string, AdminSectionKey>> = {
 };
 
 /**
- * Where a row leads (09 § 6). A technical alert leads to the admin screen
- * that shows it (`adminHref`, from ADMIN_SECTIONS); an announcement, and
- * the rest, show in full here (null).
+ * Where a row leads (09 § 6), by its type (the player's and the technical
+ * types never overlap). A technical alert leads to the admin screen that
+ * shows it (`adminHref`: `adminSectionHref` from shell-constants); an
+ * announcement, and the rest, show in full here (null).
  */
 export function hrefOf(
-  notification: { type: string; category: NotificationCategory },
+  type: string,
   adminHref: (section: AdminSectionKey) => string,
 ): string | null {
-  if (notification.category === "technical") {
-    const section = ADMIN_SECTION_OF[notification.type];
-    return section ? adminHref(section) : null;
-  }
-  return PLAYER_HREFS[notification.type] ?? null;
+  const section = ADMIN_SECTION_OF[type];
+  return section ? adminHref(section) : (PLAYER_HREFS[type] ?? null);
 }
 
 /** The badge's count and when this browser read it (Date.now()). */
