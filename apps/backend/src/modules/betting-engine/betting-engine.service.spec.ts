@@ -442,6 +442,93 @@ describe('BettingEngineService', () => {
     }
   });
 
+  it('takes its probabilities from the market grid when Pinnacle prices a 1X2 and a total line', async () => {
+    const snapshotAt = new Date('2023-01-01T10:00:00.000Z');
+    const row = (market: Market, pick: string | null, odds: string | null) => ({
+      fixtureId: 'fixture-id',
+      bookmaker: 'Pinnacle',
+      market,
+      pick,
+      odds: odds === null ? null : new Decimal(odds),
+      snapshotAt,
+      homeOdds: pick === null ? new Decimal('2.10') : null,
+      drawOdds: pick === null ? new Decimal('3.40') : null,
+      awayOdds: pick === null ? new Decimal('3.70') : null,
+    });
+    const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
+    const service = new BettingEngineService(
+      makePrismaMock({
+        modelRun: { create: createModelRun },
+        oddsSnapshot: {
+          findMany: vi
+            .fn()
+            .mockResolvedValue([
+              row(Market.ONE_X_TWO, null, null),
+              row(Market.OVER_UNDER, 'OVER', '2.02'),
+              row(Market.OVER_UNDER, 'UNDER', '1.88'),
+            ]),
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+      }),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+
+    await service.analyzeFixture('fixture-id');
+
+    const features = createModelRun.mock.calls[0]?.[0]?.data?.features as {
+      predictionSource: string;
+      market_grid: { status: string; bookmaker: string; rmse: number };
+      probabilities: { home: number; draw: number; away: number };
+      statsProbabilities: { home: number } | null;
+      lambdaHome: number;
+      statsLambdaHome: number;
+    };
+    expect(features.predictionSource).toBe('MARKET_GRID');
+    expect(features.market_grid).toMatchObject({
+      status: 'ok',
+      bookmaker: 'Pinnacle',
+    });
+    expect(features.market_grid.rmse).toBeLessThan(0.02);
+    // The book's fair 1X2 (Shin), not the statistics engine's.
+    const booksum = 1 / 2.1 + 1 / 3.4 + 1 / 3.7;
+    expect(features.probabilities.home).toBeGreaterThan(1 / 2.1 / booksum);
+    expect(features.probabilities.home).toBeLessThan(1 / 2.1);
+    expect(
+      features.probabilities.home +
+        features.probabilities.draw +
+        features.probabilities.away,
+    ).toBeCloseTo(1, 6);
+    expect(features.statsProbabilities).not.toBeNull();
+    expect(features.lambdaHome).not.toBe(features.statsLambdaHome);
+  });
+
+  it('falls back to the statistics engine without a sharp total-goals line', async () => {
+    const createModelRun = vi.fn().mockResolvedValue({ id: 'run-id' });
+    const service = new BettingEngineService(
+      makePrismaMock({ modelRun: { create: createModelRun } }),
+      makeH2hServiceMock(),
+      makeCongestionServiceMock(),
+    );
+
+    await service.analyzeFixture('fixture-id');
+
+    const features = createModelRun.mock.calls[0]?.[0]?.data?.features as {
+      predictionSource: string;
+      market_grid: { status: string; reason: string };
+      statsProbabilities: unknown;
+      lambdaHome: number;
+      statsLambdaHome: number;
+    };
+    expect(features.predictionSource).toBe('POISSON_MAIN');
+    expect(features.market_grid).toMatchObject({
+      status: 'unavailable',
+      reason: 'no_sharp_quotes',
+    });
+    expect(features.statsProbabilities).toBeNull();
+    expect(features.lambdaHome).toBe(features.statsLambdaHome);
+  });
+
   it('skips analysis when team stats are missing', async () => {
     const prismaMock = {
       client: {

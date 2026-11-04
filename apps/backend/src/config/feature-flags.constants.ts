@@ -19,5 +19,10 @@ export const FEATURE_FLAGS = {
     // with our λ, never consumed by scoring. ~1 request per analysis pass.
     // Decided, in code since ENV-PROD § 6 (was SHADOW_PREDICTIONS_ENABLED).
     SHADOW_PREDICTIONS: true,
+    // Lot ML-1: probabilities from the score grid implied by the sharp book
+    // (Pinnacle, Bet365 otherwise) when it prices a 1X2 and a total-goals
+    // line; the statistics engine is the fallback
+    // (docs/audits/2026-11-04/ML1-GRILLE-MARCHE.md).
+    MARKET_GRID: true,
   },
 } as const;

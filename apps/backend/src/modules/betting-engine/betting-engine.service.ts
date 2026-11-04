@@ -82,7 +82,11 @@ import {
   applyH2HMarketSignalCorrection,
   applyCongestionSignalCorrection,
 } from './math/probability';
-import { getLeagueThreeWayEmpiricalBlendWeight } from '@evcore/analysis-core';
+import {
+  computeMarketGrid,
+  getLeagueThreeWayEmpiricalBlendWeight,
+  summarizeMarketGrid,
+} from '@evcore/analysis-core';
 import { getPickOdds } from './pricing/odds-mapping';
 import {
   summarizeEvaluatedPicks,
@@ -644,7 +648,6 @@ export class BettingEngineService {
     }
 
     const weights = await this.getEffectiveWeights();
-    const predictionSource: PredictionSource = 'POISSON_MAIN';
     const {
       features,
       deterministicScore,
@@ -723,7 +726,7 @@ export class BettingEngineService {
 
     const h2hCorrectionApplied =
       FEATURE_FLAGS.SCORING.H2H && shadowH2h !== null;
-    const lambda = h2hCorrectionApplied
+    const statsLambda = h2hCorrectionApplied
       ? adjustLambdaForH2H({
           lambda: baselineLambda,
           favoriteIsHome,
@@ -733,7 +736,7 @@ export class BettingEngineService {
       : baselineLambda;
     const preMarketSignalProbabilities = h2hCorrectionApplied
       ? this.probabilitiesFromLambda({
-          lambda,
+          lambda: statsLambda,
           homeStats: effectiveHomeStats,
           awayStats: effectiveAwayStats,
           competitionCode,
@@ -751,9 +754,32 @@ export class BettingEngineService {
         )
       : preMarketSignalProbabilities;
     const congestionCorrectionApplied = FEATURE_FLAGS.SCORING.CONGESTION;
-    const probabilities = congestionCorrectionApplied
+    const statsProbabilities = congestionCorrectionApplied
       ? applyCongestionSignalCorrection(postH2hProbabilities, shadowCongestion)
       : postH2hProbabilities;
+
+    // Market grid (lot ML-1, docs/audits/2026-11-04/ML1-GRILLE-MARCHE.md):
+    // when a sharp book prices a complete 1X2 and a total-goals line, the
+    // probabilities and λ come from the score grid its prices imply (Shin,
+    // fitted λ); the statistics engine above stays the fallback and still
+    // gives the deterministic score. The channels read the same shape.
+    const oddsCutoff = new Date(
+      Math.min(Date.now(), fixture.scheduledAt.getTime()),
+    );
+    const marketGrid = FEATURE_FLAGS.SCORING.MARKET_GRID
+      ? computeMarketGrid(
+          await this.oddsLoader.findMarketGridRows(fixtureId, oddsCutoff),
+          oddsCutoff,
+        )
+      : null;
+    const gridFit = marketGrid?.status === 'ok' ? marketGrid : null;
+    const predictionSource: PredictionSource = gridFit
+      ? 'MARKET_GRID'
+      : 'POISSON_MAIN';
+    const probabilities = gridFit ? gridFit.probabilities : statsProbabilities;
+    const lambda = gridFit
+      ? { home: gridFit.fit.lambdaHome, away: gridFit.fit.lambdaAway }
+      : statsLambda;
 
     const lambdaFloorHit =
       lambda.home <= MIN_LAMBDA + Number.EPSILON ||
@@ -790,9 +816,6 @@ export class BettingEngineService {
       distHome.reduce((sum, p, k) => sum + k * p, 0) +
       distAway.reduce((sum, p, k) => sum + k * p, 0);
 
-    const oddsCutoff = new Date(
-      Math.min(Date.now(), fixture.scheduledAt.getTime()),
-    );
     const [latestOdds, activeSuspensions] = await Promise.all([
       this.oddsLoader.findLatestOddsSnapshot(fixtureId, oddsCutoff),
       this.prisma.client.marketSuspension.findMany({
@@ -1072,6 +1095,14 @@ export class BettingEngineService {
     const modelRunFeatures: Record<string, unknown> = {
       engineConfigVersion: BETTING_ENGINE_CONFIG_VERSION,
       predictionSource,
+      market_grid: marketGrid ? summarizeMarketGrid(marketGrid) : null,
+      // The statistics engine's own output, kept when the grid replaces it
+      // so the two stay comparable fixture by fixture.
+      statsLambdaHome: statsLambda.home,
+      statsLambdaAway: statsLambda.away,
+      statsProbabilities: gridFit
+        ? mapProbabilitiesToNumber(statsProbabilities)
+        : null,
       recentForm: features.recentForm.toNumber(),
       xg: features.xg.toNumber(),
       performanceDomExt: features.domExtPerf.toNumber(),

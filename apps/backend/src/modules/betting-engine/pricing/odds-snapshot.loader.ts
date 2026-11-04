@@ -3,6 +3,8 @@ import { Market, OddsSnapshotSource, Prisma } from '@evcore/db';
 import Decimal from 'decimal.js';
 import {
   assembleFullOddsSnapshot,
+  MARKET_GRID_BOOKMAKERS,
+  MARKET_GRID_MARKETS,
   OVER_UNDER_PICKS,
   STAT_SETTLED_MARKETS,
   type RawOddsRow,
@@ -104,6 +106,37 @@ export class OddsSnapshotLoader {
       );
     }
     return result;
+  }
+
+  /**
+   * The market grid's input rows (lot ML-1): every PREMATCH row of the
+   * grid books (MARKET_GRID_BOOKMAKERS) on the 1X2 and the two-way goal
+   * lines, captured and priced before `cutoff`. computeMarketGrid
+   * (@evcore/analysis-core) picks the book and the latest row per pick.
+   */
+  async findMarketGridRows(
+    fixtureId: string,
+    cutoff: Date,
+  ): Promise<RawOddsRow[]> {
+    return this.prisma.client.oddsSnapshot.findMany({
+      where: {
+        fixtureId,
+        bookmaker: { in: [...MARKET_GRID_BOOKMAKERS] },
+        market: { in: [...MARKET_GRID_MARKETS] },
+        line: null,
+        ...pointInTimeOddsWhere(cutoff),
+      },
+      select: {
+        bookmaker: true,
+        market: true,
+        pick: true,
+        odds: true,
+        snapshotAt: true,
+        homeOdds: true,
+        drawOdds: true,
+        awayOdds: true,
+      },
+    });
   }
 
   async findLatestOneXTwoOddsSnapshotByBookmaker(
