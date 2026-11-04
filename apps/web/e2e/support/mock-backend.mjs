@@ -2616,7 +2616,22 @@ function route(method, url, cookie = "") {
   // évaluées de la première rencontre de FIXTURE_ROWS.
   const sheetMatch = path.match(/^\/fixture\/([^/]+)\/sheet$/);
   if (sheetMatch) {
-    const group = MATCH_DECISIONS.find((m) => m.fixtureId === sheetMatch[1]);
+    // A match of the Matchs list has its analysis too: the stethoscope of
+    // its sheet leads there (navigation.spec.ts).
+    const listed = matchSheet(sheetMatch[1]);
+    const group =
+      MATCH_DECISIONS.find((m) => m.fixtureId === sheetMatch[1]) ??
+      (listed
+        ? {
+            fixtureId: listed.fixtureId,
+            homeTeam: listed.home.name,
+            awayTeam: listed.away.name,
+            competitionName: listed.competition.name,
+            country: null,
+            scheduledAt: listed.kickoffAt,
+            score: null,
+          }
+        : undefined);
     if (!group) return [404, { message: "Match introuvable" }];
     const base = FIXTURE_ROWS[0];
     return [
