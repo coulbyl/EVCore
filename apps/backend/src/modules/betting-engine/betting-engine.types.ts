@@ -32,6 +32,9 @@ export type MatchComputation = {
   rawProbabilities: MatchProbabilities;
   lambda: { home: number; away: number };
   features: MatchupFeatures;
+  // League-strength factors applied to λ (European fixtures between two
+  // leagues); null when none applied.
+  crossLeagueFactors: { home: number; away: number } | null;
 };
 
 export type { DeterministicFeatures };

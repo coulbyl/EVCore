@@ -197,11 +197,8 @@ export class BettingEngineService {
       features,
       weights,
     );
-    const lambda = deriveLambdas(
-      homeStats,
-      awayStats,
-      buildLambdaConfig(competitionCode, leagues),
-    );
+    const lambdaConfig = buildLambdaConfig(competitionCode, leagues);
+    const lambda = deriveLambdas(homeStats, awayStats, lambdaConfig);
     // 1X2: empirical blend toward team win/draw rates. O/U: shrinkage toward
     // the league base rate for data-poor leagues where the measured
     // calibration slope is near zero (see probability/ou-shrinkage.ts).
@@ -222,6 +219,7 @@ export class BettingEngineService {
       rawProbabilities,
       lambda,
       features,
+      crossLeagueFactors: lambdaConfig.crossLeagueFactors ?? null,
     };
   }
 
@@ -655,6 +653,7 @@ export class BettingEngineService {
       lambda: baselineLambda,
       probabilities: baselineProbabilities,
       rawProbabilities,
+      crossLeagueFactors,
     } = this.computeFromTeamStats({
       homeStats: effectiveHomeStats,
       awayStats: effectiveAwayStats,
@@ -1111,8 +1110,7 @@ export class BettingEngineService {
           : {
               homeLeague: leagues.home,
               awayLeague: leagues.away,
-              ...(buildLambdaConfig(competitionCode, leagues)
-                .crossLeagueFactors ?? { home: 1, away: 1 }),
+              ...(crossLeagueFactors ?? { home: 1, away: 1 }),
             },
       shadow_lineups: null,
       shadow_injuries: null,

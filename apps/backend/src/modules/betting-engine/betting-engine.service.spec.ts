@@ -816,6 +816,7 @@ describe('BettingEngineService', () => {
       makeChannelDecisionServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
+      crossLeagueFactors: null,
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.4, away: 1.1 },
       probabilities: makeMockProbabilities(),
@@ -934,6 +935,7 @@ describe('BettingEngineService', () => {
       makeCongestionServiceMock(),
     );
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
+      crossLeagueFactors: null,
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.4, away: 1.1 },
       probabilities: makeMockProbabilities(),
@@ -1061,6 +1063,7 @@ describe('BettingEngineService', () => {
       resultBtts: {},
     };
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
+      crossLeagueFactors: null,
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.0, away: 1.7 },
       probabilities: probabilities1423,
@@ -1188,6 +1191,7 @@ describe('BettingEngineService', () => {
       resultBtts: {},
     };
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
+      crossLeagueFactors: null,
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.2, away: 1.2 },
       probabilities: probabilities1537,
@@ -1603,6 +1607,7 @@ describe('BettingEngineService', () => {
       resultBtts: {},
     };
     vi.spyOn(service, 'computeFromTeamStats').mockReturnValue({
+      crossLeagueFactors: null,
       deterministicScore: new Decimal('0.7'),
       lambda: { home: 1.4, away: 1.1 },
       probabilities: probabilities1948,
