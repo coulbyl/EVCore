@@ -147,7 +147,7 @@ export class MatchSheetService {
       historyRows,
       rejectionReasons,
       events,
-      marketRows,
+      { marketRows, playerNames },
       facts,
     ] = await Promise.all([
       this.repository.findReadingCandidates({
@@ -168,14 +168,21 @@ export class MatchSheetService {
       finished
         ? this.fixtureEvents.findSheetEvents(fixtureId)
         : Promise.resolve([]),
-      this.playableOdds.findMarketPrices({
-        fixtureId,
-        markets: SHEET_NEW_MARKETS,
-        kickoff,
-        since: new Date(
-          kickoff.getTime() - SHEET_PRICES_LOOKBACK_DAYS * DAY_MS,
-        ),
-      }),
+      this.playableOdds
+        .findMarketPrices({
+          fixtureId,
+          markets: SHEET_NEW_MARKETS,
+          kickoff,
+          since: new Date(
+            kickoff.getTime() - SHEET_PRICES_LOOKBACK_DAYS * DAY_MS,
+          ),
+        })
+        .then(async (rows) => ({
+          marketRows: rows,
+          playerNames: await this.squads.findDisplayNames(
+            pricedPlayerIds(rows),
+          ),
+        })),
       finished
         ? this.matchFacts
             .findFacts([fixtureId])
@@ -183,19 +190,16 @@ export class MatchSheetService {
         : Promise.resolve(null),
     ]);
     const ai = aiRows.find((row) => row.status === 'SELECTED' && row.market);
-    const [quotes, playerNames] = await Promise.all([
-      this.playableOdds.findPlayableQuotes(
-        [
-          ...SHEET_MAIN_LINES.map((line) => ({ fixtureId, ...line })),
-          ...uniqueKeys(candidates),
-          ...(ai?.market && ai.pick
-            ? [{ fixtureId, market: ai.market, pick: ai.pick }]
-            : []),
-        ],
-        { operatorOnly: true },
-      ),
-      this.squads.findDisplayNames(pricedPlayerIds(marketRows)),
-    ]);
+    const quotes = await this.playableOdds.findPlayableQuotes(
+      [
+        ...SHEET_MAIN_LINES.map((line) => ({ fixtureId, ...line })),
+        ...uniqueKeys(candidates),
+        ...(ai?.market && ai.pick
+          ? [{ fixtureId, market: ai.market, pick: ai.pick }]
+          : []),
+      ],
+      { operatorOnly: true },
+    );
     return {
       header,
       candidates,
