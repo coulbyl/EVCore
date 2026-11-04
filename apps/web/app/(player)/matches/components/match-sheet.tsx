@@ -77,7 +77,7 @@ export async function MatchSheetView({ id }: { id: string }) {
           t={t}
           locale={display}
           timeZone={timeZone}
-          diagnosticHref={
+          analysisHref={
             signedIn ? `/matches/${sheet.fixtureId}/analysis` : null
           }
         />
@@ -195,14 +195,14 @@ function SheetHeader({
   t,
   locale,
   timeZone,
-  diagnosticHref,
+  analysisHref,
 }: {
   sheet: MatchSheet;
   t: Translate;
   locale: DisplayLocale;
   timeZone: string;
   /** Signed-in players: the match's analysis. */
-  diagnosticHref: string | null;
+  analysisHref: string | null;
 }) {
   const status =
     sheet.state === "live"
@@ -222,10 +222,10 @@ function SheetHeader({
         <span>{sheet.competition.name}</span>
         <span className="flex items-center gap-2">
           {status ? <span className="score">{status}</span> : null}
-          {diagnosticHref ? (
+          {analysisHref ? (
             <Link
-              href={diagnosticHref}
-              aria-label={t("diagnostic")}
+              href={analysisHref}
+              aria-label={t("analysis")}
               className="flex size-8 items-center justify-center rounded-full text-band-muted hover:text-band-foreground focus-visible:outline-2 focus-visible:outline-led-on"
             >
               <Stethoscope aria-hidden className="size-4" strokeWidth={2} />

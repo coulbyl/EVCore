@@ -377,7 +377,7 @@
         "suspended": "No reading · this market is suspended on our side",
         "not_sure": "No reading · no chance sure enough"
       },
-      "diagnostic": "Match analysis"
+      "analysis": "Match analysis"
     },
     "played": "{count, plural, one {# match already played} other {# matches already played}}",
     "bigOnly": "Big leagues"

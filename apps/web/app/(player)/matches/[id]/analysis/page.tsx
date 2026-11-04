@@ -12,6 +12,7 @@ import type {
   FixtureSheet,
 } from "@/domains/fixture/types/fixture";
 import { formatMarketForDisplay, formatPickWithTeams } from "@/helpers/fixture";
+import { displayLocaleOf } from "@/helpers/scoreboard-format";
 import { serverApiRequest } from "@/lib/api/server-api";
 import { translateCountry } from "@/lib/competition-i18n";
 import { formatOddsValue, frequencyOf } from "@/lib/frequency";
@@ -55,12 +56,11 @@ export default async function Page({
   const sheet = await loadSheet(id);
   if (!sheet) notFound();
 
-  const locale = await getLocale();
-  const loc = locale === "en" ? "en" : "fr";
+  const display = displayLocaleOf(await getLocale());
   const teams = { home: sheet.homeTeam, away: sheet.awayTeam };
   const run = sheet.modelRun;
   const kickoff = new Date(sheet.scheduledAt).toLocaleString(
-    locale === "en" ? "en-GB" : "fr-FR",
+    display === "en" ? "en-GB" : "fr-FR",
     {
       weekday: "long",
       day: "numeric",
@@ -123,7 +123,7 @@ export default async function Page({
           sheet.score ? ` · ${sheet.score.replace(" - ", "–")}` : ""
         }`}
         subtitle={`${sheet.competition}${
-          sheet.country ? ` · ${translateCountry(sheet.country, locale)}` : ""
+          sheet.country ? ` · ${translateCountry(sheet.country, display)}` : ""
         } · ${kickoff}`}
         back={{ href: `/matches/${id}`, label: t("back") }}
       />
@@ -187,7 +187,7 @@ export default async function Page({
                     className="group"
                   >
                     <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 text-body font-medium">
-                      {formatMarketForDisplay(market, loc)} ({picks.length})
+                      {formatMarketForDisplay(market, display)} ({picks.length})
                       <ChevronDown
                         aria-hidden
                         className="size-4 text-icon-subtle transition-transform group-open:rotate-180"
@@ -209,7 +209,7 @@ export default async function Page({
                                   pick.marketProbability ?? pick.probability,
                                 ),
                               ),
-                              odds: formatOddsValue(Number(pick.odds), locale),
+                              odds: formatOddsValue(Number(pick.odds), display),
                               motive: motive(pick.rejectionReason),
                             })}
                           </span>
