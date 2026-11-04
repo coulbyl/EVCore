@@ -1,6 +1,6 @@
 # Plan de backtest — VALUE et extension de SAFE_MARKETS sur les nouveaux marchés
 
-> Suite de `docs/market-coverage-expansion.md` et de l'incident de production
+> Suite de `docs/archive/market-coverage-expansion.md` et de l'incident de production
 > du 2026-07-19 (`ValueStrategy` rejetait ses propres sélections sur
 > `TEAM_TOTAL_HOME`, corrigé — voir historique git). Ce document couvre
 > **deux questions distinctes** :

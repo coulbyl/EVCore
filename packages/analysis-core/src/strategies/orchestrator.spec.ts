@@ -118,7 +118,7 @@ function makeContext(
     } as unknown as MatchProbabilities,
     // No longer read by any strategy (VALUE/SAFE moved to Phase 2 on
     // 2026-08-18, filtering previousDecisions instead) — kept only because
-    // StrategyContext still declares the field. TODO.md: candidate for
+    // StrategyContext still declares the field. docs/archive/TODO-2026-10.md: candidate for
     // removal.
     evaluatedMarkets: [],
     odds: BASE_ODDS,

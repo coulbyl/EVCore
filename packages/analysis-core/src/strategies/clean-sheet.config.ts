@@ -3,7 +3,7 @@ import type { ChannelStrategyLeagueConfig } from "./channel-strategy-config.type
 // CLEAN_SHEET / WIN_EITHER_HALF — new channels (2026-07-18). No historical
 // odds coverage exists for either market (odds-historical-import.worker.ts
 // stub; The Odds API's standard /odds endpoint 422s even on BTTS/DNB, let
-// alone these — see docs/market-coverage-expansion.md) — only the forward
+// alone these — see docs/archive/market-coverage-expansion.md) — only the forward
 // PREMATCH sync (API-Football) collects real prices, starting 2026-07-18.
 // So there is no ROI/hit-rate backtest to run yet (unlike DOMINANT/DRAW/BTTS
 // above). Enabled in OBSERVATION mode instead, same methodology as

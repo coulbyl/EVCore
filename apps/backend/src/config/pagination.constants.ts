@@ -1,4 +1,4 @@
-// defaultLimit raised to maxLimit 2026-09-04 (TODO.md "page Matchs 2-3x plus
+// defaultLimit raised to maxLimit 2026-09-04 (docs/archive/TODO-2026-10.md "page Matchs 2-3x plus
 // lente") — each page's fixture→modelRuns→bets→channelSelection→
 // channelDecision select can't collapse into a single JOIN (Prisma issues
 // several batched queries per page for a filtered/take-limited nested

@@ -9,7 +9,7 @@
  *
  * Contexte (2026-08-19) : `OU_SHRINKAGE_CONFIG.factor`/`baseRates` (les 4
  * lignes O/U) datent du tout premier passage de calibration (2026-07-03,
- * docs/data-poor-leagues-calibration.md) — jamais réévalué avec le
+ * docs/archive/data-poor-leagues-calibration.md) — jamais réévalué avec le
  * protocole à deux hypothèses affiné cette session pour TEAM_TOTAL/
  * CLEAN_SHEET/BTTS. Contrairement à TEAM_TOTAL (un facteur par ligne),
  * shrinkOverUnderProbabilities applique UN SEUL facteur aux 4 lignes d'une

@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions — EVCore
 
-EVCore is an autonomous sports betting engine based on Expected Value (EV) mathematics. Read `EVCORE.md` for the full specification and `CLAUDE.md` for coding conventions.
+EVCore is an autonomous sports betting engine based on Expected Value (EV) mathematics. Read `docs/archive/EVCORE-spec-v1.md` for the full specification and `CLAUDE.md` for coding conventions.
 
 ## Stack
 

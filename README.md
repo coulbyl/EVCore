@@ -189,9 +189,9 @@ CORS_ORIGIN=https://c-evcore.com
 
 | File                                                | Purpose                                                       |
 | --------------------------------------------------- | ------------------------------------------------------------- |
-| [EVCORE.md](EVCORE.md)                              | Full product specification — architecture, model, constraints |
+| [docs/archive/EVCORE-spec-v1.md](docs/archive/EVCORE-spec-v1.md)                              | Full product specification — architecture, model, constraints |
 | [ROADMAP.md](ROADMAP.md)                            | Implementation roadmap — phase-by-phase checklist             |
-| [TODO.md](TODO.md)                                  | Current work plan and upcoming blocs                          |
+| [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md)                                  | Current work plan and upcoming blocs                          |
 | [OPENCLAW.md](OPENCLAW.md)                          | OpenClaw policy — stand-by post-prod + activation criteria    |
 | [GRAFANA.md](GRAFANA.md)                            | Grafana policy — stand-by post-prod + activation criteria     |
 | [CLAUDE.md](CLAUDE.md)                              | AI coding conventions (Claude Code)                           |

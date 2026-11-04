@@ -8,7 +8,7 @@ import {
 
 // Moved from apps/backend/src/modules/coupon/coupon.constants.ts 2026-09-03 —
 // pure channel-eligibility data needed by apps/vantage-worker's own coupon
-// pool query too (see docs/vantage-centric-redesign-2026-09-01.md §9bis).
+// pool query too (see docs/archive/vantage-centric-redesign-2026-09-01.md §9bis).
 
 // Channels allowed to contribute a leg to the real coupon pool.
 //

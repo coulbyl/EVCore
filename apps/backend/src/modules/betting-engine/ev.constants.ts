@@ -388,7 +388,7 @@ export const MIN_SELECTION_ODDS = LEAGUE_MIN_SELECTION_ODDS_DEFAULT;
 // Computed from DB team_stats (April 2026, 7 leagues, includeInBacktest = true).
 export const LAMBDA_SHRINKAGE_FACTOR = 0.7;
 
-// H2H v2.0 lambda-adjustment coefficient (docs/h2h-service-v2-plan.md §4,
+// H2H v2.0 lambda-adjustment coefficient (docs/archive/h2h-service-v2-plan.md §4,
 // scope large — shifts lambdaHome/lambdaAway toward the H2H-dominant side
 // before Poisson markets are computed, so every derived market stays
 // internally consistent). gamma=0.20 is the train-optimal value from

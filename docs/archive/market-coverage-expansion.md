@@ -129,7 +129,7 @@ les buts et le résultat — exactement ce que la matrice de scores Poisson
 (lambdas home/away) sait déjà produire (`P(Home)`, `P(Draw)`, `P(Away)`,
 `P(Over X.5)`, `P(BTTS)`). Pas besoin de nouvelle feature, juste de la
 probabilité jointe déjà calculable comme pour les combos EVCore existants
-(cf. `EVCORE.md` — "un pick peut combiner deux marchés si la probabilité
+(cf. `docs/archive/EVCORE-spec-v1.md` — "un pick peut combiner deux marchés si la probabilité
 jointe est calculable depuis le modèle de Poisson").
 
 - [x] **Result/Total Goals** — `bet.id = 25` (ex. "Home & Over 2.5",
@@ -157,7 +157,7 @@ corrélation, pas d'une indépendance supposée).
 ## Niveau 3 — intéressants mais hors scope court terme
 
 Ces marchés existent bien chez API-Football et ont du volume, mais **le
-moteur EVCore est un modèle Poisson sur les buts** (`EVCORE.md` — lambdas
+moteur EVCore est un modèle Poisson sur les buts** (`docs/archive/EVCORE-spec-v1.md` — lambdas
 home/away) : aucun d'eux n'est modélisable sans une nouvelle couche de
 features (corners par match, cartons par arbitre/équipe, etc.). À ne
 considérer qu'après une extension du modèle, pas comme un simple ajout

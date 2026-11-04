@@ -188,7 +188,7 @@ const MIN_CALIBRATION_SAMPLE = 30;
  * calibration audit names another (market, pick) as measured bad, same
  * discipline as shadow-ml's DOMINANT/VALUE-only allowlist (types.ts).
  *
- * Audit 2026-09-03 (docs/vantage-centric-redesign-2026-09-01.md §5.8):
+ * Audit 2026-09-03 (docs/archive/vantage-centric-redesign-2026-09-01.md §5.8):
  * ONE_X_TWO/DRAW was VANTAGE's single most-played pick (35% of its
  * "play" volume) despite ratio 0.77 — the prompt already surfaces the
  * calibration number as context (prompt.ts), but a number in a prompt is

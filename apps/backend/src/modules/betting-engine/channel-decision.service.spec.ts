@@ -48,7 +48,7 @@ const ODDS: FullOddsSnapshot = {
 function richContext(): StrategyContext {
   // No longer read by VALUE/SAFE (Phase 2 since 2026-08-18, filtering
   // previousDecisions instead of evaluatedMarkets) — kept only because
-  // buildStrategyContext still requires evaluatedPicks. TODO.md: candidate
+  // buildStrategyContext still requires evaluatedPicks. docs/archive/TODO-2026-10.md: candidate
   // for removal alongside evaluatedMarkets.
   const evPick: EvaluatedPick = {
     market: Market.ONE_X_TWO,

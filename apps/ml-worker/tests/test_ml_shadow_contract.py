@@ -1,4 +1,4 @@
-"""Anti-drift guard (docs/ml-worker-sync.md §"garde-fou").
+"""Anti-drift guard (docs/archive/ml-worker-sync.md §"garde-fou").
 
 extract.py (this package) and ml-features.ts (packages/analysis-core, the TS
 producer) must classify competition codes identically, and train.py's

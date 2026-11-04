@@ -133,7 +133,7 @@ export function isRetryableProviderError(err: unknown): boolean {
 }
 
 /** Raw completion call — the caller owns Zod validation of the result.
- * `temperature: 0` per EVCORE.md §14.3 (reproducibility guardrail): every
+ * `temperature: 0` per docs/archive/EVCORE-spec-v1.md §14.3 (reproducibility guardrail): every
  * VANTAGE call must be replayable from its logged input.
  *
  * Tries `clients.primary` first, then each fallback in order, only moving

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
  * Calibration walk-forward de TEAM_TOTAL_HOME/AWAY — même protocole que
- * OU_SHRINKAGE_CONFIG pour l'O/U plein temps (docs/data-poor-leagues-calibration.md) :
+ * OU_SHRINKAGE_CONFIG pour l'O/U plein temps (docs/archive/data-poor-leagues-calibration.md) :
  * régresser la probabilité Poisson brute sur l'issue réelle par ligue+ligne,
  * valider hors échantillon (train = toutes saisons sauf la plus récente ;
  * test = la plus récente), ne livrer un bloc que si le Brier tenu-à-l'écart

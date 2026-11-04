@@ -4,7 +4,7 @@
  * AWAY_DISADVANTAGE_LAMBDA_FACTOR (apps/backend/.../ev.constants.ts).
  *
  * Motivation : le backtest de calibration des nouveaux marchés
- * (docs/new-markets-calibration-backtest.md) a mis en évidence un biais
+ * (docs/archive/new-markets-calibration-backtest.md) a mis en évidence un biais
  * systématique HOME sous-estimé / AWAY sur-estimé sur les 10 nouveaux
  * marchés, confirmé aussi sur ONE_X_TWO en prod (picks SELECTED : AWAY
  * prédit 63.1% / réel 51.1%). Ce script cherche la paire

@@ -107,7 +107,7 @@ pnpm --filter backend test      # Vitest unit tests (backend)
 
 ## 📖 Key Documentation
 
-- `EVCORE.md`: Full product and architectural specification.
+- `docs/archive/EVCORE-spec-v1.md`: Full product and architectural specification.
 - `ROADMAP.md`: Current implementation status and phase checklist.
 - `CLAUDE.md`: AI-specific coding conventions and hard constraints.
 - `AGENTS.md`: Specific instructions for AI agents regarding secrets and documentation.

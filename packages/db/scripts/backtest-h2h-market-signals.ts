@@ -1,6 +1,6 @@
 /// <reference types="node" />
 /**
- * docs/h2h-service-v2-plan.md §3.3 (v2.2) — le point le plus structurant du
+ * docs/archive/h2h-service-v2-plan.md §3.3 (v2.2) — le point le plus structurant du
  * plan : un H2H "complet" doit couvrir les marchés qu'EVCore trade
  * réellement (BTTS, OVER 2.5, CLEAN SHEET, WIN TO NIL), pas seulement le
  * résultat 1X2 (déjà activé en prod via l'ajustement lambda, v2.0/§4).
@@ -50,7 +50,7 @@ const DELTA_GRID: number[] = Array.from(
   { length: 25 },
   (_, i) => Math.round((-0.6 + i * 0.05) * 100) / 100,
 );
-const MIN_MARKET_SAMPLE = 200; // docs/h2h-integration-evaluation.md — "Evaluation initiale"
+const MIN_MARKET_SAMPLE = 200; // docs/archive/h2h-integration-evaluation.md — "Evaluation initiale"
 
 type FixtureRow = {
   id: string;

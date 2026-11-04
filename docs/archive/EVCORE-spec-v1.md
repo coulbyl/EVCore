@@ -142,7 +142,7 @@ soient pas des doublons de Phase 1), non validée à ce jour.
 
 Les seuils des canaux de prédiction sont configurés par ligue dans `prediction.constants.ts` et calibrés par backtest avant activation. Le canal DRAW utilise la probabilité implicite bookmaker (`1/drawOdds`) comme signal principal — le modèle Poisson est un mauvais discriminateur de nul (plafond structurel ~0.32). CLEAN_SHEET, TEAM_TOTAL et WIN_EITHER_HALF ont été ajoutés le 2026-07-18 : entièrement câblés (moteur, settlement, UI). Aucune cote historique n'existe pour ces marchés (uniquement la sync PREMATCH forward, démarrée le même jour), donc pas de vrai backtest ROI possible — les trois tournent en **OBSERVATION** avec un seuil dérivé du taux de base réel par ligue (jamais misé, même méthodologie que GOALS ; TEAM_TOTAL doublé sur la dimension équipe, avec exclusion des lignes quasi-certaines > 90% de base rate).
 
-CORRECT_SCORE (2026-06-30) et les 8 canaux ajoutés le 2026-08-16 (RESULT_TOTAL_GOALS, OVER_UNDER_HT, RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, DOUBLE_CHANCE, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME) complètent la couverture de l'enum `Market` — chaque marché a désormais un canal de prédiction dédié plutôt que de dépendre uniquement de la sélection opportuniste d'EV. ⚠️ **Périmètre de staking réécrit le 2026-08-22.** Le pool de coupon ne part plus d'une liste positive de canaux stakés : il prend tout canal non-méta et non-filtre (`POOL_EXCLUDED_CHANNELS` ne retire que CONSENSUS/CONTRARIAN/AVOID et VALUE/SAFE). L'admission se juge sur la **calibration** — ratio réalisé/annoncé — et non sur le ROI, qui n'a aucune puissance statistique à ces volumes. Les restrictions par ligue qui subsistent (`DRAW_STAKED_LEAGUES`, `BTTS_STAKED_LEAGUES`) sont documentées à leur point de définition, avec pour BTTS un risque ouvert consigné dans TODO.md.
+CORRECT_SCORE (2026-06-30) et les 8 canaux ajoutés le 2026-08-16 (RESULT_TOTAL_GOALS, OVER_UNDER_HT, RESULT_BTTS, DRAW_NO_BET, WIN_TO_NIL, DOUBLE_CHANCE, FIRST_HALF_WINNER, HALF_TIME_FULL_TIME) complètent la couverture de l'enum `Market` — chaque marché a désormais un canal de prédiction dédié plutôt que de dépendre uniquement de la sélection opportuniste d'EV. ⚠️ **Périmètre de staking réécrit le 2026-08-22.** Le pool de coupon ne part plus d'une liste positive de canaux stakés : il prend tout canal non-méta et non-filtre (`POOL_EXCLUDED_CHANNELS` ne retire que CONSENSUS/CONTRARIAN/AVOID et VALUE/SAFE). L'admission se juge sur la **calibration** — ratio réalisé/annoncé — et non sur le ROI, qui n'a aucune puissance statistique à ces volumes. Les restrictions par ligue qui subsistent (`DRAW_STAKED_LEAGUES`, `BTTS_STAKED_LEAGUES`) sont documentées à leur point de définition, avec pour BTTS un risque ouvert consigné dans docs/archive/TODO-2026-10.md.
 
 Côté surface de consultation, Investir sépare les canaux dont le **ROI shrinké** (Bayes empirique) reste positif — deux sur dix-neuf au dernier relevé — de ceux en observation, et affiche à part ce que les garde-fous écartent.
 
@@ -156,7 +156,7 @@ Côté surface de consultation, Investir sépare les canaux dont le **ROI shrink
 > 2026-08-18** (orchestrateur à 3 phases). Le reste du cadrage (moteur λ
 > mi-temps dédié notamment) n'est pas implémenté. Voir
 > `docs/prediction-engine-families.md` (cadrage, portée football actuelle en
-> §0) et `docs/channel-strategy-architecture.md` (orchestration, phases mises
+> §0) et `docs/archive/channel-strategy-architecture.md` (orchestration, phases mises
 > à jour en conséquence).
 
 ---
@@ -168,7 +168,7 @@ Retiré (2026-07-18) : le système précédent combinait deux marchés synthéti
 marchés bookmaker pré-combinés — résultat × total de buts (`RESULT_TOTAL_GOALS`) et
 résultat × BTTS (`RESULT_BTTS`) — qui portent une cote réelle plutôt qu'estimée. Ce
 ne sont pas des combos à deux jambes mais des marchés à pick composé (comme
-`HALF_TIME_FULL_TIME`). Voir `docs/market-coverage-expansion.md`.
+`HALF_TIME_FULL_TIME`). Voir `docs/archive/market-coverage-expansion.md`.
 
 ### Phase 2+
 

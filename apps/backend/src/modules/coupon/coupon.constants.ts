@@ -3,7 +3,7 @@
  *
  * Source (réécrite 2026-08-09 — le fichier `backtest-selected-params.json`
  * cité ici auparavant n'existe pas dans ce repo, gap documenté dans
- * docs/formation-content-maintenance.md §5) :
+ * docs/archive/formation-content-maintenance.md §5) :
  * packages/db/scripts/backtest-coupon-params-validation.ts, rejouable via
  * `pnpm --filter @evcore/db db:backtest:coupon-params-validation`. Valide sur
  * les 403 vrais `CouponProposal` réglés depuis 2023-04-15 (pas une
@@ -49,7 +49,7 @@ import { CLOSING_LINE_POLICY } from '../betting-engine/pricing/closing-line.cons
 // DRAW_STAKED_LEAGUES/POOL_EXCLUDED_CHANNELS/POOL_ELIGIBLE_CHANNELS moved to
 // packages/analysis-core/src/coupon/pool-eligibility.ts 2026-09-03 —
 // apps/vantage-worker's own coupon pool query needs the exact same
-// channel-eligibility data (see docs/vantage-centric-redesign-2026-09-01.md
+// channel-eligibility data (see docs/archive/vantage-centric-redesign-2026-09-01.md
 // §9bis). Full history (the 2026-08-22 `bet`-read structural-blindness
 // measurement, why this isn't a quality bar) preserved in that file's doc
 // comment. Re-exported here so existing imports against './coupon.constants'
@@ -215,7 +215,7 @@ export const TEAM_TOTAL_MAX_ODDS = 2.3;
  * `MIN_LEG_PROBABILITY`. Le composeur automatique ne triait le pool candidat
  * QUE par `signalScore` (moyenne canal×jour×ligue, identique pour toutes les
  * jambes d'un même canal/ligue/jour) puis par EV sous contraintes — jamais
- * de mix délibéré ancre/valeur. `COUPON_ANALYSIS_TEMPLATE.md` (Étape 0)
+ * de mix délibéré ancre/valeur. `docs/archive/COUPON_ANALYSIS_TEMPLATE.md` (Étape 0)
  * documente que la méthode manuelle qui marche mélange TOUJOURS quelques
  * jambes-ancres (70-90%+) et quelques jambes-valeur (60-75%, meilleure cote)
  * — jamais un seul mode. `ANCHOR_MIN_PROBABILITY=0.70` reprend le bas de
@@ -228,7 +228,7 @@ export const ANCHOR_MIN_PROBABILITY = 0.7;
 // alongside resolveEvaluatedMarketLeg (its only real reader) — part of
 // making the deterministic pool logic callable from apps/vantage-worker
 // without depending on this app's NestJS layer. See
-// docs/vantage-centric-redesign-2026-09-01.md §9bis. Full history (why the
+// docs/archive/vantage-centric-redesign-2026-09-01.md §9bis. Full history (why the
 // mapping exists, why it isn't a reproduction of each channel's own
 // selection logic, why CORRECT_SCORE stays out) preserved in that file's
 // doc comment.
@@ -238,7 +238,7 @@ export const ANCHOR_MIN_PROBABILITY = 0.7;
 // packages/analysis-core/src/coupon/coupon-classes.ts 2026-09-03 —
 // apps/vantage-worker's Phase B LLM selection (one call per class) needs the
 // exact same class definitions apps/backend's retired composer used (see
-// docs/vantage-centric-redesign-2026-09-01.md §9bis). Full history (why the
+// docs/archive/vantage-centric-redesign-2026-09-01.md §9bis). Full history (why the
 // bounds/classes look the way they do, the measured ROI-by-target-odds
 // table) preserved in that file's doc comment. Re-exported here so existing
 // imports against './coupon.constants' keep resolving unchanged.

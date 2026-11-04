@@ -94,4 +94,4 @@ Ordre = récupérer la donnée d'abord, corriger le modèle ensuite, garde-fous 
 
 - Plancher d'edge & winner's curse : mémoire projet `project_value_edge_floor`.
 - Correction modèle mi-temps (même esprit « corriger la racine, pas désactiver ») : `packages/analysis-core/src/probability/poisson.ts` (`FIRST_HALF_GOAL_FRACTION`).
-- Calibration WC : `docs/wc2026-calibration.md`.
+- Calibration WC : `docs/archive/wc2026-calibration.md`.

@@ -73,7 +73,7 @@ L'orchestration multi-canaux (`packages/analysis-core/src/strategies/orchestrato
 2. **Phase 2** — filtres (`VALUE`, `SAFE`) : sélectionnent parmi les picks déjà validés par la Phase 1, sans re-scanner les marchés évalués indépendamment.
 3. **Phase 3** — méta-canaux (`CONSENSUS`, `CONTRARIAN`, `AVOID`) : lisent toutes les décisions des Phases 1 et 2, n'émettent pas de pick propre.
 
-Ce document ne détaille pas la liste des 19 canaux ni leurs règles par famille — voir `docs/prediction-engine-families.md` et `docs/channel-strategy-architecture.md` pour cette partie.
+Ce document ne détaille pas la liste des 19 canaux ni leurs règles par famille — voir `docs/prediction-engine-families.md` et `docs/archive/channel-strategy-architecture.md` pour cette partie.
 
 ## Boucle d'apprentissage (`adjustment/`)
 
@@ -115,7 +115,7 @@ Il n'existe aucun endpoint de réactivation dans le code (`marketSuspension` n'e
 | `FEATURE_FLAGS.SCORING.*`                                              | booléens (H2H, H2H_MARKET_SIGNALS, CONGESTION, ML_CORRECTION, …) | `apps/backend/src/config/feature-flags.constants.ts`                                                                         |
 | `AUTH_LOGIN_RATE_LIMIT`                                                | `5` tentatives / `60 000` ms                                     | `apps/backend/src/config/rate-limit.constants.ts`                                                                            |
 
-Écart avec `EVCORE.md`/`CLAUDE.md` à noter : le plafond de poids LLM/OpenClaw (`≤ 0.30`) est une règle produit documentée, mais aucun code du backend ne référence `OpenClaw`, un delta LLM (`llm_delta`) ou une constante de cap dédiée — le canal `VANTAGE` (LLM contextuel, en production depuis le 2026-08-28) reste un canal de scoring déterministe classique côté `ChannelStrategyOrchestrator`, sans injection de poids LLM dans le calcul EV. Cette règle est donc à ce jour une contrainte de garde-fou pour une intégration future, pas un mécanisme câblé et vérifiable dans `apps/backend/src/modules/betting-engine/`.
+Écart avec `docs/archive/EVCORE-spec-v1.md`/`CLAUDE.md` à noter : le plafond de poids LLM/OpenClaw (`≤ 0.30`) est une règle produit documentée, mais aucun code du backend ne référence `OpenClaw`, un delta LLM (`llm_delta`) ou une constante de cap dédiée — le canal `VANTAGE` (LLM contextuel, en production depuis le 2026-08-28) reste un canal de scoring déterministe classique côté `ChannelStrategyOrchestrator`, sans injection de poids LLM dans le calcul EV. Cette règle est donc à ce jour une contrainte de garde-fou pour une intégration future, pas un mécanisme câblé et vérifiable dans `apps/backend/src/modules/betting-engine/`.
 
 `ETL_CONSTANTS`, `BULLMQ_QUEUES`, `ETL_CRON_SCHEDULES` et `ETL_SCHEDULER_KEYS` (tous dans `apps/backend/src/config/etl.constants.ts`) définissent respectivement les délais de rate-limit par fournisseur (API-Football 6 s, stats 2 s, The Odds API 500 ms), les files BullMQ, les cron d'automatisation quotidienne/hebdomadaire, et les clés stables d'`upsertJobScheduler`. Un gap connu y est documenté en commentaire : aucun cron ne réanalyse un fixture entre la veille au soir (`BETTING_ENGINE_ANALYSIS`, 20 h UTC) et son coup d'envoi — seul l'endpoint manuel `POST /betting-engine/analyze/date/:date` permet une passe le jour même.
 

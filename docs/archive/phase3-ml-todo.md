@@ -1,8 +1,8 @@
 # EVCore — Phase 3 Plan d'exécution ML
 
-> 📦 **Archive.** Ce plan a été déplacé depuis `TODO.md` (juin 2026) une fois la
+> 📦 **Archive.** Ce plan a été déplacé depuis `docs/archive/TODO-2026-10.md` (juin 2026) une fois la
 > Phase 3 ML quasi terminée. Il reste la référence détaillée des étapes ML
-> (Bloc B/C de la ROADMAP). Le `TODO.md` actif porte désormais le chantier
+> (Bloc B/C de la ROADMAP). Le `docs/archive/TODO-2026-10.md` actif porte désormais le chantier
 > « Architecture des canaux de stratégie ». Seule suite ML ouverte : étape 7ter
 > (promotion hors shadow).
 >
@@ -27,7 +27,7 @@
 ## Étape 0 — Commit des travaux Codex en attente ✅
 
 - [x] Commit `packages/db/scripts/analyze-edge.ts`
-- [x] Commit `docs/phase3-ml-correction-layer.md` + `docs/phase3-go-watch-no-go.md`
+- [x] Commit `docs/archive/phase3-ml-correction-layer.md` + `docs/archive/phase3-go-watch-no-go.md`
 - [x] Commit `ROADMAP.md` (liens vers les docs Phase 3 ajoutés)
 
 ---

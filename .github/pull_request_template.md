@@ -43,7 +43,7 @@ Aucune.
 Points d'attention pour le relecteur. Rappels EVCore utiles :
 - Le backend reste l'autorité finale ; le ML en shadow mode n'agit pas sur les décisions.
 - Pas de seuil numérique en dur (config/), pas d'appel Prisma hors repository.
-- Phase concernée (cf. ROADMAP.md / TODO.md).
+- Phase concernée (cf. ROADMAP.md / docs/archive/TODO-2026-10.md).
 -->
 
 ## Issues liées

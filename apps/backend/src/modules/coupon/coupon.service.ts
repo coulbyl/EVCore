@@ -25,7 +25,7 @@ import type { CouponSource } from '@evcore/db';
 // compose-coupon-class.ts → persist-coupon-proposal.ts), which writes
 // CouponProposal/CouponProposalLeg directly via @evcore/db, never through
 // this service. CouponPoolService (whose only caller was generateCoupons)
-// retired alongside it — see docs/vantage-centric-redesign-2026-09-01.md
+// retired alongside it — see docs/archive/vantage-centric-redesign-2026-09-01.md
 // §9bis. CouponService now only reads.
 @Injectable()
 export class CouponService {

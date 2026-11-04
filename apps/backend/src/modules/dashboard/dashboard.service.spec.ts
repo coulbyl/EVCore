@@ -35,7 +35,7 @@ function selectionRow(opts: {
 }
 
 describe('DashboardService.getChannelStatsByCompetition — calibration-based classification', () => {
-  it('classifies GREEN by calibration even when flat-stake ROI is negative (regression: DRAW showed "Négatif" on ROI while being one of only 2 well-calibrated channels — docs/vantage-centric-redesign-2026-09-01.md §5.4)', async () => {
+  it('classifies GREEN by calibration even when flat-stake ROI is negative (regression: DRAW showed "Négatif" on ROI while being one of only 2 well-calibrated channels — docs/archive/vantage-centric-redesign-2026-09-01.md §5.4)', async () => {
     // 40 settled selections, 31 won (77.5% real) — announced probability
     // 0.77 on every row (~perfectly calibrated, ratio ≈ 1.006), but odds
     // of 1.25 (bookmaker margin) make flat-stake ROI negative regardless:

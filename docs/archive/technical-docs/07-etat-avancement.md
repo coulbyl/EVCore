@@ -1,6 +1,6 @@
 # État d'avancement et roadmap
 
-> Cette page résume `ROADMAP.md` et `TODO.md` pour donner une vue d'ensemble datée. Pour le détail bloc par bloc et les décisions historiques, se référer directement à ces deux fichiers — ils restent la source de vérité pour le suivi au jour le jour.
+> Cette page résume `ROADMAP.md` et `docs/archive/TODO-2026-10.md` pour donner une vue d'ensemble datée. Pour le détail bloc par bloc et les décisions historiques, se référer directement à ces deux fichiers — ils restent la source de vérité pour le suivi au jour le jour.
 
 ## Statut au 2026-08-30
 
@@ -23,7 +23,7 @@ Fondations du monorepo, ETL historique 3 saisons EPL, modèle Poisson, backtest,
 
 - Préconditions DB validées (PgBouncer, index `ModelRun.analyzedAt`, table `ml_model_version`).
 - Infrastructure `ml-worker` (Python) livrée : entraînement via queue BullMQ, `MlController` NestJS (`POST /ml/train`, activation/rollback/suppression de modèle).
-- Couche de correction XGBoost + calibration scikit-learn livrée et tournant en **shadow mode** — le `BettingEngineService` logge la correction sans encore agir dessus. Bascule automatique prévue si le Brier Score s'améliore de ≥ 5% avec un cooldown de 7 jours, mais la **promotion hors shadow reste à décider** (`docs/phase3-ml-todo.md` étape 7ter).
+- Couche de correction XGBoost + calibration scikit-learn livrée et tournant en **shadow mode** — le `BettingEngineService` logge la correction sans encore agir dessus. Bascule automatique prévue si le Brier Score s'améliore de ≥ 5% avec un cooldown de 7 jours, mais la **promotion hors shadow reste à décider** (`docs/archive/phase3-ml-todo.md` étape 7ter).
 - Gestion dynamique du drawdown et simulation Monte Carlo : non commencées.
 
 ## Refactors d'architecture livrés
@@ -47,5 +47,5 @@ Cadrée mais différée : `docs/multi-sport-extension.md` et `docs/prediction-en
 
 ## Pour aller plus loin
 
-- Travail ouvert au niveau code, y compris les risques assumés en attendant un backtest propre (ex. `BTTS_STAKED_LEAGUES` dont le ROI mesuré s'est inversé) : `TODO.md`.
+- Travail ouvert au niveau code, y compris les risques assumés en attendant un backtest propre (ex. `BTTS_STAKED_LEAGUES` dont le ROI mesuré s'est inversé) : `docs/archive/TODO-2026-10.md`.
 - Historique complet bloc par bloc avec les mesures et décisions détaillées : `ROADMAP.md`.

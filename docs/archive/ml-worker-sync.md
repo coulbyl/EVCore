@@ -271,4 +271,4 @@ Toujours limité au canal VALUE (`ReportsRepository.findSettledEvSelections` fil
 
 - Fichiers : `apps/ml-worker/src/{data/extract,models/correction,jobs/train,inference/registry,inference/server}.py`, `apps/backend/src/modules/ml/*`, `apps/backend/src/modules/betting-engine/betting-engine.service.ts` (`computeShadowMlByChannel`), `packages/analysis-core/src/score/ml-features.ts`, `packages/analysis-core/src/score/ml-shadow-contract.json`.
 - Renommage des canaux : mémoire "Code en anglais".
-- Recalibration ayant changé les features : `docs/data-poor-leagues-calibration.md`, mémoire [[project_value_edge_floor]].
+- Recalibration ayant changé les features : `docs/archive/data-poor-leagues-calibration.md`, mémoire [[project_value_edge_floor]].

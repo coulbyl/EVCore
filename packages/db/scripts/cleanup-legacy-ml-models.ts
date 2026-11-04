@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
  * Deletes `ml_model_version` rows still tagged with the pre-2026-07 channel
- * nomenclature (EV→VALUE, CONF→DOMINANT rename — see docs/ml-worker-sync.md).
+ * nomenclature (EV→VALUE, CONF→DOMINANT rename — see docs/archive/ml-worker-sync.md).
  * These segments no longer exist in `ML_SEGMENTS`/`VALID_SEGMENTS` and are
  * never trained or looked up again under that name — keeping them around is
  * pure registry clutter (some were left `isActive=true` by mistake, see

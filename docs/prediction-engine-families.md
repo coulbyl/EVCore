@@ -6,10 +6,10 @@
 > Objectif : identifier les **familles de moteurs prédictifs** qu'EVCore doit
 > porter — pas marché par marché, pas sport par sport, mais par **processus
 > générateur partagé** — pour que l'architecture des canaux
-> (`docs/channel-strategy-architecture.md`) s'articule sur des fondations
+> (`docs/archive/channel-strategy-architecture.md`) s'articule sur des fondations
 > qui n'auront pas besoin d'être redécoupées à chaque nouveau marché.
 >
-> **Portée actuelle : football, marchés déjà en scope (EVCORE.md §3.3)
+> **Portée actuelle : football, marchés déjà en scope (docs/archive/EVCORE-spec-v1.md §3.3)
 > uniquement.** La section 0 ci-dessous est la portée de travail réelle. Les
 > sections 1 à 4 (cross-sport) sont une vision long terme volontairement mise
 > en pause — voir `docs/multi-sport-extension.md` §5 : ne pas ouvrir de sport
@@ -256,7 +256,7 @@ HT/FT, Result + Total Goals, Result + BTTS au football ; race-to-X combiné
 au moneyline en basket ; combos set + total au tennis. Ce ne sont pas de
 nouveaux processus générateurs — ce sont des **combinaisons du produit
 cartésien** de sorties déjà produites par une (ou deux) famille(s)
-existante(s). EVCore a déjà appris cette leçon une fois (EVCORE.md
+existante(s). EVCore a déjà appris cette leçon une fois (docs/archive/EVCORE-spec-v1.md
 §3.3 « Marchés pré-combinés ») : préférer une vraie cote bookmaker
 pré-combinée à une probabilité jointe synthétique recalculée en interne.
 Cette couche devrait être un **module de pricing composite** générique,
@@ -269,7 +269,7 @@ gagnés au tennis. Ce n'est pas une famille à part — c'est le **même
 générateur que la famille du sport, appliqué à la granularité joueur**
 plutôt qu'équipe, ajusté par un facteur d'usage (usage rate / minutes
 projetées / rôle dans le système de jeu). Explicitement **hors scope
-EVCORE.md aujourd'hui** (pas dans le §3.3 marchés ciblés) — à ne pas ouvrir
+docs/archive/EVCORE-spec-v1.md aujourd'hui** (pas dans le §3.3 marchés ciblés) — à ne pas ouvrir
 sans le même arbitrage de phase que multi-sport (cf. `CLAUDE.md`, table
 Phase Boundaries), simplement noté ici pour que l'architecture n'ait pas à
 être redécoupée le jour où la question se posera.

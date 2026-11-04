@@ -6,7 +6,7 @@
  * `getOneXTwoLongshotPenalty` (pick-validation.ts) amortit le qualityScore
  * des picks AWAY/DRAW à cote longue sur ONE_X_TWO uniquement (seuils 5.0/6.0,
  * floors 0.12/0.20 — dérivés d'audits sur des paris 1X2 réellement réglés).
- * TODO.md flague que ce raisonnement (surestimation de probabilité à cote
+ * docs/archive/TODO-2026-10.md flague que ce raisonnement (surestimation de probabilité à cote
  * longue) n'est pas spécifique au 1X2, mais l'historique de paris RÉELS sur
  * ces 5 marchés est trop faible pour un audit "paris déjà placés" comme
  * l'original (20-90 paris réglés selon le marché — voir `bet` table).
@@ -402,7 +402,7 @@ async function main() {
           actual,
         });
       } else if (row.market === Market.OVER_UNDER) {
-        // Only the 4.5 line — the case flagged in TODO.md as reaching
+        // Only the 4.5 line — the case flagged in docs/archive/TODO-2026-10.md as reaching
         // longshot odds with no equivalent dampening.
         if (row.pick !== "OVER_4_5" && row.pick !== "UNDER_4_5") continue;
         const prob = row.pick === "OVER_4_5" ? markets.over45 : markets.under45;

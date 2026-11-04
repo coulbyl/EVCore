@@ -28,7 +28,7 @@ import { ProductWeekService } from './product-day/product-week.service';
 // CalibrationService/OddsSnapshotLoader are still registered in their real
 // homes (adjustment.module.ts/betting-engine.module.ts) — this was a
 // duplicate registration only CouponPoolService needed. See
-// docs/vantage-centric-redesign-2026-09-01.md §9bis.
+// docs/archive/vantage-centric-redesign-2026-09-01.md §9bis.
 @Module({
   imports: [PrismaModule, AuthModule, FixtureEventsModule],
   controllers: [CouponController],

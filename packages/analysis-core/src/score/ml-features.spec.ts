@@ -1,4 +1,4 @@
-// Anti-drift guard (docs/ml-worker-sync.md §"garde-fou"): ml-features.ts (TS
+// Anti-drift guard (docs/archive/ml-worker-sync.md §"garde-fou"): ml-features.ts (TS
 // producer) and extract.py (Python consumer, apps/ml-worker) must classify
 // competition codes identically. ml-shadow-contract.json is the single
 // source of truth both sides are tested against — see the matching Python

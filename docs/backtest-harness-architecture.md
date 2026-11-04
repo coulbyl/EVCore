@@ -78,7 +78,7 @@ fonction avec `cutoff7d` pour son filtre de mouvement de cote — inopérant en
 prod sur 16 marchés sur 17 avant le fix. Tout backtest rejouant une date
 passée sur un marché hors 1X2 récupérait silencieusement des cotes du futur.
 
-**Fix** (voir TODO.md "Bugs & dette technique") : `cutoff` filtré
+**Fix** (voir docs/archive/TODO-2026-10.md "Bugs & dette technique") : `cutoff` filtré
 systématiquement partout. Suite backend complète (956 tests) verte après
 fix. **Puis extraction** : la logique pure d'assemblage des cotes
 (`assembleFullOddsSnapshot` et ses dépendances — `pickBestBookmaker`,
@@ -216,7 +216,7 @@ structuré pareil (utils purs + service I/O, avec ses propres tests), donc
 le même patron s'applique — reporté : c'est un canal de niche (V1 limitée à
 `ONE_X_TWO`, fallback hors pipeline Poisson principal), pas nécessaire pour
 que le harnais couvre le cas majoritaire des compétitions domestiques/
-européennes/sélections nationales en tournoi. Voir TODO.md.
+européennes/sélections nationales en tournoi. Voir docs/archive/TODO-2026-10.md.
 
 ## 6. Où vivent les scripts CLI — correction 2026-08-18
 

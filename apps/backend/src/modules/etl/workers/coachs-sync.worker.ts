@@ -12,7 +12,7 @@ import {
 } from '../schemas/coachs.schema';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
-// docs/h2h-service-v2-plan.md §3.4 (v2.3a) — one GET /coachs?team={id} per
+// docs/archive/h2h-service-v2-plan.md §3.4 (v2.3a) — one GET /coachs?team={id} per
 // tracked team gives that coach's FULL career, so a single pass over all
 // teams backfills the whole `coach_tenure` table (no per-season/per-fixture
 // scoping needed, unlike injuries-sync.worker.ts). Verified live 2026-07-23

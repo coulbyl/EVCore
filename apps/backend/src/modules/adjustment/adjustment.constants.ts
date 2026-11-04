@@ -26,4 +26,4 @@ export const MIN_DAYS_BETWEEN_APPLICATIONS = 7;
 // CHANNEL_RELIABILITY_PRIOR_WEIGHT moved 2026-09-03 to
 // packages/analysis-core/src/coupon/channel-reliability.ts, alongside the
 // pure Platt-curve fitting code that's its only reader — see
-// docs/vantage-centric-redesign-2026-09-01.md §9bis.
+// docs/archive/vantage-centric-redesign-2026-09-01.md §9bis.

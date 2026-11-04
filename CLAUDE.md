@@ -12,7 +12,7 @@ Channel naming is always the English code (`DRAW`, `SAFE`, `BTTS`, `DOUBLE_CHANC
 
 It is a disciplined probabilistic decision system — not a tip generator or AI chatbot. The system targets long-term ROI through deterministic data scoring (70%) refined by LLM context (30%), with the backend always acting as the final authority.
 
-⚠️ **Two measured results that override older intuitions in this repo** (audit 2026-08-22, `docs/audit-canaux-investir-2026-08-22.md`):
+⚠️ **Two measured results that override older intuitions in this repo** (audit 2026-08-22, `docs/audits/2026-08-22/audit-canaux-investir.md`):
 
 - **Claimed edge (`p − 1/odds`) is anti-predictive.** Across 51 860 settled selections the realised rate is flat (0.511 → 0.375) while the announced rate climbs from 0.481 to 0.699. It is now used as a **ceiling** (`MAX_LEG_EDGE = 0.10`), never as a selection floor, and ranking is done on calibrated probability. Treat any `EV ≥ 8%` framing found elsewhere in the docs as historical.
 - **Coupon ROI has no statistical power** at current volumes (SE 13–18 points for 10-point differences). The learning loop runs at the **leg** level. Never conclude from a coupon-level ROI.
@@ -22,7 +22,7 @@ It is a disciplined probabilistic decision system — not a tip generator or AI 
 
 Two coupon generators run in parallel since 2026-09-16, separated by `coupon_proposal.source`: the LLM pipeline (`apps/vantage-worker`, class `UNIQUE`) and the deterministic price composer (`composeByPrice`, channel `PRICE`). Compare them **per leg**, never by coupon ROI.
 
-Read [EVCORE.md](EVCORE.md) for the full product specification before making any architectural decision.
+Read [docs/archive/EVCORE-spec-v1.md](docs/archive/EVCORE-spec-v1.md) for the full product specification before making any architectural decision.
 Check [ROADMAP.md](ROADMAP.md) to know the current implementation state before adding or modifying any feature.
 
 ## Database access
@@ -310,7 +310,7 @@ Rules:
 
 ## EVCore-Specific Rules
 
-These rules reflect the product specification in EVCORE.md and must never be bypassed.
+These rules reflect the product specification in docs/archive/EVCORE-spec-v1.md and must never be bypassed.
 
 ### Hard constraints (backend enforces, never client)
 

@@ -615,7 +615,7 @@ capturée. **Relu le 2026-10-10 sur le dump du jour** (prod déjà sous `observe
 16 à 37 % par canal, CLV de −4,2 % (GOALS, DOMINANT) à −16,4 % (HT/FT). Point
 de lecture : un pari pris au prix de clôture vaut **moins la marge**, pas zéro ;
 les familles jointes ressortent 2 à 3 fois plus chères, en accord avec l'audit
-d'efficience du 15/09. Tableau dans `docs/plan-mesure-bout-en-bout.md` §3.
+d'efficience du 15/09. Tableau dans `docs/archive/plan-mesure-bout-en-bout.md` §3.
 **Relu le soir même après le re-règlement en prod** (couverture 76–78 %) :
 l'écart entre prix pris et prix de clôture est nul pour tous les canaux à deux
 erreurs types près ; seuls RESULT_BTTS (+1,1 pt) et RESULT_TOTAL_GOALS (+0,9 pt)

@@ -11,8 +11,8 @@ conséquences produit de l'audit du 2026-08-22 : l'edge revendiqué est
 anti-prédictif, et Investir n'affiche plus 18 modes mais 3 vues.
 
 Sources : `docs/prediction-engine-families.md`,
-`docs/channel-strategy-architecture.md`,
-`docs/audit-canaux-investir-2026-08-22.md`, code réel dans
+`docs/archive/channel-strategy-architecture.md`,
+`docs/audits/2026-08-22/audit-canaux-investir.md`, code réel dans
 `packages/analysis-core/src/strategies/`,
 `apps/backend/src/modules/investment/`,
 `apps/backend/src/modules/coupon/`.
@@ -33,7 +33,7 @@ Avant le 2026-08-17, chaque canal lisait la même fiche de match et le même
 λ Poisson plein-match, y compris les canaux mi-temps et le canal DRAW. La
 redéfinition sépare la question « quel processus génère la probabilité » de
 la question « quel canal choisit une décision sur ce marché ». En football,
-sur les marchés déjà en scope (EVCORE.md §3.3), 3 familles alimentent les 19
+sur les marchés déjà en scope (docs/archive/EVCORE-spec-v1.md §3.3), 3 familles alimentent les 19
 canaux de prédiction pure :
 
 | Famille                           | Processus générateur                                                    | Canaux nourris                                                                                                          | Statut du moteur                                                                                                                                                                                                                           |
@@ -218,7 +218,7 @@ liste à maintenir ait dû l'exclure à l'avance. Corriger l'emporte sur
 exclure : le canal continue de contribuer là où il A raison.
 
 Rappel : l'admission au pool ne se décide jamais sur le ROI de coupon.
-`docs/audit-canaux-investir-2026-08-22.md` le chiffre — écart-type de
+`docs/audits/2026-08-22/audit-canaux-investir.md` le chiffre — écart-type de
 13 à 18 points pour des différences de ROI de 10 points aux volumes actuels
 de coupons/jour. La boucle d'apprentissage tourne au niveau **jambe**
 (écart-type ~1,25 point, ~7 000 jambes/mois), jamais au niveau coupon.

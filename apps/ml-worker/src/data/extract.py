@@ -25,7 +25,7 @@ ENGINE_CONFIG_VERSION = "betting-engine-2026-09-14.1"
 # "AWAY": 4.2} or {"OVER_1_5": 1.5, "UNDER_1_5": 2.6}. Prefers Pinnacle (the
 # "sharp" reference used across the codebase) but falls back to Bet365 when
 # Pinnacle has no coverage at all for that market (CLEAN_SHEET/WIN_EITHER_HALF,
-# 2026-07-24 — see docs/ml-worker-sync.md). Generic pick-keyed map instead of
+# 2026-07-24 — see docs/archive/ml-worker-sync.md). Generic pick-keyed map instead of
 # fixed named columns (old homeOdds/yesOdds/overOdds/... columns) so any
 # market's arbitrary pick strings (TEAM_TOTAL's "OVER_1_5", etc.) work without
 # a new column per market family.
@@ -68,7 +68,7 @@ LEFT JOIN LATERAL (
 # canals never materialise a `bet` row at all (they aren't individually
 # staked), so `bet` cannot be the source table. `cs.channel` doesn't exist
 # either: it moved to `channel_decision.channel` in migration
-# `20260617000232` (17 juin 2026) — see docs/ml-worker-sync.md.
+# `20260617000232` (17 juin 2026) — see docs/archive/ml-worker-sync.md.
 # CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF added 2026-07-24 (real settled
 # volume + Pinnacle/Bet365 odds coverage confirmed). CORRECT_SCORE excluded:
 # a correct-score market has ~50 competing scorelines per fixture, so

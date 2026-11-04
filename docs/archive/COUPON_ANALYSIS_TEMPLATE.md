@@ -5,7 +5,7 @@
 > erreurs de méthode à chaque nouvelle session d'analyse.
 >
 > Référence : [PROD_DB_ACCESS.md](PROD_DB_ACCESS.md) (accès données réelles) ·
-> [TODO.md](TODO.md) (statut à jour par canal/ligue) ·
+> [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md) (statut à jour par canal/ligue) ·
 > [ROADMAP.md](ROADMAP.md) Bloc 10 (détail de l'audit source).
 
 ---
@@ -28,7 +28,7 @@ Nordsjaelland Over 2.5...) alors que la donnée existe.
    — pour chaque fixture du jour, ne pas se limiter à `selectedPicks` :
    parcourir `evaluatedPicks` en entier (viable **et** rejected — un rejet
    EV/odds n'est pas un rejet de fiabilité, voir étape 5) et, quand un
-   marché en est absent (bug bookmaker-par-marché, cf. TODO.md), aller
+   marché en est absent (bug bookmaker-par-marché, cf. docs/archive/TODO-2026-10.md), aller
    chercher la cote dans `odds_snapshot` et calculer la probabilité à
    partir de `lambda`. Retenir un candidat comme fiable si :
    - `probability` (calibrée) ≥ ~55-60% ;
@@ -37,7 +37,7 @@ Nordsjaelland Over 2.5...) alors que la donnée existe.
      n'a automatiquement raison, cf. l'étape 7 du bug Nordsjaelland) ;
    - pour tout pick `UNDER_*` du marché `OVER_UNDER` (**toutes lignes**,
      pas juste 2,5) : `lambdaHome + lambdaAway < 2.3` — le garde-fou système
-     `under_high_lambda` ne couvre que la ligne 2,5 (cf. TODO.md) ;
+     `under_high_lambda` ne couvre que la ligne 2,5 (cf. docs/archive/TODO-2026-10.md) ;
    - `dataCoverage` pondère la confiance globale sans disqualifier seul.
      Ce tri ramène ~300+ candidats bruts (39 fixtures × ~8 marchés) à un pool
      réduit (~30-50) — et documente explicitement les fixtures qui n'ont
@@ -75,7 +75,7 @@ Nordsjaelland Over 2.5...) alors que la donnée existe.
    aller-retour, cohérence narrative, clusters de risque corrélé, tier des
    canaux comme signal additionnel) pour construire le ou les coupons.
 
-**Prérequis outillage** (suivi dans [TODO.md](TODO.md), section Générateur
+**Prérequis outillage** (suivi dans [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md), section Générateur
 de coupon) : ce balayage suppose d'avoir `evaluatedPicks` complet par
 fixture sans dépendre d'un accès DB live à chaque fois (tunnel SSH
 instable en pratique) — l'export "fiche EVCore" doit être enrichi en
@@ -182,7 +182,7 @@ plusieurs canaux Tier C/D, plusieurs picks construits sur la même lecture
 narrative). Diversifier les sources de risque, pas seulement viser une cote.
 
 ⚠️ Point ouvert : `jointProbability` du système lui-même se dégrade avec la
-confiance affichée (cf. TODO.md) — ne pas non plus faire une confiance
+confiance affichée (cf. docs/archive/TODO-2026-10.md) — ne pas non plus faire une confiance
 aveugle au chiffre du système une fois qu'il devient élevé (>40%).
 
 ## Étape 4 — Respecter la hiérarchie réelle des canaux
@@ -191,11 +191,11 @@ aveugle au chiffre du système une fois qu'il devient élevé (>40%).
 | ------------------------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | A — stakés en direct           | VALUE, SAFE                                                             | Rien de spécial, ce sont les plus éprouvés                                                                                          |
 | B — promus par ligue seulement | DRAW (`I2/POR/BL1`), BTTS (`PL/BL1`), TEAM_TOTAL (toutes ligues)        | Vérifier que la ligue du match fait partie de la whitelist active                                                                   |
-| C — observation documentée     | DOMINANT (ROI backtesté −2.1%), CORRECT_SCORE (aucune promotion encore) | Traiter comme un signal informatif, jamais comme un pick à jouer, sauf ligue déjà validée (cf. TODO.md pour CORRECT_SCORE)          |
-| D — jamais évalués             | CONSENSUS, CLEAN_SHEET, WIN_EITHER_HALF, GOALS (hors ligne 2.5)         | Signal parfois bon par ligue (voir TODO.md) mais aucun backtest formel — mentionner explicitement le statut expérimental si utilisé |
+| C — observation documentée     | DOMINANT (ROI backtesté −2.1%), CORRECT_SCORE (aucune promotion encore) | Traiter comme un signal informatif, jamais comme un pick à jouer, sauf ligue déjà validée (cf. docs/archive/TODO-2026-10.md pour CORRECT_SCORE)          |
+| D — jamais évalués             | CONSENSUS, CLEAN_SHEET, WIN_EITHER_HALF, GOALS (hors ligne 2.5)         | Signal parfois bon par ligue (voir docs/archive/TODO-2026-10.md) mais aucun backtest formel — mentionner explicitement le statut expérimental si utilisé |
 
 Ce tableau bouge (des canaux passent de D à B au fil des backtests) — se
-référer à [TODO.md](TODO.md) pour le statut à jour plutôt que de le
+référer à [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md) pour le statut à jour plutôt que de le
 recopier de mémoire.
 
 ## Étape 5 — Vérifier chaque jambe : cohérence inter-canaux et EV réel, pas juste le tier
@@ -251,7 +251,7 @@ Pour tout coupon qui casse, ne pas s'arrêter à "cette jambe a perdu" :
    **vrai miss du modèle** (la lecture directionnelle était fausse, aucun
    marché du match n'aurait vraiment aidé).
 4. Si le miss révèle un motif réutilisable (biais de canal, ligue, type de
-   marché), le documenter dans [TODO.md](TODO.md) plutôt que de le laisser
+   marché), le documenter dans [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md) plutôt que de le laisser
    dans l'historique de conversation.
 
 ## Étape 9 — Post-mortem pick par pick, y compris les matchs/marchés écartés
@@ -296,7 +296,7 @@ match terminé :
    famille de bug que `calibration_alert` (étape 7/ROADMAP Bloc 10) : un
    garde-fou construit pour un marché précis ne protège pas les marchés
    adjacents, et personne ne l'a remarqué avant que ça casse en vrai.
-5. Documenter tout motif réutilisable trouvé ici dans [TODO.md](TODO.md)
+5. Documenter tout motif réutilisable trouvé ici dans [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md)
    (garde-fous/code), pas seulement dans ce template (méthode).
 
 ---

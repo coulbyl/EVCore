@@ -157,7 +157,7 @@ function getValueMinEdge(competitionCode: string | null): Decimal | undefined {
 // VALUE-only edge floor, mirroring the standalone VALUE channel's own gate
 // (probability − 1/odds ≥ getValueMinEdge(league) ?? VALUE_MIN_EDGE=0.10).
 // ⚠️ Inatteignable en production depuis le 2026-09-03 : VALUE est déconnecté
-// de la pipeline live (docs/vantage-centric-redesign-2026-09-01.md §5.1),
+// de la pipeline live (docs/archive/vantage-centric-redesign-2026-09-01.md §5.1),
 // donc plus jamais dans le pool. Gardé pour la valeur documentaire du
 // constat : la région que VALUE sélectionne (forte divergence modèle↔marché)
 // est précisément celle où le modèle réalise 0.694 de ce qu'il annonce,
@@ -231,7 +231,7 @@ export const MAX_LEG_EDGE = 0.1;
  * Marchés exclus du vivier de coupon sur leur coût mesuré à la clôture.
  *
  * Mesure du 2026-10-10 sur 13 180 sélections dédupliquées depuis le
- * 2026-09-15 (`report:selection-clv`, `docs/plan-mesure-bout-en-bout.md` §3),
+ * 2026-09-15 (`report:selection-clv`, `docs/archive/plan-mesure-bout-en-bout.md` §3),
  * valeur à la clôture d'un pari pris AU prix de clôture — c'est-à-dire la
  * marge payée, groupe d'issues complet chez un même book :
  *

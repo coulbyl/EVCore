@@ -20,7 +20,7 @@ from ..models import correction, persist
 logger = logging.getLogger(__name__)
 
 # Canal names mirror the `StrategyChannel` Prisma enum (EV→VALUE, CONF→DOMINANT
-# renamed 2026-07; see docs/ml-worker-sync.md). Each entry needs >=50 settled
+# renamed 2026-07; see docs/archive/ml-worker-sync.md). Each entry needs >=50 settled
 # channel_selection rows to actually train (ML_RETRAIN_MIN_NEW_BETS).
 # CLEAN_SHEET/TEAM_TOTAL/WIN_EITHER_HALF added 2026-07-24 (real settled
 # volume + Pinnacle/Bet365 odds coverage confirmed — see extract.py).

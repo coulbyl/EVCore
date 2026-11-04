@@ -11,13 +11,13 @@ What makes it different is only its _source_: every other channel computes its p
 **What VANTAGE explicitly does not do:**
 
 - It never changes another channel's score, pick, or probability. It only ever proposes its own selection, under its own channel name.
-- It never influences the deterministic scoring loop. `ModelRun.llmDelta`/`ModelRun.openclawRaw` (the fields EVCORE.md §14.3 reserved for a scoring-loop LLM integration) are untouched — VANTAGE writes to `ChannelDecision`/`ChannelSelection` only, the same tables every channel writes to.
+- It never influences the deterministic scoring loop. `ModelRun.llmDelta`/`ModelRun.openclawRaw` (the fields docs/archive/EVCORE-spec-v1.md §14.3 reserved for a scoring-loop LLM integration) are untouched — VANTAGE writes to `ChannelDecision`/`ChannelSelection` only, the same tables every channel writes to.
 - It never picks by default. The common case — reading a match and finding nothing worth flagging — is `verdict: "no_play"`, stored as `status: REJECTED`, same as any other channel passing on a match.
 - It never invents a market. Its output is validated against the exact same `Market` enum every strategy in `@evcore/analysis-core` uses, plus a second check that the _pick_ is a legal value for that specific market (see `src/vantage/known-picks.ts`) — a hallucinated pick like `{ market: "BTTS", pick: "Home wins comfortably" }` cannot reach the database.
 
 ## Why a channel, not a scoring-loop LLM
 
-EVCORE.md §14.3 already describes an "OpenClaw" component: an LLM that refines the deterministic score by up to 30%, gated behind a "not before MVP validation, needs a deterministic ROI/Brier baseline first" rule, and constrained to emit "un delta numérique... jamais un raisonnement narratif que le système interpréterait librement."
+docs/archive/EVCORE-spec-v1.md §14.3 already describes an "OpenClaw" component: an LLM that refines the deterministic score by up to 30%, gated behind a "not before MVP validation, needs a deterministic ROI/Brier baseline first" rule, and constrained to emit "un delta numérique... jamais un raisonnement narratif que le système interpréterait librement."
 
 VANTAGE deliberately does not go through that door. Two reasons:
 
@@ -39,7 +39,7 @@ Concrete example that motivated this shape: on a real fixture, `RESULT_BTTS` had
 
 Both checks fail closed: anything that doesn't pass is logged with the raw response and dropped, never persisted half-formed.
 
-`temperature: 0` on every call, per EVCORE.md's reproducibility guardrail — every VANTAGE decision should be replayable from its logged input.
+`temperature: 0` on every call, per docs/archive/EVCORE-spec-v1.md's reproducibility guardrail — every VANTAGE decision should be replayable from its logged input.
 
 ## What the research says (and why the model choice matters less than you'd think)
 
@@ -92,4 +92,4 @@ VANTAGE still writes a verdict on every fixture across all 68 competitions eithe
 
 **Phase 3 — widen research, or don't.** Grow `VANTAGE_RESEARCH_COMPETITION_CODES` past the default six only once Phase 2's A/B shows research measurably improves calibration over the channel-only baseline — not on a timer, not because the budget allows it. If VANTAGE underperforms anywhere, the fix is the same as any other channel: recalibrate, don't disable (project convention — a channel that loses is a channel to tune, not switch off).
 
-**Never in scope without a separate, explicit decision:** feeding VANTAGE's output back into the deterministic score (the EVCORE.md §14.3 scoring-loop door), or letting it drive automatic staking. Both require the human-approval step CLAUDE.md already reserves for "introducing OpenClaw into the scoring loop" — VANTAGE existing as a channel does not imply that door is now open.
+**Never in scope without a separate, explicit decision:** feeding VANTAGE's output back into the deterministic score (the docs/archive/EVCORE-spec-v1.md §14.3 scoring-loop door), or letting it drive automatic staking. Both require the human-approval step CLAUDE.md already reserves for "introducing OpenClaw into the scoring loop" — VANTAGE existing as a channel does not imply that door is now open.

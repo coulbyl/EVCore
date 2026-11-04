@@ -2,7 +2,7 @@
 
 EVCore est un moteur autonome, probabiliste, de sélection de paris sportifs. Il analyse des matchs de football et **propose** des décisions — il ne place jamais de pari à la place d'un utilisateur. Ce n'est pas un chatbot ni un générateur de pronostics excitants : c'est un système décisionnel discipliné, mesurable et auto-calibré, construit pour survivre à la variance sur des centaines de paris plutôt que d'optimiser un résultat court terme.
 
-Cette documentation technique décrit l'état réel du code au 2026-08-30. Elle remplace les parties périmées de `EVCORE.md` (la spécification produit d'origine) et de `README.md`, qui datent tous les deux d'avant l'extension à ~19 canaux et avant les apps `ml-worker`/`vantage-worker`.
+Cette documentation technique décrit l'état réel du code au 2026-08-30. Elle remplace les parties périmées de `docs/archive/EVCORE-spec-v1.md` (la spécification produit d'origine) et de `README.md`, qui datent tous les deux d'avant l'extension à ~19 canaux et avant les apps `ml-worker`/`vantage-worker`.
 
 ## Ce que le système fait, et ne fait jamais
 
@@ -13,7 +13,7 @@ Cette documentation technique décrit l'état réel du code au 2026-08-30. Elle 
 
 ## Deux résultats mesurés qui priment sur l'intuition d'origine
 
-Deux constats d'audit (2026-08-22, `docs/audit-canaux-investir-2026-08-22.md`) annulent des hypothèses qui structuraient encore une partie de la documentation historique. Ils sont rappelés dans chaque page technique où ils s'appliquent :
+Deux constats d'audit (2026-08-22, `docs/audits/2026-08-22/audit-canaux-investir.md`) annulent des hypothèses qui structuraient encore une partie de la documentation historique. Ils sont rappelés dans chaque page technique où ils s'appliquent :
 
 - **L'edge revendiqué (`p − 1/cote`) est anti-prédictif.** Sur 51 860 sélections réglées, le taux réel reste plat (0.511 → 0.375) pendant que le taux annoncé grimpe (0.481 → 0.699). Il sert désormais de **plafond** (`MAX_LEG_EDGE = 0.10`) sur toute surface de mise, jamais de seuil de sélection. Le classement se fait partout sur la probabilité calibrée.
 - **Le ROI au niveau coupon n'a aucune puissance statistique** aux volumes actuels (erreur standard de 13 à 18 points pour des écarts de 10 points). La boucle d'apprentissage et toute décision de calibration tournent au niveau de la jambe (leg), jamais au niveau du coupon.
@@ -52,8 +52,8 @@ Détail dans [Packages partagés et base de données](/dashboard/documentation-t
 
 ## Où trouver le reste
 
-- Spécification produit d'origine (partiellement périmée, corrections indiquées dans cette documentation) : `EVCORE.md`
+- Spécification produit d'origine (partiellement périmée, corrections indiquées dans cette documentation) : `docs/archive/EVCORE-spec-v1.md`
 - Suivi d'avancement détaillé bloc par bloc : `ROADMAP.md`
-- Travail ouvert au niveau code : `TODO.md`
+- Travail ouvert au niveau code : `docs/archive/TODO-2026-10.md`
 - Conventions de code et règles produit non négociables : `CLAUDE.md`
 - Glossaire métier : [Documentation EVCore (glossaire)](/dashboard/glossaire)

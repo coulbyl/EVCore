@@ -1,14 +1,14 @@
 # EVCore — Roadmap d'implémentation
 
 > Source de vérité pour le suivi d'avancement. Mettre à jour à chaque merge significatif.
-> Spécification complète : [EVCORE.md](EVCORE.md) | Conventions : [CLAUDE.md](CLAUDE.md)
+> Spécification complète : [docs/archive/EVCORE-spec-v1.md](docs/archive/EVCORE-spec-v1.md) | Conventions : [CLAUDE.md](CLAUDE.md)
 
 **Statut actuel : Phase 2 en production (argent réel) ; Phase 3 ML redéfinie le 2026-10-29 (le prix devient l'entrée du moteur, l'ombre XGBoost est coupée) — mise à jour le 2026-10-29**
 
 > Révisé le 2026-08-15 : sections Mois 1-3 condensées (détail non-critique,
 > tout est `[x]` depuis mars 2026) ; plusieurs items marqués `[ ]`/`[~]`
 > corrigés en `[x]` car déjà faits mais jamais mis à jour ici (Refactor
-> Domaine canaux, multi-ligues) — voir TODO.md pour ce qui reste réellement
+> Domaine canaux, multi-ligues) — voir docs/archive/TODO-2026-10.md pour ce qui reste réellement
 > ouvert.
 
 ---
@@ -191,10 +191,10 @@
 
 ### Bloc 8 — Extension marchés Niveau 1/2/2.b + nouveaux canaux (2026-07-18)
 
-> Suite de `docs/market-coverage-expansion.md`. Deux volets : (a) rendre les 10
+> Suite de `docs/archive/market-coverage-expansion.md`. Deux volets : (a) rendre les 10
 > marchés ajoutés depuis Niveau 1 exploitables par EV/SAFE, (b) ajouter des
 > canaux de prédiction dédiés pour les signaux vraiment indépendants (pas une
-> reformulation d'un canal existant — voir arbitrage dans EVCORE.md).
+> reformulation d'un canal existant — voir arbitrage dans docs/archive/EVCORE-spec-v1.md).
 
 - [x] `listEvaluatedPicks` évalue désormais DRAW_NO_BET, TEAM_TOTAL_HOME/AWAY,
       CLEAN_SHEET_HOME/AWAY, WIN_TO_NIL_HOME/AWAY, TO_WIN_EITHER_HALF,
@@ -254,7 +254,7 @@
 > coupons générés le même jour, DRAW staké sans whitelist par ligue,
 > `COUPON_PARAMS.minCouponEV` jamais re-backtesté depuis sa source documentée
 > (fichier `backtest-selected-params.json` introuvable dans ce repo). Branche
-> `feat/coupon-generator-intelligence`. Reste à faire : [TODO.md](TODO.md).
+> `feat/coupon-generator-intelligence`. Reste à faire : [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md).
 
 **Architecture préalable**
 
@@ -326,7 +326,7 @@
 > canal, pourquoi 7 canaux sur 10 n'ont jamais atteint un coupon/abonnement/
 > pari réel, et classement par ligue de CORRECT_SCORE + des 4 canaux jamais
 > évalués (CONSENSUS/GOALS/CLEAN_SHEET/WIN_EITHER_HALF). Détail complet et
-> requêtes dans la conversation source ; suites d'action dans [TODO.md](TODO.md).
+> requêtes dans la conversation source ; suites d'action dans [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md).
 
 **Bugs corrigés en cours de route**
 
@@ -342,7 +342,7 @@
       ajout d'un champ `label` (via `pickLabel()`, déjà utilisé côté `.txt`
       mais jamais côté JSON) pour lever l'ambiguïté sans toucher à l'enum
 
-**Constats de calibration confirmés sur données réelles (suites dans TODO.md)**
+**Constats de calibration confirmés sur données réelles (suites dans docs/archive/TODO-2026-10.md)**
 
 - [x] `jointProbability` des coupons se dégrade avec la confiance affichée
       (bucket ~44% annoncé → 20% réel sur n=30) — pas de correction de
@@ -378,7 +378,7 @@ transition de format (J1) et trou d'intersaison (AUS1)**
 
 - [x] Diagnostic confirmé en direct contre l'API-FOOTBALL (`/leagues?id=`)
       pour les 68 compétitions actives — un seul vrai décalage structurel
-      (J1) + un trou d'intersaison mineur (AUS1, cf. TODO.md), tout le reste
+      (J1) + un trou d'intersaison mineur (AUS1, cf. docs/archive/TODO-2026-10.md), tout le reste
       sain. `apiSeasonOverride=2027` pour J1 est confirmé **correct**
       (l'API elle-même déclare `current: true` sur l'année 2027) — le bug
       n'était pas le numéro de saison utilisé pour interroger l'API, mais la
@@ -414,7 +414,7 @@ OVER_UNDER/marchés de buts**
 
 > Repéré en post-mortem d'une jambe cassée du coupon longshot 13-14/08
 > (FC Nordsjaelland–Valur, Under 3,5 buts, terminé 5-0+). Détail dans
-> [TODO.md](TODO.md).
+> [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md).
 
 - [x] `assessMarketCoherence()` (`market-coherence.ts`), seule source de
       `calibration_alert`, ne compare que le 1X2 (home/draw/away) contre les
@@ -432,8 +432,8 @@ OVER_UNDER/marchés de buts**
 > chaque canal — EV/odds/probabilité — qui n'ont pas de sens pour
 > construire un combiné à la main) plutôt que balayer tous les marchés
 > cotés de tous les matchs du jour. Détail et mécanique dans
-> [COUPON_ANALYSIS_TEMPLATE.md](COUPON_ANALYSIS_TEMPLATE.md) (étape 0) et
-> [TODO.md](TODO.md) (section Générateur de coupon).
+> [docs/archive/COUPON_ANALYSIS_TEMPLATE.md](docs/archive/COUPON_ANALYSIS_TEMPLATE.md) (étape 0) et
+> [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md) (section Générateur de coupon).
 
 - `[x]` Enrichir l'export "fiche EVCore"
   (`apps/backend/src/modules/analysis-sheet/analysis-sheet.render.ts`)
@@ -451,7 +451,7 @@ OVER_UNDER/marchés de buts**
 > supplémentaires trouvées en plus des 3 du post-mortem initial — dont la
 > cause racine des doublons `odds_snapshot` (upsert qui ne se déclenche
 > jamais, clé jamais réellement `@@unique`). Détail complet dans
-> [TODO.md](TODO.md), section "Audit systémique 2026-08-13".
+> [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md), section "Audit systémique 2026-08-13".
 
 **PR "sûrs uniquement" du 2026-08-13** — 4 correctifs sans impact sur le
 comportement de staking, livrés dans la foulée de l'audit plutôt que
@@ -464,13 +464,13 @@ jamais — la contrainte `@@unique` en DB reste une migration à faire par
 l'utilisateur). Le reste de l'audit (calibration_alert étendu,
 under_high_lambda généralisé, seuils DRAW/longshot/htftCalibrated,
 shrinkage TEAM_TOTAL) demande un backtest avant merge — laissé dans
-TODO.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
+docs/archive/TODO-2026-10.md, pas dans cette PR. 828 tests verts, typecheck et lint propres.
 
 ---
 
 ### Bloc 13 — Refonte d'Investir : trois vues, plus de `topN` (2026-08-22, branche `fix/todo-2026-08-15`)
 
-> Suite directe de l'audit [docs/audit-canaux-investir-2026-08-22.md](docs/audit-canaux-investir-2026-08-22.md)
+> Suite directe de l'audit [docs/audits/2026-08-22/audit-canaux-investir.md](docs/audits/2026-08-22/audit-canaux-investir.md)
 > §5. Investir n'est plus une surface de revue exhaustive (18 modes, un par
 > canal) mais **le point de filtre unique** du système : un filtre se juge à
 > ce qu'il exclut, pas à ce qu'il expose.
@@ -564,7 +564,7 @@ Migration Prisma : `20260822120000_add_double_chance_subscription_source`.
 > -29%), révélé une fois `deleteExpiredInRange` corrigé. Le plan de recherche
 > initial (Deflated Sharpe, James-Stein, parlays corrélés, dérive) a été
 > exécuté puis **largement invalidé par la mesure** — détail par piste dans
-> `apps/backend/src/modules/coupon/recherche.md` §"Résultats du 2026-08-22".
+> `docs/archive/coupon-module/recherche.md` §"Résultats du 2026-08-22".
 
 **Résultat mesuré** (5 passes de régénération, 2025-01 → 2026-08) :
 
@@ -609,7 +609,7 @@ Migration Prisma : `20260822120000_add_double_chance_subscription_source`.
       dont la SE valait 13-18. **La boucle d'apprentissage doit tourner au
       niveau jambe** (SD 1.247, ~7000/mois, 2 points en ~4 mois).
 
-**Reste ouvert** — voir [TODO.md](TODO.md) §"Générateur de coupon" : mouvement
+**Reste ouvert** — voir [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md) §"Générateur de coupon" : mouvement
 des cotes (seule piste de découverte crédible), meilleure cote étendue au
 moteur, abonnements par classe, sélecteur de classe côté UX.
 
@@ -620,7 +620,7 @@ Aucune migration Prisma.
 ### Bloc 11 — Corrections audit systémique : résolution bookmaker par ligne, garde-fous 1X2-only (2026-08-15, branche `fix/systemic-audit-market-guards`)
 
 > Reprise du reste de l'audit systémique du Bloc 10 (post-mortem
-> Nordsjaelland–Valur, [TODO.md](TODO.md) section "Audit systémique
+> Nordsjaelland–Valur, [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md) section "Audit systémique
 > 2026-08-13"), laissé de côté de la PR "sûrs uniquement" du 2026-08-13 car
 > ces deux-là touchent directement à quelles cotes/picks atteignent
 > `evaluatedPicks` — corrigés en premier dans ce chantier plus large.
@@ -760,7 +760,7 @@ Aucune migration Prisma.
 - **Audit systémique 2026-08-13 : statut final** — **entièrement trié et
   clos**. Chaque motif de bug trouvé est corrigé, activé après backtest, ou
   explicitement reporté (jamais oublié) ; détail complet dans
-  [TODO.md](TODO.md). Tous les items "backtest à faire" ont été mesurés (DB
+  [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md). Tous les items "backtest à faire" ont été mesurés (DB
   locale, sync prod 2026-08-15 16h48) et activés : shrinkage `TEAM_TOTAL`,
   shrinkage `RESULT_TOTAL_GOALS`, pénalité longshot
   (`RESULT_TOTAL_GOALS`/`HALF_TIME_FULL_TIME`), `calibration_alert` sur
@@ -778,7 +778,7 @@ Aucune migration Prisma.
         hétérogénéité par ligue qu'on ne peut pas calibrer ici (volume par
         ligue à cote longue : 3 à 67 paris, trop faible). Cohérent avec le
         gate 1X2 existant (également global), donc pas une régression — à
-        revisiter avec plus de volume, voir TODO.md.
+        revisiter avec plus de volume, voir docs/archive/TODO-2026-10.md.
 - 855 tests backend (+27 vs Bloc 10), 104 tests `analysis-core` (+6),
   typecheck et lint (`--max-warnings 0`) propres sur backend et
   `analysis-core`.
@@ -809,8 +809,8 @@ Aucune migration Prisma.
 
 Docs de cadrage Phase 3:
 
-- [docs/phase3-ml-correction-layer.md](docs/phase3-ml-correction-layer.md) — rôle du ML comme couche de correction au-dessus du Poisson
-- [docs/phase3-go-watch-no-go.md](docs/phase3-go-watch-no-go.md) — lecture décisionnelle `GO / WATCH / NO-GO` par `canal × marché`
+- [docs/archive/phase3-ml-correction-layer.md](docs/archive/phase3-ml-correction-layer.md) — rôle du ML comme couche de correction au-dessus du Poisson
+- [docs/archive/phase3-go-watch-no-go.md](docs/archive/phase3-go-watch-no-go.md) — lecture décisionnelle `GO / WATCH / NO-GO` par `canal × marché`
 - [packages/db/reports/edge-vs-pinnacle-2026-06-04.md](packages/db/reports/edge-vs-pinnacle-2026-06-04.md) — premier rapport `edge vs Pinnacle`
 
 ### Préconditions DB ✅ (4 juin 2026)
@@ -825,10 +825,10 @@ Docs de cadrage Phase 3:
 
 - [x] Comparer probabilités moteur vs probabilité implicite Pinnacle — 680 picks analysés
 - [x] Edge moyen par canal : `SV` GO (+5.17% / +17.16%), `EV/ONE_X_TWO` NO-GO (-54.86%), `CONF` WATCH
-- [x] Matrice GO / WATCH / NO-GO par `canal × marché` — voir `docs/phase3-go-watch-no-go.md`
+- [x] Matrice GO / WATCH / NO-GO par `canal × marché` — voir `docs/archive/phase3-go-watch-no-go.md`
 - [x] Rapport → `packages/db/reports/edge-vs-pinnacle-2026-06-04.md`
 
-### Bloc B — Infrastructure ML ✅ (juin 2026 — détail dans `docs/phase3-ml-todo.md` étapes 3–7bis)
+### Bloc B — Infrastructure ML ✅ (juin 2026 — détail dans `docs/archive/phase3-ml-todo.md` étapes 3–7bis)
 
 - [x] Service `ml-worker` Python dans Docker Compose (image `python:3.12-slim`, accès Redis + PostgreSQL)
 - [x] Queue BullMQ `ml-training` — NestJS pousse le job, Python consomme
@@ -837,9 +837,9 @@ Docs de cadrage Phase 3:
 - [x] Suite de tests pytest ml-worker + job CI (étape 7bis)
 - [ ] Upgrade VPS OVH si besoin (≥ 4 vCPU / 8 GB RAM) avant premier entraînement prod
 
-### Bloc C — Correction layer XGBoost + Calibration ✅ (juin 2026 — détail dans `docs/phase3-ml-todo.md` étapes 4–7)
+### Bloc C — Correction layer XGBoost + Calibration ✅ (juin 2026 — détail dans `docs/archive/phase3-ml-todo.md` étapes 4–7)
 
-> Architecture retenue (voir `docs/phase3-ml-correction-layer.md`) : le modèle apprend
+> Architecture retenue (voir `docs/archive/phase3-ml-correction-layer.md`) : le modèle apprend
 > **où le Poisson se trompe** (cible `outcome_correct` sur les lignes avec cote Pinnacle) et
 > produit une probabilité corrigée. Il ne remplace pas Poisson — il le calibre. La correction
 > est servie en **shadow mode** via le serveur d'inférence (pas de chargement de poids au démarrage).
@@ -870,8 +870,8 @@ Docs de cadrage Phase 3:
 
 ## Refactor Domaine — Architecture des canaux de stratégie ✅ fait (corrigé le 2026-08-15)
 
-> Cadrage : [docs/channel-strategy-architecture.md](docs/channel-strategy-architecture.md)
-> · Suites/canaux restants : [TODO.md](TODO.md)
+> Cadrage : [docs/archive/channel-strategy-architecture.md](docs/archive/channel-strategy-architecture.md)
+> · Suites/canaux restants : [docs/archive/TODO-2026-10.md](docs/archive/TODO-2026-10.md)
 >
 > Toute la checklist ci-dessous était encore marquée `[ ]` alors que le
 > refactor est en production depuis des semaines (`channel-decision.service.ts`
@@ -900,7 +900,7 @@ Docs de cadrage Phase 3:
 - [~] Nouveaux canaux phasés — la plupart existent déjà et ont une stratégie
   (`GOALS`, `CONSENSUS`, `AVOID`, `UNDERDOG`, `FAVORITE`, `MARKET_MOVE`,
   `FIRST_HALF`, `LIVE_VALUE`) ; seul `BB` côté `NO` (BTTS NO) reste en
-  observation avant activation — voir TODO.md
+  observation avant activation — voir docs/archive/TODO-2026-10.md
 - [x] **Coquilles de ré-export nettoyées (2026-08-18)** — 23 fichiers dans
       `apps/backend/.../betting-engine/strategies/` ne faisaient que
       ré-exporter `@evcore/analysis-core` (reliquat de l'extraction jamais
@@ -925,7 +925,7 @@ Docs de cadrage Phase 3:
 
 > Cadrage : [docs/prediction-engine-families.md](docs/prediction-engine-families.md)
 > (§0, portée football actuelle) · orchestration mise à jour en conséquence
-> dans [docs/channel-strategy-architecture.md](docs/channel-strategy-architecture.md)
+> dans [docs/archive/channel-strategy-architecture.md](docs/archive/channel-strategy-architecture.md)
 > (§5, §6.1, §11).
 >
 > Constat qui a déclenché ce refactor : `EV`/`SAFE` ne filtraient pas les
@@ -944,7 +944,7 @@ Docs de cadrage Phase 3:
 > HT Over désactivé est la Coupe du Monde/sélections nationales, où le
 > volume est structurellement insuffisant pour calibrer par cette méthode
 > (WC : train=4, test=8). Pas de chantier de calibration lancé sans
-> évidence — voir TODO.md.
+> évidence — voir docs/archive/TODO-2026-10.md.
 
 - [-] **Famille A'** — reportée (voir constat ci-dessus), pas de biais
   démontré à corriger sur les ligues où ça compte
@@ -956,7 +956,7 @@ Docs de cadrage Phase 3:
       scan de `evaluatedMarkets`) → Phase 3 = CONSENSUS/AVOID (inchangé,
       voit maintenant VALUE/SAFE via la map accumulée). `context.
 evaluatedMarkets` n'est plus lu par aucun canal — candidat à
-      suppression (TODO.md). Simplification assumée : l'exception SAFE
+      suppression (docs/archive/TODO-2026-10.md). Simplification assumée : l'exception SAFE
       "comparaison OVER/UNDER symétrique à haut lambda" (avait besoin de
       plusieurs lignes O/U simultanées, incompatible avec "un pick par
       canal de marché") a été retirée plutôt que bricolée — à revoir
@@ -981,7 +981,7 @@ evaluatedMarkets` n'est plus lu par aucun canal — candidat à
       n'appliquait `cutoff` qu'au marché `ONE_X_TWO` — 16 marchés sur 17
       retournaient toujours la cote la plus récente en base, cutoff ignoré
       (impactait déjà le filtre de mouvement de cote en prod). Fix +
-      régression test, suite backend 956/956 verte (voir TODO.md "Bugs &
+      régression test, suite backend 956/956 verte (voir docs/archive/TODO-2026-10.md "Bugs &
       dette technique")
 - [x] Extraction `assembleFullOddsSnapshot` et dépendances pures
       (`apps/backend/.../odds-snapshot.loader.ts` →
@@ -1011,7 +1011,7 @@ evaluatedMarkets` n'est plus lu par aucun canal — candidat à
 - [ ] Elo FRI (`fri-model.service.ts`/`fri-model.utils.ts`, canal FRI) — pas
       encore extrait, même patron déjà applicable (utils déjà purs avec
       leurs propres tests) ; reporté, canal de niche (V1 `ONE_X_TWO`
-      uniquement), voir TODO.md
+      uniquement), voir docs/archive/TODO-2026-10.md
 - [x] `backtest-runner.ts` — façade CLI (`BacktestRunner`, assemble cotes +
       team stats + H2H + congestion par fixture)
 - [x] Premier script réel — `packages/backtest-core/scripts/coverage-check.ts`

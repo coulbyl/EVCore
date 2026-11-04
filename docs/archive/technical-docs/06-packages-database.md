@@ -69,14 +69,14 @@ D'après `packages/analysis-core/src/index.ts`, le package exporte :
 
 ### État d'avancement réel
 
-L'extraction décrite dans `lab.md` (à la racine du repo) est **entièrement terminée** : les étapes 0 à 6 du plan sont cochées. Concrètement :
+L'extraction décrite dans `docs/archive/lab.md` (à la racine du repo) est **entièrement terminée** : les étapes 0 à 6 du plan sont cochées. Concrètement :
 
 - Les enums de domaine ont migré vers `analysis-core/types`, avec un test de conformité côté backend qui casse le build si un enum Prisma diverge de sa contrepartie noyau.
 - Toute la logique pure (EV, probabilité, sélection, stratégies, settlement, métriques) a été déplacée tranche par tranche, chaque tranche prouvée iso-comportement par les specs existantes (616/616 tests verts au moment de la bascule, golden specs inchangés).
 - `apps/backend` (module `betting-engine`) et le module `backtest` du backend consomment `analysis-core` via de purs fichiers shims de réexport — zéro logique dupliquée. `ml-worker` consomme le contrat `MlShadowFeatures` défini dans `analysis-core/score/ml-features.ts`.
 - Le domaine calibration (`AdjustmentProposal`, `MarketSuspension`) est passé sur un schéma Postgres dédié (`calibration`) dans la base unique, pas une base séparée.
 
-Il ne reste, selon `lab.md`, qu'un point ouvert non bloquant : la politique de rétention/volumétrie du schéma `calibration` (partitionnement à reconsidérer seulement au-delà d'1M+ lignes).
+Il ne reste, selon `docs/archive/lab.md`, qu'un point ouvert non bloquant : la politique de rétention/volumétrie du schéma `calibration` (partitionnement à reconsidérer seulement au-delà d'1M+ lignes).
 
 ## packages/backtest-core (@evcore/backtest-core)
 
@@ -119,7 +119,7 @@ Conventions :
 
 - `packages/transactional/src/emails/` : un fichier par email — `email-verification.tsx`, `password-reset.tsx`, `roi-alert.tsx`, `market-suspension.tsx`, `brier-alert.tsx`, `weight-adjustment.tsx`, `ml-model-activated.tsx`, `ml-model-missing.tsx`, `etl-failure.tsx`, `xg-unavailable-report.tsx`, `weekly-report.tsx`, `support-message.tsx`. Les noms recoupent directement les événements métier du backend (alertes ROI, suspension de marché, propositions d'ajustement de poids, échecs ETL, xG indisponible).
 - `packages/transactional/src/components/` : mise en page et styles partagés entre emails (`evcore-layout.tsx`, `palette.ts`, `shared-styles.ts`).
-- `packages/transactional/src/render.ts` expose la fonction de rendu HTML consommée par le module `notification` du backend (envoi via Nodemailer, conformément à `EVCORE.md`/`CLAUDE.md`).
+- `packages/transactional/src/render.ts` expose la fonction de rendu HTML consommée par le module `notification` du backend (envoi via Nodemailer, conformément à `docs/archive/EVCORE-spec-v1.md`/`CLAUDE.md`).
 - `pnpm --filter @evcore/transactional dev` lance `email dev --dir src/emails`, la prévisualisation locale React Email.
 
 ## Rappel — accès base de données

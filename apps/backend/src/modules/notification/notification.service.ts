@@ -283,7 +283,7 @@ export class NotificationService {
     offset: number;
   }> {
     const types = this.allowedTypes(query.role);
-    // Écran Notifications fusionné (docs/vantage-centric-redesign-2026-09-01.md
+    // Écran Notifications fusionné (docs/archive/vantage-centric-redesign-2026-09-01.md
     // §0 point 3) — "announcement" est exactement ANNOUNCEMENT_PUBLISHED,
     // "alert" tout le reste. AND-é sur le OR broadcast/personnel ci-dessous :
     // les notifications personnelles ne sont jamais ANNOUNCEMENT_PUBLISHED

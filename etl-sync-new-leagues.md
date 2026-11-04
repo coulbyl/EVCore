@@ -1,6 +1,6 @@
 # ETL — endpoints à lancer pour synchroniser les nouvelles ligues
 
-Suite de [new-leagues.md](new-leagues.md). Ce document liste, **ligue par
+Suite de [docs/archive/new-leagues.md](docs/archive/new-leagues.md). Ce document liste, **ligue par
 ligue**, la séquence d'appels `POST /etl/...` à lancer pour peupler
 fixtures/stats/cotes historiques des 19 compétitions ajoutées à `seed.ts`
 (+ 2 fix rapides KOR1/UNL). `BASE_URL` = ton backend (`http://localhost:3000`
