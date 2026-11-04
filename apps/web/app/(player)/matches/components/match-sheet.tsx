@@ -51,10 +51,10 @@ export async function MatchSheetView({ id }: { id: string }) {
     getPlayerTimeZone(),
     getPlayerSession(),
   ]);
-  // An admin opens the match's diagnostic from here (12-admin.md § 2):
-  // λ, factors, every reading the engine set aside with its reason.
-  const admin =
-    session.status === "signed-in" && session.session.user.role === "ADMIN";
+  // Every signed-in player opens the match's analysis from here (12-admin
+  // § 2, open to players since 04/11): λ, factors, every reading the engine
+  // set aside with its reason.
+  const signedIn = session.status === "signed-in";
   const display = displayLocaleOf(locale);
   const muted = sheet.state === "postponed";
 
@@ -75,7 +75,9 @@ export async function MatchSheetView({ id }: { id: string }) {
           t={t}
           locale={display}
           timeZone={timeZone}
-          diagnosticHref={admin ? `/admin/matches/${sheet.fixtureId}` : null}
+          diagnosticHref={
+            signedIn ? `/matches/${sheet.fixtureId}/analysis` : null
+          }
         />
       }
     >
@@ -197,7 +199,7 @@ function SheetHeader({
   t: Translate;
   locale: DisplayLocale;
   timeZone: string;
-  /** Admins only: the match's diagnostic. */
+  /** Signed-in players: the match's analysis. */
   diagnosticHref: string | null;
 }) {
   const status =

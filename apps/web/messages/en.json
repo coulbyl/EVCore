@@ -85,6 +85,7 @@
     "activeSuspensions": "Active suspensions"
   },
   "matchSheet": {
+    "title": "Match analysis",
     "back": "Back to the match",
     "expectedTitle": "What our model expects",
     "expected": "{home} about {homeGoals} goals, {away} about {awayGoals} goals: {total} goals on average.",
@@ -372,7 +373,7 @@
         "suspended": "No reading · this market is suspended on our side",
         "not_sure": "No reading · no chance sure enough"
       },
-      "diagnostic": "Match diagnostic"
+      "diagnostic": "Match analysis"
     },
     "played": "{count, plural, one {# match already played} other {# matches already played}}",
     "bigOnly": "Big leagues"

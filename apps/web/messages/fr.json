@@ -85,6 +85,7 @@
     "activeSuspensions": "Suspensions actives"
   },
   "matchSheet": {
+    "title": "Analyse du match",
     "back": "Retour au match",
     "expectedTitle": "Ce que notre modèle attend",
     "expected": "{home} environ {homeGoals} {homeUnit}, {away} environ {awayGoals} {awayUnit} : {total} buts en moyenne.",
@@ -372,7 +373,7 @@
         "suspended": "Pas de lecture · ce marché est suspendu chez nous",
         "not_sure": "Pas de lecture · aucune chance assez sûre"
       },
-      "diagnostic": "Diagnostic du match"
+      "diagnostic": "Analyse du match"
     },
     "played": "{count, plural, one {# match déjà joué} other {# matchs déjà joués}}",
     "bigOnly": "Grands championnats"
