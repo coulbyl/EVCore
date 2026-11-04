@@ -14,34 +14,6 @@ import { PrismaService } from '@/prisma.service';
 import { startOfUtcDay } from '@utils/date.utils';
 
 /**
- * Découpage des cotes en tranches, partagé par la calibration et le vivier.
- *
- * Une seule définition : deux expressions séparées finiraient par diverger, et
- * le compositeur appliquerait alors à une jambe le coût d'une autre tranche.
- * Les bornes suivent les paliers mesurés sur la calibration des jambes —
- * ratio 0,899 sous 1,45, 0,836 entre 1,45 et 1,80, 0,619 au-delà.
- *
- * Au-dessus de 2,5 les tranches sont FERMÉES. Une tranche ouverte « 2,5+ »
- * créditait à une jambe à cote 12 le coût moyen d'une cellule faite à 3,5,
- * alors que la queue coûte bien plus (mesuré le 2026-10-05, `evaluated_pick`
- * réglé : ONE_X_TWO 2,5–3,5 → 0,926 ; 5–7 → 0,996 ; 7+ → 0,585 sur 588
- * jambes ; OVER_UNDER 5–7 → 0,856 ; 7+ → 0,714). Le compositeur minimise le
- * coût total, donc prend le moins de jambes possible : la plus longue d'une
- * tranche ouverte gagnait à coût crédité égal.
- */
-const ODDS_BAND_SQL = `CASE
-  WHEN odds < 1.3 THEN '<1.3'
-  WHEN odds < 1.45 THEN '1.3-1.45'
-  WHEN odds < 1.6 THEN '1.45-1.6'
-  WHEN odds < 1.8 THEN '1.6-1.8'
-  WHEN odds < 2.5 THEN '1.8-2.5'
-  WHEN odds < 3.5 THEN '2.5-3.5'
-  WHEN odds < 5 THEN '3.5-5'
-  WHEN odds < 7 THEN '5-7'
-  ELSE '7+'
-END`;
-
-/**
  * Matchs du créneau dont la dernière analyse d'avant-match porte l'alerte de
  * cohérence modèle↔marché : « Données suspectes » sur Décisions, dont
  * l'info-bulle promet que le match est retiré des paris réels.
@@ -126,7 +98,6 @@ export type PriceCandidateRow = {
   market: string;
   pick: string;
   odds: number;
-  band: string;
   scheduledAt: Date;
 };
 
@@ -399,7 +370,7 @@ export class CouponRepository {
    * Écrit la proposition du compositeur et ses jambes en une transaction.
    *
    * `source` fait partie de la clé unique : l'upsert ne peut donc jamais
-   * écraser la proposition du LLM du même jour sur la même cible.
+   * écraser la proposition d'une autre source du même jour sur la même cible.
    *
    * Une proposition existante n'est jamais réécrite : `created` dit si
    * cette passe l'a écrite ou l'a trouvée publiée (la passe de 21 h trouve
@@ -972,7 +943,6 @@ export class CouponRepository {
              market,
              pick,
              odds::float                AS odds,
-             ${Prisma.raw(ODDS_BAND_SQL)} AS band,
              "scheduledAt"
       FROM public.evaluated_pick
       WHERE "fixtureStatus" NOT IN ('FINISHED', 'POSTPONED', 'CANCELLED')

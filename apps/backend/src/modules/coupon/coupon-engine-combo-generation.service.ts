@@ -29,8 +29,8 @@ type Composer = (
   | { outcome: 'abstained'; reason: string; candidateCount: number };
 
 /** Un produit composé sur les sélections du moteur : sa classe, sa règle,
- * sa politique. Deux aujourd'hui, le combiné (2026-10-13) et le coupon long
- * (2026-10-18), sur le même vivier et la même calibration. */
+ * sa politique. Le combiné (2026-10-13) seul depuis l'arrêt du coupon long
+ * le 2026-11-04. */
 export type EngineCouponProfile = {
   couponClass: CouponClass;
   compose: Composer;

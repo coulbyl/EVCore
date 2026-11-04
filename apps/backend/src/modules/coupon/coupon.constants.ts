@@ -413,8 +413,7 @@ export const COUPON_SETTLEMENT_POLICY = {
 
 /**
  * Passes dont l'abstention est expliquée au joueur, et le produit qu'elles
- * composent (2026-10-29). Le coupon long et le combiné IA ne sont pas des
- * produits de l'Accueil.
+ * composent (2026-10-29), Combiné IA compris depuis le 2026-11-03.
  */
 const ABSTENTION_PASSES: Readonly<Record<string, CouponClass>> = {
   favourite: FAVOURITE_COUPON_CLASS,

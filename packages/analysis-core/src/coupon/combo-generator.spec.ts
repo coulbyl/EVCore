@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   COMBO_CONFIG,
   composeEngineCombo,
-  composeEngineLong,
   eligibleComboLegs,
   type CalibrationCell,
   type ComboCandidate,
@@ -250,37 +249,5 @@ describe("composeEngineCombo", () => {
       "a@1.21",
       "b@1.25",
     ]);
-  });
-
-  it("builds the long coupon longest-first, one per competition, until the 2.5 target", () => {
-    const result = composeEngineLong(
-      [
-        cand({ fixtureId: "a", odds: 1.7 }),
-        cand({ fixtureId: "b", odds: 1.6, competition: "PL" }),
-        cand({ fixtureId: "c", odds: 1.75, competition: "PL" }),
-        cand({ fixtureId: "d", odds: 1.3, competition: "SA" }),
-        cand({ fixtureId: "e", odds: 1.9, competition: "BL1" }),
-      ],
-      [green, { ...green, competition: "PL" }, { ...green, competition: "SA" }],
-    );
-    expect(result.outcome).toBe("picked");
-    if (result.outcome === "picked") {
-      // "e" is above 1.80; "c" wins PL over "b"; 1.75 × 1.7 = 2.98 ≥ 2.5.
-      expect(result.legs.map((l) => l.fixtureId)).toEqual(["c", "a"]);
-    }
-  });
-
-  it("abstains when the target cannot be reached within four legs", () => {
-    const result = composeEngineLong(
-      [
-        cand({ fixtureId: "a", odds: 1.25 }),
-        cand({ fixtureId: "b", odds: 1.22, competition: "PL" }),
-      ],
-      [green, { ...green, competition: "PL" }],
-    );
-    expect(result).toMatchObject({
-      outcome: "abstained",
-      reason: "target_unreachable",
-    });
   });
 });
