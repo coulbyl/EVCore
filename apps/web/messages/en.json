@@ -162,6 +162,23 @@
       "admin": "Admin"
     },
     "close": "Close",
+    "back": "Back",
+    "backTo": {
+      "today": "Back to Today",
+      "matches": "Back to Matches",
+      "results": "Back to Results",
+      "me": "Back to Me",
+      "messages": "Back to Messages",
+      "help": "Back to Help",
+      "account": "Back to Account",
+      "responsible": "Back to Responsible gambling",
+      "notifications": "Back to Notifications",
+      "admin": "Back to Admin",
+      "home": "Back to home",
+      "login": "Back to sign in",
+      "register": "Back to sign up",
+      "forgotPassword": "Back to forgotten password"
+    },
     "legal": "18+ (21+ in Cameroon) · Betting carries a risk of loss · Only stake what you can afford to lose",
     "unread": "{count} unread",
     "adminSections": {

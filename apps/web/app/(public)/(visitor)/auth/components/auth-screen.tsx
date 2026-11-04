@@ -18,7 +18,7 @@ export async function AuthScreen({
   title: string;
   /** One short line under the title, when the screen needs it. */
   intro?: React.ReactNode;
-  back: { href: string; label: string };
+  back: { href: string; label?: string };
   /** « Se connecter » in the band; off on the sign-in page itself. */
   action?: boolean;
   children: React.ReactNode;

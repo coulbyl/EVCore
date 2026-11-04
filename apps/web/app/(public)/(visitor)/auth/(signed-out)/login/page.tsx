@@ -22,11 +22,7 @@ export default async function LoginPage({
     searchParams,
   ]);
   return (
-    <AuthScreen
-      title={t("signIn")}
-      back={{ href: "/", label: t("back") }}
-      action={false}
-    >
+    <AuthScreen title={t("signIn")} back={{ href: "/" }} action={false}>
       <LoginForm
         resetDone={query.reset === "success"}
         labels={{

@@ -85,7 +85,7 @@ export default async function Page({
       <SubpageBand
         title={t("title")}
         subtitle={t("subtitle")}
-        back={{ href: "/me", label: t("back") }}
+        back={{ href: "/me" }}
       />
       <PushNudge labels={{ text: t("pushNudge"), enable: t("pushEnable") }} />
       <ThreadLive unread={unread} />

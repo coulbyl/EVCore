@@ -63,7 +63,7 @@ test.describe("/resultats, sans compte", () => {
       main.getByRole("link", { name: /Paris SG – Lens/ }),
     ).toHaveCount(0);
     await expect(main.getByRole("link", { name: /Aide/ })).toHaveCount(0);
-    await page.getByRole("link", { name: "Résultats" }).click();
+    await page.getByRole("link", { name: "Retour aux résultats" }).click();
     await expect(page).toHaveURL(/\/resultats$/);
   });
 

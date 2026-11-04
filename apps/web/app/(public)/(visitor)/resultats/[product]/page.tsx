@@ -53,11 +53,10 @@ export default async function PublicResultPage({
   params,
   searchParams,
 }: Props) {
-  const [{ product }, query, t, shell, locale] = await Promise.all([
+  const [{ product }, query, t, locale] = await Promise.all([
     params,
     searchParams,
     getTranslations("results.sheet"),
-    getTranslations("shell"),
     getLocale(),
   ]);
   const line = lineOf(product);
@@ -89,10 +88,7 @@ export default async function PublicResultPage({
       <VisitorBand>
         <BandTitle
           title={t(`titles.${line.kind === "ai" ? "AI" : line.product}`)}
-          back={{
-            href: periodHref(period, "/resultats"),
-            label: shell("tabs.results"),
-          }}
+          back={{ href: periodHref(period, "/resultats") }}
         />
       </VisitorBand>
       <main

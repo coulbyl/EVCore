@@ -88,9 +88,8 @@ export default async function Page({
 }: {
   searchParams: Promise<{ more?: string; status?: string; kind?: string }>;
 }) {
-  const [t, shell, params, locale, timeZone, session] = await Promise.all([
+  const [t, params, locale, timeZone, session] = await Promise.all([
     getTranslations("playerNotifications"),
-    getTranslations("shell"),
     searchParams,
     getLocale(),
     getPlayerTimeZone(),
@@ -151,10 +150,7 @@ export default async function Page({
       {badge !== null ? (
         <UnreadDrawn count={badge} render={crypto.randomUUID()} />
       ) : null}
-      <SubpageBand
-        title={t("title")}
-        back={{ href: "/today", label: shell("tabs.today") }}
-      />
+      <SubpageBand title={t("title")} back={{ href: "/today" }} />
       <div className="flex flex-col px-4 pb-4 lg:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
           <ChipGroup label={t("filterStatus")} items={statusChips} />

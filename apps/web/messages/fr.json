@@ -162,6 +162,23 @@
       "admin": "Admin"
     },
     "close": "Fermer",
+    "back": "Retour",
+    "backTo": {
+      "today": "Retour à Aujourd'hui",
+      "matches": "Retour aux matchs",
+      "results": "Retour aux résultats",
+      "me": "Retour à Moi",
+      "messages": "Retour aux messages",
+      "help": "Retour à l'aide",
+      "account": "Retour au compte",
+      "responsible": "Retour à Jeu responsable",
+      "notifications": "Retour aux notifications",
+      "admin": "Retour à l'admin",
+      "home": "Retour à l'accueil",
+      "login": "Retour à la connexion",
+      "register": "Retour à l'inscription",
+      "forgotPassword": "Retour au mot de passe oublié"
+    },
     "legal": "18+ (21+ au Cameroun) · Parier comporte des risques de perte · Ne mise que ce que tu peux perdre",
     "unread": "{count} non lues",
     "adminSections": {

@@ -58,10 +58,7 @@ export default async function Page() {
 
   return (
     <>
-      <SubpageBand
-        title={t("title")}
-        back={{ href: "/me", label: t("back") }}
-      />
+      <SubpageBand title={t("title")} back={{ href: "/me" }} />
       <div className="flex flex-col divide-y divide-border px-4 pb-4 lg:px-6">
         <section className="flex flex-col gap-3 py-4">
           <p className="text-body">{t("intro")}</p>

@@ -23,10 +23,7 @@ export default async function ResetPasswordPage({
   ]);
   const token = typeof query.token === "string" ? query.token : null;
   return (
-    <AuthScreen
-      title={t("reset.title")}
-      back={{ href: "/auth/login", label: t("signIn") }}
-    >
+    <AuthScreen title={t("reset.title")} back={{ href: "/auth/login" }}>
       <ResetPasswordForm
         token={token}
         labels={{

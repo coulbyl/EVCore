@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { getLocale } from "next-intl/server";
 import { Providers } from "./providers";
 import { PwaRegister } from "./pwa-register";
+import { InAppHistoryTracker } from "@/components/scoreboard/sheet/in-app-history";
 
 // Not preloaded: 134 kB that every page fetched first, while the player's
 // screens are set in Barlow (app/fonts/scoreboard-fonts.ts). The browser
@@ -68,6 +69,9 @@ export default async function RootLayout({
             few texts (C0). Every message of the app, 53 kB, went out with
             each page. */}
         <Providers>{children}</Providers>
+        {/* Where a way back leads, the player's screens and the visitor's
+            alike (BackLink, a sheet's close). */}
+        <InAppHistoryTracker />
         <PwaRegister />
       </body>
     </html>

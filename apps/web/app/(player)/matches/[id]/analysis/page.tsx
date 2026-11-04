@@ -125,7 +125,7 @@ export default async function Page({
         subtitle={`${sheet.competition}${
           sheet.country ? ` · ${translateCountry(sheet.country, display)}` : ""
         } · ${kickoff}`}
-        back={{ href: `/matches/${id}`, label: t("back") }}
+        back={{ href: `/matches/${id}`, under: "/matches", label: t("back") }}
       />
       <div className="flex flex-col gap-6 px-4 pt-3 pb-4 lg:px-6">
         {!run ? (

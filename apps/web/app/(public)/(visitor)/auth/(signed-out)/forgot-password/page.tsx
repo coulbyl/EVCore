@@ -18,7 +18,7 @@ export default async function ForgotPasswordPage() {
   return (
     <AuthScreen
       title={t("forgot.title")}
-      back={{ href: "/auth/login", label: t("signIn") }}
+      back={{ href: "/auth/login" }}
       intro={t("forgot.intro")}
     >
       <ForgotPasswordForm
