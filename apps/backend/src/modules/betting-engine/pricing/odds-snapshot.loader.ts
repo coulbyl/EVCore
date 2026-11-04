@@ -4,6 +4,7 @@ import Decimal from 'decimal.js';
 import {
   assembleFullOddsSnapshot,
   MARKET_GRID_BOOKMAKERS,
+  MARKET_GRID_LOOKBACK_DAYS,
   MARKET_GRID_MARKETS,
   OVER_UNDER_PICKS,
   STAT_SETTLED_MARKETS,
@@ -125,6 +126,14 @@ export class OddsSnapshotLoader {
         market: { in: [...MARKET_GRID_MARKETS] },
         line: null,
         ...pointInTimeOddsWhere(cutoff),
+        // Lower bound: the grid ignores older prices (selectMarketGridQuotes),
+        // and it lets the monthly partitions prune.
+        snapshotAt: {
+          lte: cutoff,
+          gte: new Date(
+            cutoff.getTime() - MARKET_GRID_LOOKBACK_DAYS * 86_400_000,
+          ),
+        },
       },
       select: {
         bookmaker: true,

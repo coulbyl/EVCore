@@ -16,6 +16,7 @@ import {
   MARKET_GRID_MAX_GOALS,
   MARKET_GRID_MAX_RMSE,
   MARKET_GRID_ONE_X_TWO_WEIGHT,
+  MARKET_GRID_LOOKBACK_DAYS,
 } from "./market-grid.config";
 
 /**
@@ -220,9 +221,11 @@ export function selectMarketGridQuotes(
   rows: readonly RawOddsRow[],
   cutoff: Date,
 ): MarketGridQuotes | null {
+  const since = cutoff.getTime() - MARKET_GRID_LOOKBACK_DAYS * 86_400_000;
   const usable = rows.filter(
     (row) =>
       row.snapshotAt.getTime() <= cutoff.getTime() &&
+      row.snapshotAt.getTime() >= since &&
       MARKET_GRID_MARKETS.includes(row.market),
   );
   for (const bookmaker of MARKET_GRID_BOOKMAKERS) {

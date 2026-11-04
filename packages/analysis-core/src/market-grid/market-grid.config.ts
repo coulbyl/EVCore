@@ -39,6 +39,13 @@ export const MARKET_GRID_ONE_X_TWO_WEIGHT = 3;
  */
 export const MARKET_GRID_MAX_RMSE = 0.02;
 
+/**
+ * How far before the cutoff a price still counts: a Pinnacle quote older
+ * than this is not the market of the match any more, and the bound lets the
+ * read prune the monthly odds_snapshot partitions.
+ */
+export const MARKET_GRID_LOOKBACK_DAYS = 14;
+
 /** λ search bounds, the same as the statistics engine's clamp. */
 export const MARKET_GRID_LAMBDA_MIN = 0.05;
 export const MARKET_GRID_LAMBDA_MAX = 5;
