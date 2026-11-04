@@ -38,6 +38,11 @@ export type SheetReading = SheetPick & {
 export type SheetAiOpinion = SheetPick & {
   /** The AI played the same pick as our reading. */
   sameAsReading: boolean;
+  /**
+   * Another pick than our reading, that one final score makes win with it
+   * (06 § 7): said so a player does not read a contradiction in it.
+   */
+  passesWithReading: boolean;
   /** Its text, whole, opened from its pick, or nothing (06 § 2). */
   speech: string | null;
   /** When it decided, ISO: « Décidé le 31/10 à 13:41 ». */

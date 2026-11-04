@@ -24,7 +24,8 @@ import {
   type MarketPriceRow,
   type PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
-import type { MatchFacts } from '@evcore/analysis-core';
+import { BetStatus, Market } from '@evcore/db';
+import { resolvePickBetStatus, type MatchFacts } from '@evcore/analysis-core';
 import { MatchFactsRepository } from '@modules/fixture-events/match-facts.repository';
 import { PlayerSquadRepository } from '@modules/fixture-events/player-squad.repository';
 import { newMarketPicksOf, pricedPlayerIds } from './match-sheet-markets';
@@ -425,9 +426,56 @@ function aiOpinionOf(
       : (quote?.operatorFairProbability ?? null),
     result: resultOf(ai.result),
     sameAsReading,
+    passesWithReading:
+      reading !== null && !sameAsReading && bothCanWin(reading, key),
     speech: speechOf(ai.text),
     decidedAt: ai.decidedAt.toISOString(),
   };
+}
+
+/** The markets settled on the final score alone (resolvePickBetStatus). */
+const FULL_TIME_MARKETS: ReadonlySet<string> = new Set<Market>([
+  Market.ONE_X_TWO,
+  Market.DOUBLE_CHANCE,
+  Market.OVER_UNDER,
+  Market.BTTS,
+  Market.DRAW_NO_BET,
+  Market.TEAM_TOTAL_HOME,
+  Market.TEAM_TOTAL_AWAY,
+  Market.CLEAN_SHEET_HOME,
+  Market.CLEAN_SHEET_AWAY,
+  Market.WIN_TO_NIL_HOME,
+  Market.WIN_TO_NIL_AWAY,
+  Market.CORRECT_SCORE,
+  Market.RESULT_TOTAL_GOALS,
+  Market.RESULT_BTTS,
+]);
+
+/** Goals per team tried: every line priced is under it. */
+const SCORES_TRIED = 10;
+
+/**
+ * Two bets settled on the final score that one score makes both win
+ * (06 § 7: « l'équipe marque » and « victoire de l'équipe » pass together).
+ * False when one of them reads another fact (half-time, corners, a
+ * player…): the sheet then says nothing rather than guess.
+ */
+export function bothCanWin(
+  a: { market: string; pick: string },
+  b: { market: string; pick: string },
+): boolean {
+  if (!FULL_TIME_MARKETS.has(a.market) || !FULL_TIME_MARKETS.has(b.market)) {
+    return false;
+  }
+  for (let home = 0; home <= SCORES_TRIED; home += 1) {
+    for (let away = 0; away <= SCORES_TRIED; away += 1) {
+      const wins = (bet: { market: string; pick: string }) =>
+        resolvePickBetStatus(bet.market as Market, bet.pick, home, away) ===
+        BetStatus.WON;
+      if (wins(a) && wins(b)) return true;
+    }
+  }
+  return false;
 }
 
 /** One team's matches, most recent first (rows come per venue). */

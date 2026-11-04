@@ -23,7 +23,11 @@ import type {
   FixtureEventRepository,
   SheetEventRow,
 } from '@modules/fixture-events/fixture-event.repository';
-import { MatchSheetService, setAsideReasonOf } from './match-sheet.service';
+import {
+  bothCanWin,
+  MatchSheetService,
+  setAsideReasonOf,
+} from './match-sheet.service';
 import { speechOf } from './matches-reading';
 
 const NOW = new Date('2026-10-30T15:00:00.000Z');
@@ -242,6 +246,8 @@ describe('MatchSheetService', () => {
       chance: 0.27,
       result: null,
       sameAsReading: false,
+      // Victoire Arsenal and the draw: no score makes both win.
+      passesWithReading: false,
       speech:
         'Chelsea n’a perdu qu’une fois en huit déplacements. Le reste du texte.',
       decidedAt: '2026-10-31T13:41:00.000Z',
@@ -253,6 +259,28 @@ describe('MatchSheetService', () => {
       'OVER_UNDER/UNDER',
       'BTTS/YES',
     ]);
+  });
+
+  it("says when the AI's other pick can pass with our reading", () => {
+    const under = { market: 'TEAM_TOTAL_HOME', pick: 'UNDER_2_5' };
+    // Rennes under 2.5 and both teams score: 1–1.
+    expect(bothCanWin(under, { market: 'BTTS', pick: 'YES' })).toBe(true);
+    expect(
+      bothCanWin(
+        { market: 'ONE_X_TWO', pick: 'HOME' },
+        { market: 'ONE_X_TWO', pick: 'AWAY' },
+      ),
+    ).toBe(false);
+    expect(
+      bothCanWin(
+        { market: 'OVER_UNDER', pick: 'UNDER' },
+        { market: 'RESULT_TOTAL_GOALS', pick: 'HOME_UNDER_3_5' },
+      ),
+    ).toBe(true);
+    // Another fact than the final score: nothing said.
+    expect(
+      bothCanWin(under, { market: 'FIRST_HALF_WINNER', pick: 'HOME' }),
+    ).toBe(false);
   });
 
   it('says when the AI played our pick, with our chance, and nothing when it did not play', async () => {
