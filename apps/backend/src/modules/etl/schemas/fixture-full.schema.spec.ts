@@ -98,6 +98,14 @@ describe('FixtureByIdDetailsSchema', () => {
     expect(FixtureByIdDetailsSchema.safeParse(match).success).toBe(true);
   });
 
+  // Manchester United–Roma, 03/11: the VAR check on the 58' penalty came
+  // with `detail: null`, and the whole match lost its events.
+  it('accepts a VAR event without a detail', () => {
+    const match = entry();
+    Object.assign(match.events[0] ?? {}, { type: 'Var', detail: null });
+    expect(FixtureByIdDetailsSchema.safeParse(match).success).toBe(true);
+  });
+
   it('rejects an event without a minute', () => {
     const match = entry();
     Object.assign(match.events[0]?.time ?? {}, { elapsed: null });

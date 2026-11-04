@@ -57,7 +57,11 @@ const FixtureEventSchema = z.object({
   player: PersonRefSchema,
   assist: PersonRefSchema,
   type: z.string(),
-  detail: z.string(),
+  // Null on a VAR check the API has not labelled (Bruno Fernandes' penalty
+  // at 58', Manchester United–Roma, 03/11): required, it rejected the whole
+  // match's events, lineups and player statistics, and its scorers never
+  // showed.
+  detail: z.string().nullish(),
   comments: z.string().nullish(),
 });
 

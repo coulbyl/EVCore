@@ -17,6 +17,17 @@ function details(mutate?: (entry: Record<string, unknown>) => void) {
 }
 
 describe('toFixtureDetailRows', () => {
+  it('stores an event the API sent without a detail as an empty text', () => {
+    const rows = toFixtureDetailRows({
+      details: details((entry) => {
+        const events = entry.events as Array<Record<string, unknown>>;
+        Object.assign(events[0] ?? {}, { detail: null });
+      }),
+      teams: TEAMS,
+    });
+    expect(rows.events[0]?.detail).toBe('');
+  });
+
   it('maps a real match: events in response order, our team ids', () => {
     const rows = toFixtureDetailRows({ details: details(), teams: TEAMS });
 
