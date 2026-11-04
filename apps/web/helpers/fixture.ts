@@ -139,20 +139,18 @@ export function formatStatPick(
   const line = bet.line ?? null;
   const player = bet.player ?? null;
   const number = (value: number) => value.toLocaleString("fr-FR");
-  const overUnder = (unit: string): string | null =>
-    line === null
-      ? null
-      : pick === "OVER"
-        ? `plus de ${number(line)} ${unit}`
-        : pick === "UNDER"
-          ? `moins de ${number(line)} ${unit}`
-          : null;
+  const overUnder = (unit: string): string | null => {
+    if (line === null) return null;
+    if (pick === "OVER") return `plus de ${number(line)} ${unit}`;
+    if (pick === "UNDER") return `moins de ${number(line)} ${unit}`;
+    return null;
+  };
   const capital = (text: string | null) =>
     text === null ? null : `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
   switch (market) {
     case "CORNERS":
-      return capital(overUnder("corners"));
+      return formatLinePick(pick, market, line);
     case "CARDS":
       return capital(overUnder("cartons"));
     case "CORNERS_HOME":
@@ -182,15 +180,10 @@ export function formatStatPick(
     case "PLAYER_SHOTS":
     case "PLAYER_SHOTS_ON_TARGET": {
       if (player === null || line === null) return null;
-      const many = line >= 2;
-      const shots =
-        market === "PLAYER_SHOTS"
-          ? many
-            ? "tirs"
-            : "tir"
-          : many
-            ? "tirs cadrés"
-            : "tir cadré";
+      const words = market === "PLAYER_SHOTS" ? ["tir"] : ["tir", "cadré"];
+      const shots = words
+        .map((word) => (line >= 2 ? `${word}s` : word))
+        .join(" ");
       return `${player} : au moins ${number(line)} ${shots}`;
     }
     default:
