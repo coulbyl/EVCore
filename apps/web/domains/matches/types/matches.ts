@@ -33,6 +33,8 @@ export type MatchItem = {
   away: TodayTeam;
   reading: MatchReading | null;
   withoutReading: MatchWithoutReading | null;
+  /** The match sheet shows an « Avis IA » (its pick or its spoken no-play). */
+  ai: boolean;
 };
 
 export type MatchesScreen = {
