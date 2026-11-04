@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { extractXg, StatsSyncWorker } from './stats-sync.worker';
+import {
+  extractXg,
+  rejectionAlertMessage,
+  StatsSyncWorker,
+} from './stats-sync.worker';
 import type { FixtureService } from '../../fixture/fixture.service';
 import type { ConfigService } from '@nestjs/config';
 import { ApiFootballClient } from '../api-football.client';
@@ -652,8 +656,54 @@ describe('StatsSyncWorker', () => {
     await alerting.syncFixtures([fixtureWithoutStatistics(73002)]);
 
     expect(notification.sendEtlFailureAlert).toHaveBeenCalledOnce();
-    expect(notification.sendEtlFailureAlert.mock.calls[0]?.[2]).toContain(
-      '1 match(es)',
+    expect(notification.sendEtlFailureAlert.mock.calls[0]?.[2]).toBe(
+      '1 match(es) without their events, lineups and player statistics, left pending. events, lineups or players block missing — 1: #73001.',
+    );
+  });
+
+  it('says the cause of each match left without events, grouped', async () => {
+    persistDetails
+      .mockResolvedValueOnce({
+        status: 'rejected',
+        cause: 'unknown-team',
+        reason: 'Unexpected team 99',
+        match: 'Groningen – Sparta Rotterdam',
+      })
+      .mockRejectedValueOnce(new Error('deadlock'));
+    serve((ids) => ({
+      body: fixturesAnswer([
+        entry(ids[0] ?? 0),
+        entry(ids[1] ?? 0),
+        entry(ids[2] ?? 0, { details: { events: undefined } }),
+      ]),
+    }));
+    const alerting = new StatsSyncWorker(
+      fixtureService as unknown as FixtureService,
+      apiFootball,
+      notification as unknown as NotificationService,
+      prisma as unknown as PrismaService,
+      rollingStatsService as unknown as RollingStatsService,
+      fixtureStatistics as unknown as FixtureStatisticsService,
+      fixtureEvents,
+    );
+
+    const result = await alerting.syncFixtures([
+      fixtureWithoutStatistics(74001),
+      fixtureWithoutStatistics(74002),
+      fixtureWithoutStatistics(74003),
+    ]);
+
+    expect(result.details.rejections).toEqual([
+      {
+        externalId: 74001,
+        cause: 'unknown-team',
+        match: 'Groningen – Sparta Rotterdam',
+      },
+      { externalId: 74002, cause: 'write-failed', match: null },
+      { externalId: 74003, cause: 'missing-block', match: null },
+    ]);
+    expect(notification.sendEtlFailureAlert.mock.calls[0]?.[2]).toBe(
+      '3 match(es) without their events, lineups and player statistics, left pending. unknown team — 1: Groningen – Sparta Rotterdam (#74001). database write failed — 1: #74002. events, lineups or players block missing — 1: #74003.',
     );
   });
 
@@ -684,5 +734,22 @@ describe('extractXg', () => {
       value: 2,
       source: XgSource.SHOTS_PROXY,
     });
+  });
+});
+
+describe('rejectionAlertMessage', () => {
+  it('names five matches per cause, then counts the rest', () => {
+    const rejections = Array.from({ length: 7 }, (_, i) => ({
+      externalId: 100 + i,
+      cause: 'unknown-team' as const,
+      match: `Home ${i} – Away ${i}`,
+    }));
+    const message = rejectionAlertMessage({ rejectedCalls: 2, rejections });
+    expect(message).toContain(
+      '2 /fixtures?ids= answer(s) rejected whole by the schema (Zod)',
+    );
+    expect(message).toContain('unknown team — 7: Home 0 – Away 0 (#100)');
+    expect(message).toContain('Home 4 – Away 4 (#104) and 2 more.');
+    expect(message).not.toContain('#105');
   });
 });

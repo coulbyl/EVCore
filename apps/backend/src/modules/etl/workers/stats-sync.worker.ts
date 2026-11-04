@@ -374,7 +374,10 @@ export class StatsSyncWorker {
       await this.notification.sendEtlFailureAlert(
         'stats-sync',
         'fixtures-by-ids',
-        `${tally.rejectedCalls} /fixtures?ids= answer(s) rejected by the schema, ${tally.details.rejected} match(es) without their events, lineups and player statistics (rejected or not written) — left pending; see the stats-sync-worker logs`,
+        rejectionAlertMessage({
+          rejectedCalls: tally.rejectedCalls,
+          rejections: tally.details.rejections,
+        }),
       );
     } catch (error) {
       logger.error({ err: error }, 'Rejection alert could not be sent');
@@ -491,6 +494,53 @@ export class StatsSyncWorker {
     tally.details.written++;
     if (written.synced) tally.details.synced++;
   }
+}
+
+const REJECTION_CAUSE_LABELS: Record<FixtureDetailRejectionCause, string> = {
+  'unknown-team': 'unknown team',
+  'missing-block': 'events, lineups or players block missing',
+  'write-failed': 'database write failed',
+  'unknown-fixture': 'fixture not in the database',
+};
+
+// How many matches the alert names per cause before « and N more ».
+const ALERT_MATCHES_PER_CAUSE = 5;
+
+/**
+ * The stats-sync alert, readable in the admin bell: the rejected calls,
+ * then the matches left without events grouped by cause, each named.
+ */
+export function rejectionAlertMessage(input: {
+  rejectedCalls: number;
+  rejections: readonly DetailRejection[];
+}): string {
+  const parts: string[] = [];
+  if (input.rejectedCalls > 0) {
+    parts.push(
+      `${input.rejectedCalls} /fixtures?ids= answer(s) rejected whole by the schema (Zod), every match left pending`,
+    );
+  }
+  const byCause = new Map<FixtureDetailRejectionCause, DetailRejection[]>();
+  for (const rejection of input.rejections) {
+    const group = byCause.get(rejection.cause) ?? [];
+    group.push(rejection);
+    byCause.set(rejection.cause, group);
+  }
+  if (byCause.size > 0) {
+    const groups = [...byCause].map(([cause, group]) => {
+      const named = group
+        .slice(0, ALERT_MATCHES_PER_CAUSE)
+        .map(({ externalId, match }) =>
+          match === null ? `#${externalId}` : `${match} (#${externalId})`,
+        );
+      const more = group.length - named.length;
+      return `${REJECTION_CAUSE_LABELS[cause]} — ${group.length}: ${named.join(', ')}${more > 0 ? ` and ${more} more` : ''}`;
+    });
+    parts.push(
+      `${input.rejections.length} match(es) without their events, lineups and player statistics, left pending. ${groups.join('. ')}`,
+    );
+  }
+  return `${parts.join('. ')}.`;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
