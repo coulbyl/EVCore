@@ -669,7 +669,7 @@ function matchSheet(fixtureId) {
     // A finished match's goals and red cards, from its events (phase 2 of
     // the 03/11 plan): Paris SG – Lens 2-0, an own goal and a penalty.
     scorers:
-      fixtureId === "y-psg"
+      fixtureId === matchUuid("y-psg")
         ? [
             {
               minute: 12,
@@ -688,7 +688,7 @@ function matchSheet(fixtureId) {
           ]
         : null,
     redCards:
-      fixtureId === "y-psg"
+      fixtureId === matchUuid("y-psg")
         ? [{ minute: 63, extraMinute: null, player: "Sotoca", team: "away" }]
         : null,
     otherPicks:
