@@ -46,6 +46,12 @@ export function PushBridge({ unread }: { unread: number | null }) {
   // The count the list on screen was drawn with. A row touched here leads
   // away, or redraws the list itself once its read is written.
   const drawn = useRef(count);
+  // Opening Notifications reads the count again: its chip is drawn from the
+  // server, and the badge must count the same set (a notification written
+  // since, for a player who never granted the push).
+  useEffect(() => {
+    if (pathname === "/notifications") void refreshUnread();
+  }, [pathname]);
   useEffect(() => {
     if (pathname !== "/notifications" || shownCountMarkedHere()) {
       drawn.current = count;
