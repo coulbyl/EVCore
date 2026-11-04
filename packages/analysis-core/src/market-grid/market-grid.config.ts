@@ -1,4 +1,5 @@
 import { Market } from "../types";
+import { BOOKMAKER_PREFERENCE } from "../pricing/odds-assembly";
 
 /**
  * Market grid (docs/audits/2026-10-29/ML-V2-PROPOSITION.md § 2.2 and § 3.1,
@@ -7,13 +8,14 @@ import { Market } from "../types";
  */
 
 /**
- * Books whose prices feed the grid, in order of preference: Pinnacle first
- * (the sharpest, 64 % of our fixtures), Bet365 otherwise (98 % together,
- * ML-V2-PROPOSITION § 3.1). The first book with a complete 1X2 and at least
- * one complete total-goals line is used, alone: prices are never mixed
- * across books.
+ * Books whose prices feed the grid: the two sharpest of the engine's
+ * preference order (BOOKMAKER_PREFERENCE), Pinnacle first (64 % of our
+ * fixtures), Bet365 otherwise (98 % together, ML-V2-PROPOSITION § 3.1). The
+ * first book with a complete 1X2 and at least one complete total-goals line
+ * is used, alone: prices are never mixed across books.
  */
-export const MARKET_GRID_BOOKMAKERS: readonly string[] = ["Pinnacle", "Bet365"];
+export const MARKET_GRID_BOOKMAKERS: readonly string[] =
+  BOOKMAKER_PREFERENCE.slice(0, 2);
 
 /** Markets read to fit the grid: the 1X2 and every two-way goal line. */
 export const MARKET_GRID_MARKETS: readonly Market[] = [
@@ -45,6 +47,13 @@ export const MARKET_GRID_MAX_RMSE = 0.02;
  * read prune the monthly odds_snapshot partitions.
  */
 export const MARKET_GRID_LOOKBACK_DAYS = 14;
+
+/**
+ * The goal lines are read at the 1X2's instant: a line priced further than
+ * this from the 1X2 row kept (either side) is ignored, so an OVER of one
+ * moment is never paired with an UNDER or a 1X2 of another.
+ */
+export const MARKET_GRID_SAME_INSTANT_MINUTES = 60;
 
 /** λ search bounds, the same as the statistics engine's clamp. */
 export const MARKET_GRID_LAMBDA_MIN = 0.05;

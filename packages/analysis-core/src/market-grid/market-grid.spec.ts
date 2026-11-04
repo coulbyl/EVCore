@@ -108,6 +108,26 @@ describe("fitMarketGridLambdas", () => {
     expect(fit.rmse).toBeLessThan(1e-6);
   });
 
+  it("recovers λ from one start across lopsided and low-scoring grids", () => {
+    for (const [lh, la] of [
+      [3.6, 0.3],
+      [0.3, 3.2],
+      [0.6, 0.5],
+      [2.4, 2.2],
+    ] as const) {
+      const p = computePoissonMarkets(lh, la);
+      const fit = fitMarketGridLambdas({
+        oneXTwo: { home: p.home, draw: p.draw, away: p.away },
+        lines: [
+          { market: Market.OVER_UNDER, line: 2.5, fairOver: p.over25 },
+          { market: Market.OVER_UNDER, line: 3.5, fairOver: p.over35 },
+        ],
+      });
+      expect(fit.lambdaHome).toBeCloseTo(lh, 4);
+      expect(fit.lambdaAway).toBeCloseTo(la, 4);
+    }
+  });
+
   it("is deterministic", () => {
     const p = computePoissonMarkets(1.2, 1.4);
     const targets = {
@@ -259,6 +279,47 @@ describe("selectMarketGridQuotes", () => {
       status: "unavailable",
       reason: "no_sharp_quotes",
     });
+  });
+
+  it("ignores a line priced away from the 1X2's instant", () => {
+    const rows = bookRows({
+      bookmaker: "Pinnacle",
+      lambdaHome: 1.5,
+      lambdaAway: 1,
+    }).map((row) =>
+      row.pick === "OVER_3_5" || row.pick === "UNDER_3_5"
+        ? { ...row, snapshotAt: new Date(BEFORE.getTime() - 61 * 60_000) }
+        : row.pick === "UNDER_1_5"
+          ? { ...row, snapshotAt: new Date(BEFORE.getTime() - 59 * 60_000) }
+          : row,
+    );
+    const quotes = selectMarketGridQuotes(rows, AT);
+    expect(quotes?.lines.map((l) => `${l.market}:${l.line}`)).toEqual([
+      "OVER_UNDER:2.5",
+      "TEAM_TOTAL_HOME:1.5",
+    ]);
+  });
+
+  it("pairs an OVER with the UNDER of its own instant, not an older one", () => {
+    const older = new Date(BEFORE.getTime() - 3 * 3_600_000);
+    const rows = [
+      ...bookRows({
+        bookmaker: "Pinnacle",
+        lambdaHome: 1.5,
+        lambdaAway: 1,
+        snapshotAt: older,
+      }).filter((row) => row.pick !== "OVER"),
+      ...bookRows({
+        bookmaker: "Pinnacle",
+        lambdaHome: 1.5,
+        lambdaAway: 1,
+      }).filter((row) => row.pick !== "UNDER"),
+    ];
+    const quotes = selectMarketGridQuotes(rows, AT);
+    expect(quotes?.lines.map((l) => `${l.market}:${l.line}`)).toEqual([
+      "OVER_UNDER:3.5",
+      "TEAM_TOTAL_HOME:1.5",
+    ]);
   });
 
   it("reads every complete line, and only complete ones", () => {

@@ -1,10 +1,12 @@
 import Decimal from "decimal.js";
 import { Market } from "../types";
 import type { RawOddsRow } from "../pricing/odds-assembly";
-import { shinProbabilities } from "../pricing/shin";
+import { shinOneXTwo, shinOutcomeGroups } from "../pricing/shin";
+import { overUnderPickLine } from "../pricing/outcome-groups";
 import {
   buildPoissonDistributions,
   deriveMarketsFromPoisson,
+  poissonProbaFromDistributions,
 } from "../probability/poisson";
 import type { ThreeWayProba } from "../probability/markets";
 import type { MatchProbabilities } from "../selection/types";
@@ -17,6 +19,7 @@ import {
   MARKET_GRID_MAX_RMSE,
   MARKET_GRID_ONE_X_TWO_WEIGHT,
   MARKET_GRID_LOOKBACK_DAYS,
+  MARKET_GRID_SAME_INSTANT_MINUTES,
 } from "./market-grid.config";
 
 /**
@@ -87,19 +90,6 @@ type FitTargets = {
   lines: ReadonlyArray<{ market: Market; line: number; fairOver: Decimal }>;
 };
 
-const LINE_PICK = /^(OVER|UNDER)(?:_(\d+)_5)?$/;
-
-/** Line of a two-way goals pick: "OVER" / "UNDER" are the 2.5 line. */
-function parseLinePick(
-  pick: string,
-): { side: "OVER" | "UNDER"; line: number } | null {
-  const match = LINE_PICK.exec(pick);
-  if (!match) return null;
-  const side = match[1] as "OVER" | "UNDER";
-  const line = match[2] === undefined ? 2.5 : Number(match[2]) + 0.5;
-  return { side, line };
-}
-
 function latest<T extends { snapshotAt: Date }>(rows: readonly T[]): T | null {
   let best: T | null = null;
   for (const row of rows) {
@@ -137,85 +127,97 @@ function quotesForBook(
     draw: toDecimal(oneXTwoRow.drawOdds) as Decimal,
     away: toDecimal(oneXTwoRow.awayOdds) as Decimal,
   };
-  const fair = shinProbabilities([
-    { pick: "HOME", odds: oneXTwoOdds.home },
-    { pick: "DRAW", odds: oneXTwoOdds.draw },
-    { pick: "AWAY", odds: oneXTwoOdds.away },
-  ]);
-  const home = fair?.get("HOME");
-  const draw = fair?.get("DRAW");
-  const away = fair?.get("AWAY");
-  if (!home || !draw || !away) return null;
+  const fairOneXTwo = shinOneXTwo(oneXTwoOdds);
+  if (!fairOneXTwo) return null;
 
-  // Latest row per (market, pick), then complete OVER/UNDER pairs per line.
-  const latestByPick = new Map<string, RawOddsRow>();
+  // Every line is read at the 1X2's instant: a row priced further than
+  // MARKET_GRID_SAME_INSTANT_MINUTES from it is another market state and is
+  // ignored, so the grid never pairs an OVER of one moment with an UNDER or
+  // a 1X2 of another. Then the latest row per (market, pick) in that window.
+  const anchor = oneXTwoRow.snapshotAt.getTime();
+  const tolerance = MARKET_GRID_SAME_INSTANT_MINUTES * 60_000;
+  const byPick = new Map<string, RawOddsRow[]>();
   for (const row of bookRows) {
     if (row.market === Market.ONE_X_TWO || !row.pick) continue;
     if (!toDecimal(row.odds)) continue;
+    if (Math.abs(row.snapshotAt.getTime() - anchor) > tolerance) continue;
     const key = `${row.market}|${row.pick}`;
-    const current = latestByPick.get(key);
-    if (!current || row.snapshotAt.getTime() > current.snapshotAt.getTime()) {
-      latestByPick.set(key, row);
-    }
+    const bucket = byPick.get(key);
+    if (bucket) bucket.push(row);
+    else byPick.set(key, [row]);
   }
+  const picked = [...byPick.values()].map(
+    (bucket) => latest(bucket) as RawOddsRow,
+  );
+
+  // Margin removed per complete OVER/UNDER pair (outcome-groups.ts pairs
+  // OVER_x with UNDER_x only), by Shin.
+  const priced = shinOutcomeGroups(
+    picked.map((row) => ({
+      fixtureId: "",
+      market: row.market,
+      pick: row.pick as string,
+      odds: Number(row.odds),
+      row,
+    })),
+  );
   const pairs = new Map<
     string,
-    { market: Market; line: number; over?: RawOddsRow; under?: RawOddsRow }
+    {
+      market: Market;
+      line: number;
+      over?: Decimal;
+      under?: Decimal;
+      fairOver?: Decimal;
+    }
   >();
-  for (const row of latestByPick.values()) {
-    const parsed = parseLinePick(row.pick as string);
+  let snapshotAt = oneXTwoRow.snapshotAt;
+  for (const entry of priced) {
+    const parsed = overUnderPickLine(entry.pick);
     if (!parsed) continue;
-    const key = `${row.market}|${parsed.line}`;
-    const pair = pairs.get(key) ?? { market: row.market, line: parsed.line };
-    if (parsed.side === "OVER") pair.over = row;
-    else pair.under = row;
+    const key = `${entry.market}|${parsed.line}`;
+    const pair = pairs.get(key) ?? {
+      market: entry.row.market,
+      line: parsed.line,
+    };
+    const odds = toDecimal(entry.row.odds) as Decimal;
+    if (parsed.side === "OVER") {
+      pair.over = odds;
+      pair.fairOver = entry.fair;
+    } else {
+      pair.under = odds;
+    }
     pairs.set(key, pair);
+    if (entry.row.snapshotAt.getTime() > snapshotAt.getTime()) {
+      snapshotAt = entry.row.snapshotAt;
+    }
   }
 
   const lines: MarketGridLine[] = [];
-  let snapshotAt = oneXTwoRow.snapshotAt;
   for (const pair of pairs.values()) {
-    if (!pair.over || !pair.under) continue;
-    const overOdds = toDecimal(pair.over.odds) as Decimal;
-    const underOdds = toDecimal(pair.under.odds) as Decimal;
-    const fairLine = shinProbabilities([
-      { pick: "OVER", odds: overOdds },
-      { pick: "UNDER", odds: underOdds },
-    ]);
-    const fairOver = fairLine?.get("OVER");
-    if (!fairOver) continue;
+    if (!pair.over || !pair.under || !pair.fairOver) continue;
     lines.push({
       market: pair.market,
       line: pair.line,
-      overOdds,
-      underOdds,
-      fairOver,
+      overOdds: pair.over,
+      underOdds: pair.under,
+      fairOver: pair.fairOver,
     });
-    for (const row of [pair.over, pair.under]) {
-      if (row.snapshotAt.getTime() > snapshotAt.getTime()) {
-        snapshotAt = row.snapshotAt;
-      }
-    }
   }
   if (!lines.some((line) => line.market === Market.OVER_UNDER)) return null;
 
   lines.sort((a, b) =>
     a.market === b.market ? a.line - b.line : a.market < b.market ? -1 : 1,
   );
-  return {
-    bookmaker,
-    snapshotAt,
-    oneXTwoOdds,
-    fairOneXTwo: { home, draw, away },
-    lines,
-  };
+  return { bookmaker, snapshotAt, oneXTwoOdds, fairOneXTwo, lines };
 }
 
 /**
  * The prices the grid is fitted on: the first book of MARKET_GRID_BOOKMAKERS
  * with a complete 1X2 and at least one complete total-goals line among the
- * rows priced at or before `cutoff` (latest row per pick). `null` when no
- * book qualifies.
+ * rows priced at or before `cutoff`, within MARKET_GRID_LOOKBACK_DAYS (the
+ * latest 1X2, then the lines priced within MARKET_GRID_SAME_INSTANT_MINUTES
+ * of it, latest row per pick). `null` when no book qualifies.
  */
 export function selectMarketGridQuotes(
   rows: readonly RawOddsRow[],
@@ -240,41 +242,32 @@ type ModelTargets = {
   lines: ReadonlyArray<{ market: Market; line: number; over: number }>;
 };
 
-function modelResiduals(
-  lambdaHome: number,
-  lambdaAway: number,
-  targets: ModelTargets,
-): { residuals: number[]; weights: number[] } {
+type Evaluation = { x: [number, number]; residuals: number[]; loss: number };
+
+/** P(goals > line) of a goal distribution. */
+function overLine(dist: readonly number[], line: number): number {
+  return dist.reduce((sum, p, goals) => (goals > line ? sum + p : sum), 0);
+}
+
+/** Residuals (grid − target) and weighted loss of the grid at `x`. */
+function evaluate(x: [number, number], targets: ModelTargets): Evaluation {
   const { distHome, distAway } = buildPoissonDistributions(
-    lambdaHome,
-    lambdaAway,
+    x[0],
+    x[1],
     MARKET_GRID_MAX_GOALS,
   );
-  let home = 0;
-  let draw = 0;
-  let away = 0;
+  const oneXTwo = poissonProbaFromDistributions(distHome, distAway);
   const total = new Array<number>(distHome.length + distAway.length).fill(0);
   for (let h = 0; h < distHome.length; h++) {
     for (let a = 0; a < distAway.length; a++) {
-      const p = (distHome[h] ?? 0) * (distAway[a] ?? 0);
-      if (h > a) home += p;
-      else if (h === a) draw += p;
-      else away += p;
-      total[h + a] = (total[h + a] ?? 0) + p;
+      total[h + a] =
+        (total[h + a] ?? 0) + (distHome[h] ?? 0) * (distAway[a] ?? 0);
     }
   }
-  const over = (dist: readonly number[], line: number): number =>
-    dist.reduce((sum, p, goals) => (goals > line ? sum + p : sum), 0);
-
   const residuals = [
-    home - targets.oneXTwo[0],
-    draw - targets.oneXTwo[1],
-    away - targets.oneXTwo[2],
-  ];
-  const weights = [
-    MARKET_GRID_ONE_X_TWO_WEIGHT,
-    MARKET_GRID_ONE_X_TWO_WEIGHT,
-    MARKET_GRID_ONE_X_TWO_WEIGHT,
+    oneXTwo.home.toNumber() - targets.oneXTwo[0],
+    oneXTwo.draw.toNumber() - targets.oneXTwo[1],
+    oneXTwo.away.toNumber() - targets.oneXTwo[2],
   ];
   for (const target of targets.lines) {
     const dist =
@@ -283,18 +276,13 @@ function modelResiduals(
         : target.market === Market.TEAM_TOTAL_AWAY
           ? distAway
           : total;
-    residuals.push(over(dist, target.line) - target.over);
-    weights.push(1);
+    residuals.push(overLine(dist, target.line) - target.over);
   }
-  return { residuals, weights };
-}
-
-function weightedLoss(
-  x: readonly [number, number],
-  targets: ModelTargets,
-): number {
-  const { residuals, weights } = modelResiduals(x[0], x[1], targets);
-  return residuals.reduce((sum, r, i) => sum + (weights[i] ?? 0) * r * r, 0);
+  const loss = residuals.reduce(
+    (sum, r, i) => sum + (i < 3 ? MARKET_GRID_ONE_X_TWO_WEIGHT : 1) * r * r,
+    0,
+  );
+  return { x, residuals, loss };
 }
 
 function clampLambda(value: number): number {
@@ -304,32 +292,63 @@ function clampLambda(value: number): number {
   );
 }
 
-const STARTS: ReadonlyArray<readonly [number, number]> = [
-  [1.4, 1.1],
-  [1.0, 1.6],
-  [2.0, 0.8],
-];
+/**
+ * Starting point read off the prices: the Poisson total whose P(> line)
+ * matches the fair total-goals line closest to 2.5 (bisection), split by
+ * the 1X2 (home share = P(home) + P(draw) / 2).
+ */
+function startFromPrices(targets: ModelTargets): [number, number] {
+  const totals = targets.lines.filter((l) => l.market === Market.OVER_UNDER);
+  const reference = totals.reduce<(typeof totals)[number] | null>(
+    (best, l) =>
+      !best || Math.abs(l.line - 2.5) < Math.abs(best.line - 2.5) ? l : best,
+    null,
+  );
+  let mu = 2.6;
+  if (reference) {
+    let lo = 2 * MARKET_GRID_LAMBDA_MIN;
+    let hi = 2 * MARKET_GRID_LAMBDA_MAX;
+    for (let i = 0; i < 60; i++) {
+      mu = (lo + hi) / 2;
+      const { distHome } = buildPoissonDistributions(
+        mu,
+        MARKET_GRID_LAMBDA_MIN,
+        2 * MARKET_GRID_MAX_GOALS,
+      );
+      if (overLine(distHome, reference.line) < reference.over) lo = mu;
+      else hi = mu;
+    }
+  }
+  const share = Math.min(
+    0.9,
+    Math.max(0.1, targets.oneXTwo[0] + targets.oneXTwo[1] / 2),
+  );
+  return [clampLambda(mu * share), clampLambda(mu * (1 - share))];
+}
+
 const MAX_ITERATIONS = 100;
 const STEP = 1e-6;
 const TOLERANCE = 1e-12;
 
-/** Levenberg-Marquardt on (λ home, λ away), numerical Jacobian, clamped. */
+/**
+ * Levenberg-Marquardt on (λ home, λ away), numerical Jacobian, clamped. The
+ * residuals of the last accepted step are carried to the next iteration.
+ */
 function levenbergMarquardt(
-  start: readonly [number, number],
+  start: [number, number],
   targets: ModelTargets,
-): { x: [number, number]; loss: number } {
-  let x: [number, number] = [start[0], start[1]];
-  let loss = weightedLoss(x, targets);
+): Evaluation {
+  let current = evaluate(start, targets);
   let mu = 1e-3;
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
-    const { residuals, weights } = modelResiduals(x[0], x[1], targets);
+    const { x, residuals } = current;
     const jacobian = [0, 1].map((k) => {
       const up: [number, number] = [x[0], x[1]];
       const down: [number, number] = [x[0], x[1]];
       up[k] = (up[k] as number) + STEP;
       down[k] = (down[k] as number) - STEP;
-      const rUp = modelResiduals(up[0], up[1], targets).residuals;
-      const rDown = modelResiduals(down[0], down[1], targets).residuals;
+      const rUp = evaluate(up, targets).residuals;
+      const rDown = evaluate(down, targets).residuals;
       return rUp.map((r, i) => (r - (rDown[i] ?? 0)) / (2 * STEP));
     });
     const [j0, j1] = jacobian as [number[], number[]];
@@ -339,7 +358,7 @@ function levenbergMarquardt(
     let g0 = 0;
     let g1 = 0;
     residuals.forEach((r, i) => {
-      const w = weights[i] ?? 0;
+      const w = i < 3 ? MARKET_GRID_ONE_X_TWO_WEIGHT : 1;
       const d0 = j0[i] ?? 0;
       const d1 = j1[i] ?? 0;
       a00 += w * d0 * d0;
@@ -356,30 +375,28 @@ function levenbergMarquardt(
       if (Math.abs(det) < 1e-300) break;
       const step0 = -(b11 * g0 - a01 * g1) / det;
       const step1 = -(b00 * g1 - a01 * g0) / det;
-      const candidate: [number, number] = [
-        clampLambda(x[0] + step0),
-        clampLambda(x[1] + step1),
-      ];
-      const candidateLoss = weightedLoss(candidate, targets);
-      if (candidateLoss < loss) {
-        const gain = loss - candidateLoss;
-        x = candidate;
-        loss = candidateLoss;
+      const candidate = evaluate(
+        [clampLambda(x[0] + step0), clampLambda(x[1] + step1)],
+        targets,
+      );
+      if (candidate.loss < current.loss) {
+        const gain = current.loss - candidate.loss;
+        current = candidate;
         mu = Math.max(mu / 3, 1e-12);
         improved = true;
-        if (gain < TOLERANCE) return { x, loss };
+        if (gain < TOLERANCE) return current;
       } else {
         mu *= 4;
       }
     }
     if (!improved) break;
   }
-  return { x, loss };
+  return current;
 }
 
 /**
  * λ home and λ away whose independent Poisson grid reproduces the fair
- * targets best (weighted least squares, three fixed starts, the best kept).
+ * targets best (weighted least squares from one start read off the prices).
  * Deterministic: same targets → same λ.
  */
 export function fitMarketGridLambdas(targets: FitTargets): MarketGridFit {
@@ -395,12 +412,10 @@ export function fitMarketGridLambdas(targets: FitTargets): MarketGridFit {
       over: line.fairOver.toNumber(),
     })),
   };
-  let best: { x: [number, number]; loss: number } | null = null;
-  for (const start of STARTS) {
-    const result = levenbergMarquardt(start, modelTargets);
-    if (!best || result.loss < best.loss) best = result;
-  }
-  const solved = best as { x: [number, number]; loss: number };
+  const solved = levenbergMarquardt(
+    startFromPrices(modelTargets),
+    modelTargets,
+  );
   const totalWeight =
     3 * MARKET_GRID_ONE_X_TWO_WEIGHT + modelTargets.lines.length;
   return {
