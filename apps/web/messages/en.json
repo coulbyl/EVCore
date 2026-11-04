@@ -722,7 +722,20 @@
     "empty": "Nothing yet: your morning comes at 8 am.",
     "seeMore": "See more",
     "note": "Four kinds and no more: your morning, your week, the result of your coupons, the team's replies, and an announcement now and then.",
-    "settings": "Set them in Account"
+    "settings": "Set them in Account",
+    "filterStatus": "Show",
+    "statusAll": "All",
+    "statusUnread": "Unread",
+    "statusUnreadCount": "Unread · {count}",
+    "statusRead": "Read",
+    "filterKind": "Kind",
+    "kindAll": "All",
+    "kindPlayer": "Player",
+    "kindTechnical": "Technical alerts",
+    "markAllRead": "Mark all as read",
+    "emptyUnread": "Nothing unread.",
+    "emptyRead": "Nothing read yet.",
+    "emptyTechnical": "No technical alert."
   },
   "notFound": {
     "title": "Page not found",

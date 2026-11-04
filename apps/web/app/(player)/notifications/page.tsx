@@ -4,10 +4,15 @@ import { ChevronRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { SubpageBand } from "@/components/scoreboard/shell/subpage-band";
 import { getPlayerTimeZone } from "@/domains/preferences/get-player-time-zone";
+import { getNotifications } from "@/domains/notifications/use-cases/get-notifications";
 import {
-  getNotifications,
-  type PlayerNotification,
-} from "@/domains/notifications/use-cases/get-notifications";
+  feedHref,
+  hrefOf,
+  parseFeedFilter,
+  type FeedFilter,
+} from "@/domains/notifications/helpers/notification-feed";
+import { getPlayerSession } from "@/domains/auth/use-cases/get-player-session";
+import { ChipGroup } from "@/components/scoreboard/ui/chip-group";
 import {
   displayLocaleOf,
   formatShortDate,
@@ -16,6 +21,7 @@ import {
 import { RichText } from "@/components/scoreboard/ui/rich-text";
 import { plainTextOf } from "@/helpers/plain-text";
 import { NotificationLink } from "./components/notification-link";
+import { MarkAllRead } from "./components/mark-all-read";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("playerNotifications");
@@ -26,22 +32,6 @@ const PAGE = 30;
 const MAX_PAGES = 5;
 const INTL: Record<string, string> = { fr: "fr-FR", en: "en-GB" };
 
-/** Where each of the four kinds leads (09 § 6); an announcement shows here. */
-function hrefOf(notification: PlayerNotification): string | null {
-  switch (notification.type) {
-    case "MORNING_BRIEF":
-      return "/today";
-    case "WEEKLY_STATEMENT":
-      return "/results/week";
-    case "FOLLOWED_SETTLED":
-      return "/me?tab=settled";
-    case "SUPPORT_MESSAGE":
-      return "/me/messages";
-    default:
-      return null;
-  }
-}
-
 /**
  * La cloche (09 § 6, maquette Cloche) : une liste sans onglet, les plus
  * récentes d'abord — la matinée, la semaine, le résultat des coupons
@@ -49,22 +39,64 @@ function hrefOf(notification: PlayerNotification): string | null {
  * non-lues en gras avec leur point ; toucher une ligne la marque lue et
  * mène où elle parle. Les alertes d'exploitation ne viennent jamais ici
  * (le serveur ne les sert qu'à l'admin).
+ *
+ * Filtres demandés le 04/11 (09 § 6 disait « pas d'onglets ») : Toutes ·
+ * Non lues · Lues pour tous, et pour l'admin, dont la cloche reçoit aussi
+ * les alertes techniques, Tout · Joueur · Alertes techniques. Le serveur
+ * filtre (jamais une page filtrée dans le navigateur) et le compte des non
+ * lues de la puce est celui de la même requête.
  */
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ more?: string }>;
+  searchParams: Promise<{ more?: string; status?: string; kind?: string }>;
 }) {
-  const [t, shell, params, locale, timeZone] = await Promise.all([
+  const [t, shell, params, locale, timeZone, session] = await Promise.all([
     getTranslations("playerNotifications"),
     getTranslations("shell"),
     searchParams,
     getLocale(),
     getPlayerTimeZone(),
+    getPlayerSession(),
   ]);
+  const admin =
+    session.status === "signed-in" && session.session.user.role === "ADMIN";
+  const filter = parseFeedFilter(params, admin);
   const display = displayLocaleOf(locale);
   const pages = Math.min(MAX_PAGES, 1 + Math.max(0, Number(params.more) || 0));
-  const { data, total } = await getNotifications(PAGE * pages);
+  // The unread of the kind shown: the chip's count and « tout marquer »,
+  // from the same filter as the list (a read list has none to count).
+  const [{ data, total }, unread] = await Promise.all([
+    getNotifications(filter.status, filter.kind, PAGE * pages),
+    filter.status === "read"
+      ? Promise.resolve(null)
+      : getNotifications("unread", filter.kind, 1),
+  ]);
+  const unreadTotal = unread?.total ?? 0;
+  const statusChips = (["all", "unread", "read"] as const).map((status) => ({
+    key: status,
+    label:
+      status === "all"
+        ? t("statusAll")
+        : status === "read"
+          ? t("statusRead")
+          : unreadTotal > 0
+            ? t("statusUnreadCount", { count: unreadTotal })
+            : t("statusUnread"),
+    href: feedHref({ ...filter, status }),
+    active: filter.status === status,
+  }));
+  const kindChips = (["all", "player", "technical"] as const).map((kind) => ({
+    key: kind,
+    label:
+      kind === "all"
+        ? t("kindAll")
+        : kind === "player"
+          ? t("kindPlayer")
+          : t("kindTechnical"),
+    href: feedHref({ ...filter, kind }),
+    active: filter.kind === kind,
+  }));
 
   const dayOf = (date: Date) =>
     new Intl.DateTimeFormat("en-CA", { timeZone }).format(date);
@@ -94,13 +126,33 @@ export default async function Page({
         back={{ href: "/today", label: shell("tabs.today") }}
       />
       <div className="flex flex-col px-4 pb-4 lg:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+          <ChipGroup label={t("filterStatus")} items={statusChips} />
+          {unreadTotal > 0 ? (
+            <MarkAllRead kind={filter.kind} label={t("markAllRead")} />
+          ) : null}
+        </div>
+        {/* An admin's bell also holds the technical alerts (ETL, stats,
+            engine): a second row of chips, the admin's only. */}
+        {admin ? (
+          <ChipGroup
+            label={t("filterKind")}
+            items={kindChips}
+            className="pb-2"
+          />
+        ) : null}
         {data.length === 0 ? (
-          <p className="py-6 text-body text-muted-foreground">{t("empty")}</p>
+          <p className="py-6 text-body text-muted-foreground">
+            {emptyText(filter, t)}
+          </p>
         ) : (
           <ul aria-label={t("title")} className="divide-y divide-border">
             {data.map((notification) => {
               const { day, time } = when(notification.createdAt);
-              const href = hrefOf(notification);
+              const href = hrefOf(notification.type);
+              // A row that leads somewhere shows two lines: a technical
+              // alert's list of raw ids is read whole on its admin screen.
+              const clamp = href !== null;
               const unread = !notification.isRead;
               const body = (
                 <>
@@ -130,8 +182,8 @@ export default async function Page({
                       linkable={!href}
                       phrasing
                       className={
-                        href
-                          ? "line-clamp-2 text-meta text-muted-foreground"
+                        clamp
+                          ? "line-clamp-2 break-words text-meta text-muted-foreground"
                           : "text-meta text-muted-foreground"
                       }
                     />
@@ -163,7 +215,7 @@ export default async function Page({
         )}
         {data.length < total && pages < MAX_PAGES ? (
           <Link
-            href={`/notifications?more=${pages}`}
+            href={feedHref(filter, pages)}
             scroll={false}
             className="flex min-h-11 items-center text-body font-medium underline-offset-4 hover:underline"
           >
@@ -179,4 +231,14 @@ export default async function Page({
       </div>
     </>
   );
+}
+
+function emptyText(
+  filter: FeedFilter,
+  t: (key: "empty" | "emptyUnread" | "emptyRead" | "emptyTechnical") => string,
+): string {
+  if (filter.status === "unread") return t("emptyUnread");
+  if (filter.status === "read") return t("emptyRead");
+  if (filter.kind === "technical") return t("emptyTechnical");
+  return t("empty");
 }

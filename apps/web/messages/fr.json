@@ -722,7 +722,20 @@
     "empty": "Rien pour l'instant : ta matinée arrive à 8 h.",
     "seeMore": "Voir plus",
     "note": "Quatre sortes et pas plus : ta matinée, ta semaine, le résultat de tes coupons, les réponses de l'équipe, et une annonce de temps en temps.",
-    "settings": "Réglables dans Compte"
+    "settings": "Réglables dans Compte",
+    "filterStatus": "Afficher",
+    "statusAll": "Toutes",
+    "statusUnread": "Non lues",
+    "statusUnreadCount": "Non lues · {count}",
+    "statusRead": "Lues",
+    "filterKind": "Sorte",
+    "kindAll": "Tout",
+    "kindPlayer": "Joueur",
+    "kindTechnical": "Alertes techniques",
+    "markAllRead": "Tout marquer comme lu",
+    "emptyUnread": "Rien de non lu.",
+    "emptyRead": "Rien de lu pour l'instant.",
+    "emptyTechnical": "Aucune alerte technique."
   },
   "notFound": {
     "title": "Page introuvable",

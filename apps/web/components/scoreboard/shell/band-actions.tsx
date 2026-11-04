@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Bell } from "lucide-react";
 import { cn } from "@evcore/ui/cn";
+import type { UnreadReading } from "@/domains/notifications/helpers/notification-feed";
+import { BellLink } from "./bell-link";
 
 /**
  * La cloche et l'initiale du joueur, en haut à droite du bandeau sur
@@ -10,15 +11,15 @@ import { cn } from "@evcore/ui/cn";
 export function BandActions({
   initial,
   avatarUrl,
-  unread = 0,
+  unread,
   labels,
   className,
 }: {
   initial: string;
   /** The player's avatar, shown in place of the initial once chosen. */
   avatarUrl?: string | null;
-  /** Unread notifications: the bell's badge (09 § 6). */
-  unread?: number;
+  /** Unread notifications: the bell's badge (09 § 6); null when its read failed. */
+  unread: UnreadReading | null;
   labels: { notifications: string; me: string; unread: string };
   className?: string;
 }) {
@@ -27,25 +28,14 @@ export function BandActions({
 
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <Link
-        href="/notifications"
-        aria-label={
-          unread > 0
-            ? `${labels.notifications}, ${labels.unread.replace("{count}", String(unread))}`
-            : labels.notifications
-        }
-        className={cn(action, "relative")}
-      >
-        <Bell aria-hidden className="size-5" strokeWidth={1.8} />
-        {unread > 0 ? (
-          <span
-            aria-hidden
-            className="score absolute -end-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-led-on px-1 text-legal font-bold text-band"
-          >
-            {unread > 9 ? "9+" : unread}
-          </span>
-        ) : null}
-      </Link>
+      <BellLink
+        unread={unread}
+        labels={{
+          notifications: labels.notifications,
+          unread: labels.unread,
+        }}
+        className={action}
+      />
       <Link
         href="/me"
         aria-label={labels.me}
