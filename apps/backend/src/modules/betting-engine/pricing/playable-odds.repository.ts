@@ -50,6 +50,17 @@ export function playableQuoteKey(key: PlayableQuoteKey): string {
   return key.line == null ? base : `${base}|${Number(key.line)}`;
 }
 
+/** One book's last price before kick-off on one pick (and line) of a fixture. */
+export type MarketPriceRow = {
+  market: string;
+  pick: string;
+  /** Null for a market without a line column. */
+  line: number | null;
+  bookmaker: string;
+  odds: number;
+  snapshotAt: Date;
+};
+
 type QuoteRow = {
   fixtureId: string;
   market: string;
@@ -269,6 +280,31 @@ export class PlayableOddsRepository {
       result.set(key, current);
     }
     return result;
+  }
+
+  /**
+   * Every book's last price before kick-off on every pick and line of these
+   * markets, for one fixture: the match sheet chooses its lines from them
+   * (corners, cards, scorers, player shots, minute 1X2).
+   */
+  async findMarketPrices(input: {
+    fixtureId: string;
+    markets: readonly string[];
+  }): Promise<MarketPriceRow[]> {
+    if (input.markets.length === 0) return [];
+    return this.prisma.client.$queryRaw<MarketPriceRow[]>`
+      SELECT DISTINCT ON (o.market, o.line, o.pick, o.bookmaker)
+             o.market::text AS market, o.pick, o.line::float AS line,
+             o.bookmaker, o.odds::float AS odds, o."snapshotAt"
+      FROM public.odds_snapshot o
+      JOIN public.fixture f ON f.id = o."fixtureId"
+      WHERE o."fixtureId" = ${input.fixtureId}::uuid
+        AND o.market::text = ANY(ARRAY[${Prisma.join(input.markets)}]::text[])
+        AND o.pick IS NOT NULL
+        AND o.odds IS NOT NULL
+        AND o."snapshotAt" <= f."scheduledAt"
+      ORDER BY o.market, o.line, o.pick, o.bookmaker, o."snapshotAt" DESC
+    `;
   }
 
   /**

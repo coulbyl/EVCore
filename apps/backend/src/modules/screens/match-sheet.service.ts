@@ -9,6 +9,7 @@ import {
   SCREEN_READS_MAX_KEYS,
   SCREEN_READS_TTL_MS,
   SHEET_MAIN_LINES,
+  SHEET_NEW_MARKETS,
 } from '@config/screens.constants';
 import { SharedReads } from '@utils/shared-reads';
 import {
@@ -19,8 +20,13 @@ import {
 import {
   PlayableOddsRepository,
   playableQuoteKey,
+  type MarketPriceRow,
   type PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
+import type { MatchFacts } from '@evcore/analysis-core';
+import { MatchFactsRepository } from '@modules/fixture-events/match-facts.repository';
+import { PlayerSquadRepository } from '@modules/fixture-events/player-squad.repository';
+import { newMarketPicksOf, pricedPlayerIds } from './match-sheet-markets';
 import { legFact, of, type PastMatch } from '@modules/coupon/leg-fact/leg-fact';
 import {
   LegFactRepository,
@@ -61,9 +67,10 @@ type DatedMatch = PastMatch & { scheduledAt: Date };
 
 /**
  * GET /matches/:id/sheet: the player's match sheet (docs/refonte-ui/06
- * § 2–4). Six SQL queries: the match and its last meetings, the engine's
- * picks, the AI's opinion, the two teams' last matches, the 1xBet prices,
- * and a finished match's events.
+ * § 2–4). The match and its last meetings, the engine's picks, the AI's
+ * opinion, the two teams' last matches, the 1xBet prices, the prices of
+ * the new markets and their players' names, and a finished match's events
+ * and facts.
  */
 /** What a sheet reads, shared between the players who open it. */
 type SheetReads = {
@@ -75,6 +82,12 @@ type SheetReads = {
   rejectionReasons: string[];
   /** A finished match's events; empty before the end. */
   events: SheetEventRow[];
+  /** Every book's prices on the markets of SHEET_NEW_MARKETS. */
+  marketRows: MarketPriceRow[];
+  /** The names of the players those prices name. */
+  playerNames: Map<number, string>;
+  /** A finished match's facts (statistics, events, lineups); else null. */
+  facts: MatchFacts | null;
 };
 
 @Injectable()
@@ -95,6 +108,8 @@ export class MatchSheetService {
     private readonly playableOdds: PlayableOddsRepository,
     private readonly history: LegFactRepository,
     private readonly fixtureEvents: FixtureEventRepository,
+    private readonly matchFacts: MatchFactsRepository,
+    private readonly squads: PlayerSquadRepository,
   ) {}
 
   async getSheet(
@@ -110,7 +125,7 @@ export class MatchSheetService {
     return this.sheetOf({ ...reads, kickoff: reads.header.scheduledAt, now });
   }
 
-  /** Six SQL queries (events only once finished); null for an unknown match. */
+  /** The sheet's reads (events and facts only once finished); null for an unknown match. */
   private async readSheet(
     fixtureId: string,
     now: Date,
@@ -123,38 +138,58 @@ export class MatchSheetService {
     if (!header) return null;
     const kickoff = header.scheduledAt;
 
-    const [candidates, aiRows, historyRows, rejectionReasons, events] =
-      await Promise.all([
-        this.repository.findReadingCandidates({
-          fixtureIds: [fixtureId],
-          channels: READING_CHANNELS,
-        }),
-        this.repository.findAiOpinion(fixtureId),
-        this.history.findTeamHistories({
-          teamIds: [header.homeTeamId, header.awayTeamId],
-          since: new Date(kickoff.getTime() - LEG_FACT_HISTORY_DAYS * DAY_MS),
-          before: kickoff,
-          perVenue: LEG_FACT_HISTORY_MATCHES,
-        }),
-        this.repository.findRejectionReasons({
-          fixtureId,
-          channels: READING_CHANNELS,
-        }),
-        header.status === 'FINISHED'
-          ? this.fixtureEvents.findSheetEvents(fixtureId)
-          : Promise.resolve([]),
-      ]);
+    const finished = header.status === 'FINISHED';
+    const [
+      candidates,
+      aiRows,
+      historyRows,
+      rejectionReasons,
+      events,
+      marketRows,
+      facts,
+    ] = await Promise.all([
+      this.repository.findReadingCandidates({
+        fixtureIds: [fixtureId],
+        channels: READING_CHANNELS,
+      }),
+      this.repository.findAiOpinion(fixtureId),
+      this.history.findTeamHistories({
+        teamIds: [header.homeTeamId, header.awayTeamId],
+        since: new Date(kickoff.getTime() - LEG_FACT_HISTORY_DAYS * DAY_MS),
+        before: kickoff,
+        perVenue: LEG_FACT_HISTORY_MATCHES,
+      }),
+      this.repository.findRejectionReasons({
+        fixtureId,
+        channels: READING_CHANNELS,
+      }),
+      finished
+        ? this.fixtureEvents.findSheetEvents(fixtureId)
+        : Promise.resolve([]),
+      this.playableOdds.findMarketPrices({
+        fixtureId,
+        markets: SHEET_NEW_MARKETS,
+      }),
+      finished
+        ? this.matchFacts
+            .findFacts([fixtureId])
+            .then((byId) => byId.get(fixtureId) ?? null)
+        : Promise.resolve(null),
+    ]);
     const ai = aiRows.find((row) => row.status === 'SELECTED' && row.market);
-    const quotes = await this.playableOdds.findPlayableQuotes(
-      [
-        ...SHEET_MAIN_LINES.map((line) => ({ fixtureId, ...line })),
-        ...uniqueKeys(candidates),
-        ...(ai?.market && ai.pick
-          ? [{ fixtureId, market: ai.market, pick: ai.pick }]
-          : []),
-      ],
-      { operatorOnly: true },
-    );
+    const [quotes, playerNames] = await Promise.all([
+      this.playableOdds.findPlayableQuotes(
+        [
+          ...SHEET_MAIN_LINES.map((line) => ({ fixtureId, ...line })),
+          ...uniqueKeys(candidates),
+          ...(ai?.market && ai.pick
+            ? [{ fixtureId, market: ai.market, pick: ai.pick }]
+            : []),
+        ],
+        { operatorOnly: true },
+      ),
+      this.squads.findDisplayNames(pricedPlayerIds(marketRows)),
+    ]);
     return {
       header,
       candidates,
@@ -163,6 +198,9 @@ export class MatchSheetService {
       quotes,
       rejectionReasons,
       events,
+      marketRows,
+      playerNames,
+      facts,
     };
   }
 
@@ -243,7 +281,13 @@ export class MatchSheetService {
           p?.market && p.pick ? [{ market: p.market, pick: p.pick }] : [],
         ),
         finished,
-      }),
+      }).concat(
+        newMarketPicksOf({
+          rows: input.marketRows,
+          playerNames: input.playerNames,
+          settle: { finished, facts: input.facts },
+        }),
+      ),
       scorers: matchEvents?.scorers ?? null,
       redCards: matchEvents?.redCards ?? null,
     };
@@ -317,6 +361,9 @@ function readingOnSheet(
   return {
     market: reading.market,
     pick: reading.pick,
+    line: null,
+    player: null,
+    addable: true,
     odds: reading.odds,
     chance: reading.chance,
     result: reading.result,
@@ -341,6 +388,9 @@ function aiOpinionOf(
     reading.pick === key.pick;
   return {
     ...key,
+    line: null,
+    player: null,
+    addable: true,
     odds: quote?.operatorOdds ?? null,
     // One bet, one chance on the sheet: the AI's pick when it is ours reads
     // the reading's chance, never a second figure next to it.
@@ -454,7 +504,8 @@ function headToHeadOf(header: SheetHeaderRow): string | null {
 /**
  * « Autres paris » (06 § 2): the main lines 1xBet prices, then the
  * engine's other picks it prices, by chance; never the reading or the AI's
- * pick again. Every chance is the market's frequency.
+ * pick again. Every chance is the market's frequency. The new markets
+ * (match-sheet-markets.ts) follow.
  */
 function otherPicksOf(input: {
   header: SheetHeaderRow;
@@ -472,6 +523,9 @@ function otherPicksOf(input: {
     seen.add(id);
     picks.push({
       ...key,
+      line: null,
+      player: null,
+      addable: true,
       odds: quote.operatorOdds,
       chance: quote.operatorFairProbability,
       result,

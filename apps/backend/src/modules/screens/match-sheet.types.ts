@@ -1,16 +1,33 @@
 import type { MatchState, MatchWithoutReading } from './matches.types';
 import type { TodayTeam } from './today.types';
 
-/** A pick shown on the sheet, with its 1xBet price and its chance. */
+/** A pick shown on the sheet, with its price and its chance. */
 export type SheetPick = {
   market: string;
   pick: string;
-  /** The 1xBet price; null when 1xBet does not price it. */
+  /**
+   * The line of a market that keeps it apart from `pick` (corners, cards,
+   * player shots: at least N, 1X2 at a minute: the minute); null otherwise.
+   * Shown as the book prices it, never rounded.
+   */
+  line: number | null;
+  /** The player a scorer or shots bet names; null for any other bet. */
+  player: string | null;
+  /**
+   * The 1xBet price; for the markets of SHEET_NEW_MARKETS, another book's
+   * when 1xBet does not price it (never named). Null when unpriced.
+   */
   odds: number | null;
   /** In [0, 1]; null when unknown (06 § 2, « Les chances affichées »). */
   chance: number | null;
-  /** Once the match is over: did it land. */
+  /** Once the match is over: did it land; null while unknown. */
   result: 'won' | 'lost' | 'void' | null;
+  /**
+   * « Mon ticket » can take it: priced at 1xBet and settled on the score.
+   * Not the markets of SHEET_NEW_MARKETS: the ticket keeps no line, prices
+   * at 1xBet only and settles on the score alone.
+   */
+  addable: boolean;
 };
 
 /** « Notre lecture »: the same pick as the list, with its fact. */
@@ -104,7 +121,10 @@ export type MatchSheet = {
   form: { home: SheetTeamForm; away: SheetTeamForm };
   /** « 4 victoires d'Arsenal sur les 6 derniers », or null. */
   headToHead: string | null;
-  /** The main 1xBet lines and the engine's other picks, market chance. */
+  /**
+   * The main 1xBet lines, the engine's other picks, then the new markets
+   * (SHEET_NEW_MARKETS), market chance.
+   */
   otherPicks: SheetPick[];
   /**
    * A finished match's goals, by minute. Null before the end, and when its

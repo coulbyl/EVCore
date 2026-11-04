@@ -2,9 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import type {
+  MarketPriceRow,
   PlayableOddsRepository,
   PlayableQuote,
 } from '@modules/betting-engine/pricing/playable-odds.repository';
+import type { MatchFacts } from '@evcore/analysis-core';
+import type { MatchFactsRepository } from '@modules/fixture-events/match-facts.repository';
+import type { PlayerSquadRepository } from '@modules/fixture-events/player-squad.repository';
 import type {
   LegFactRepository,
   TeamMatchRow,
@@ -121,6 +125,9 @@ function harness(input: {
   quotes?: [string, PlayableQuote][];
   reasons?: string[];
   events?: SheetEventRow[];
+  marketRows?: MarketPriceRow[];
+  playerNames?: Map<number, string>;
+  facts?: MatchFacts | null;
 }) {
   const repository = {
     findSheetHeader: vi
@@ -136,6 +143,7 @@ function harness(input: {
     findPlayableQuotes: vi
       .fn()
       .mockResolvedValue(new Map(input.quotes ?? QUOTES)),
+    findMarketPrices: vi.fn().mockResolvedValue(input.marketRows ?? []),
   } as unknown as PlayableOddsRepository;
   const history = {
     findTeamHistories: vi.fn().mockResolvedValue(input.history ?? homeWins(6)),
@@ -143,13 +151,29 @@ function harness(input: {
   const fixtureEvents = {
     findSheetEvents: vi.fn().mockResolvedValue(input.events ?? []),
   } as unknown as FixtureEventRepository;
+  const matchFacts = {
+    findFacts: vi
+      .fn()
+      .mockResolvedValue(
+        new Map(input.facts ? [[FX, input.facts] as const] : []),
+      ),
+  } as unknown as MatchFactsRepository;
+  const squads = {
+    findDisplayNames: vi
+      .fn()
+      .mockResolvedValue(input.playerNames ?? new Map<number, string>()),
+  } as unknown as PlayerSquadRepository;
   return {
     service: new MatchSheetService(
       repository,
       playableOdds,
       history,
       fixtureEvents,
+      matchFacts,
+      squads,
     ),
+    matchFacts,
+    squads,
     fixtureEvents,
     repository,
     playableOdds,
@@ -185,6 +209,9 @@ describe('MatchSheetService', () => {
     expect(sheet.reading).toEqual({
       market: 'ONE_X_TWO',
       pick: 'HOME',
+      line: null,
+      player: null,
+      addable: true,
       odds: 1.65,
       chance: 0.7,
       result: null,
@@ -210,6 +237,9 @@ describe('MatchSheetService', () => {
     expect(sheet.ai).toEqual({
       market: 'ONE_X_TWO',
       pick: 'DRAW',
+      line: null,
+      player: null,
+      addable: true,
       odds: 3.4,
       chance: 0.27,
       result: null,
@@ -408,10 +438,96 @@ describe('MatchSheetService', () => {
     expect(sheet.otherPicks.at(0)).toEqual({
       market: 'ONE_X_TWO',
       pick: 'HOME',
+      line: null,
+      player: null,
+      addable: true,
       odds: 1.65,
       chance: 0.58,
       result: null,
     });
+  });
+});
+
+describe('MatchSheetService, the new markets in « Autres paris »', () => {
+  const at = new Date('2026-10-30T18:00:00.000Z');
+  const corners = (pick: string, odds: number): MarketPriceRow => ({
+    market: 'CORNERS_1X2',
+    pick,
+    line: null,
+    bookmaker: '1xBet',
+    odds,
+    snapshotAt: at,
+  });
+  const rows: MarketPriceRow[] = [
+    corners('HOME', 1.6),
+    corners('DRAW', 8),
+    corners('AWAY', 2.6),
+    {
+      market: 'GOAL_SCORER_ANYTIME',
+      pick: 'P9',
+      line: null,
+      bookmaker: 'Bet365',
+      odds: 2.1,
+      snapshotAt: at,
+    },
+  ];
+
+  it('follow the main lines with their price, never addable, names read once', async () => {
+    const { service, squads, matchFacts } = harness({
+      marketRows: rows,
+      playerNames: new Map([[9, 'Bukayo Saka']]),
+    });
+    const sheet = await service.getSheet(FX, NOW);
+    const added = sheet.otherPicks.slice(-4);
+    expect(added.map((p) => `${p.market}/${p.pick}`)).toEqual([
+      'CORNERS_1X2/HOME',
+      'CORNERS_1X2/DRAW',
+      'CORNERS_1X2/AWAY',
+      'GOAL_SCORER_ANYTIME/P9',
+    ]);
+    expect(added[0]).toMatchObject({ odds: 1.6, result: null, addable: false });
+    expect(added[3]).toEqual({
+      market: 'GOAL_SCORER_ANYTIME',
+      pick: 'P9',
+      line: null,
+      player: 'Bukayo Saka',
+      odds: 2.1,
+      chance: null,
+      result: null,
+      addable: false,
+    });
+    expect(squads.findDisplayNames).toHaveBeenCalledWith([9]);
+    // Before the end, no facts are read.
+    expect(matchFacts.findFacts).not.toHaveBeenCalled();
+  });
+
+  it('after the end: settled on the facts, unsettled without them', async () => {
+    const finished = header({ status: 'FINISHED', homeScore: 1, awayScore: 0 });
+    const results = async (facts: MatchFacts | null) =>
+      (
+        await harness({
+          header: finished,
+          marketRows: rows,
+          playerNames: new Map([[9, 'Bukayo Saka']]),
+          facts,
+        }).service.getSheet(FX, NOW)
+      ).otherPicks
+        .slice(-4)
+        .map((p) => p.result);
+    expect(await results(null)).toEqual([null, null, null, null]);
+    // Corners went to Chelsea; the goal's event is missing, the scorer unknown.
+    expect(
+      await results({
+        score: { home: 1, away: 0 },
+        teams: {
+          home: { corners: 3, shotsTotal: null, shotsOn: null },
+          away: { corners: 7, shotsTotal: null, shotsOn: null },
+        },
+        events: [],
+        lineups: [{ side: 'home', playerExternalId: 9, starter: true }],
+        playerStats: null,
+      }),
+    ).toEqual(['lost', 'lost', 'won', null]);
   });
 });
 
