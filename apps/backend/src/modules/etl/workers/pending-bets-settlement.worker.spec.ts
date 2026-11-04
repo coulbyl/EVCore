@@ -207,6 +207,8 @@ describe('PendingBetsSettlementWorker', () => {
         id: 'fixture-1',
         externalId: 999,
         scheduledAt: new Date('2025-03-15T20:00:00Z'),
+        status: 'IN_PROGRESS',
+        hasEvents: false,
         season: {
           competition: {
             leagueId: 39,
@@ -275,6 +277,45 @@ describe('PendingBetsSettlementWorker', () => {
     ).toBeLessThan(
       bettingEngineService.settleOpenBets.mock.invocationCallOrder[0] ?? 0,
     );
+  });
+
+  describe('a fixture already stored FINISHED (a bet still pending)', () => {
+    const finishedWithEvents = (hasEvents: boolean) => {
+      fixtureService.findPendingSettlementFixtures.mockResolvedValue([
+        {
+          id: 'fixture-1',
+          externalId: 999,
+          scheduledAt: new Date('2025-03-15T20:00:00Z'),
+          status: 'FINISHED',
+          hasEvents,
+          season: { competition: { leagueId: 39, code: 'PL' } },
+        },
+      ]);
+      const body = buildFixtureResponse('FT');
+      Object.assign(body.response[0] ?? {}, {
+        events: [],
+        lineups: [],
+        players: [],
+      });
+      mockCurlStdoutOnce(buildCurlStdout(body));
+    };
+
+    it('does not write its events again', async () => {
+      finishedWithEvents(true);
+
+      await worker.process({ data: {} } as Job<Record<string, never>>);
+
+      expect(fixtureEvents.persistDetails).not.toHaveBeenCalled();
+      expect(bettingEngineService.settleOpenBets).toHaveBeenCalled();
+    });
+
+    it('writes them while it has none', async () => {
+      finishedWithEvents(false);
+
+      await worker.process({ data: {} } as Job<Record<string, never>>);
+
+      expect(fixtureEvents.persistDetails).toHaveBeenCalledOnce();
+    });
   });
 
   it('settles a finished fixture whose events cannot be written', async () => {
@@ -367,6 +408,8 @@ describe('PendingBetsSettlementWorker', () => {
         id: 'fixture-1',
         externalId: 999,
         scheduledAt: new Date('2025-03-15T20:00:00Z'),
+        status: 'IN_PROGRESS',
+        hasEvents: false,
         season: {
           competition: {
             leagueId: 39,
@@ -378,6 +421,8 @@ describe('PendingBetsSettlementWorker', () => {
         id: 'fixture-2',
         externalId: 1000,
         scheduledAt: new Date('2025-03-15T21:00:00Z'),
+        status: 'IN_PROGRESS',
+        hasEvents: false,
         season: {
           competition: {
             leagueId: 39,

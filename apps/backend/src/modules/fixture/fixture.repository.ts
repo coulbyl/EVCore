@@ -274,10 +274,14 @@ export type UpsertSecondaryMarketOddsInput = {
   source?: OddsSnapshotSource;
 };
 
-type PendingSettlementFixture = {
+export type PendingSettlementFixture = {
   id: string;
   externalId: number;
   scheduledAt: Date;
+  // The stored state before this pass: the settlement writes the events of
+  // a match only once (when it turns FINISHED, or while it has none).
+  status: FixtureStatus;
+  hasEvents: boolean;
   season: {
     competition: {
       leagueId: number;
@@ -804,10 +808,10 @@ export class FixtureRepository {
     });
   }
 
-  findPendingSettlementFixtures(
+  async findPendingSettlementFixtures(
     now: Date,
   ): Promise<PendingSettlementFixture[]> {
-    return this.prisma.client.fixture.findMany({
+    const fixtures = await this.prisma.client.fixture.findMany({
       where: {
         OR: [
           // fixtures with pending bets — always process regardless of scheduledAt
@@ -827,6 +831,8 @@ export class FixtureRepository {
         id: true,
         externalId: true,
         scheduledAt: true,
+        status: true,
+        events: { select: { id: true }, take: 1 },
         season: {
           select: {
             competition: {
@@ -840,6 +846,10 @@ export class FixtureRepository {
       },
       orderBy: { scheduledAt: 'asc' },
     });
+    return fixtures.map(({ events, ...fixture }) => ({
+      ...fixture,
+      hasEvents: events.length > 0,
+    }));
   }
 
   findPastScheduledFixtures(

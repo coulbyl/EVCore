@@ -13,6 +13,7 @@ import {
   type UpsertSecondaryMarketOddsInput,
   type SyncFixtureStateResult,
   type EventsCoverageRow,
+  type PendingSettlementFixture,
   type StatsBackfillCandidateRow,
 } from './fixture.repository';
 import { MatchLegDetectionService } from './match-leg-detection.service';
@@ -328,19 +329,9 @@ export class FixtureService {
     return this.fixtureRepository.markXgUnavailable(externalId);
   }
 
-  findPendingSettlementFixtures(now: Date): Promise<
-    {
-      id: string;
-      externalId: number;
-      scheduledAt: Date;
-      season: {
-        competition: {
-          leagueId: number;
-          code: string;
-        };
-      };
-    }[]
-  > {
+  findPendingSettlementFixtures(
+    now: Date,
+  ): Promise<PendingSettlementFixture[]> {
     return this.fixtureRepository.findPendingSettlementFixtures(now);
   }
 

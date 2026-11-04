@@ -19,8 +19,8 @@ import { AdjustmentService } from '../../adjustment/adjustment.service';
 import { RollingStatsService } from '../../rolling-stats/rolling-stats.service';
 import { FixtureEventsService } from '../../fixture-events/fixture-events.service';
 import {
-  ApiFootballFixturesByIdsResponseSchema,
   FixtureByIdDetailsSchema,
+  droppedCount,
 } from '../schemas/fixture-full.schema';
 import { notifyOnWorkerFailure } from './etl-worker.utils';
 
@@ -171,8 +171,16 @@ export class PendingBetsSettlementWorker extends WorkerHost {
         // The answer that says FINISHED carries the events, lineups and
         // player statistics too (/fixtures?id= is /fixtures?ids= of one):
         // written now, the scorers show within this pass instead of waiting
-        // for the stats sync. Before the settlement, which reads them.
-        await this.persistDetails(fixture.externalId, res.body);
+        // for the stats sync. Before the settlement, which reads them. Once
+        // only — when the match turns FINISHED, or while it has no event —
+        // not on every pass a bet stays pending: the stats sync corrects
+        // them after.
+        if (fixture.status !== 'FINISHED' || !fixture.hasEvents) {
+          // Same body ApiFootballFixturesResponseSchema validated: its
+          // `response` is an array, read raw for the blocks it strips.
+          const entry = (res.body as { response: unknown[] }).response[0];
+          await this.persistDetails(fixture.externalId, entry);
+        }
 
         const { settled } = await this.bettingEngineService.settleOpenBets(
           fixture.id,
@@ -226,19 +234,22 @@ export class PendingBetsSettlementWorker extends WorkerHost {
   // leaves the events pending for the stats sync and its backfill.
   private async persistDetails(
     externalId: number,
-    body: unknown,
+    entry: unknown,
   ): Promise<void> {
     try {
-      const envelope = ApiFootballFixturesByIdsResponseSchema.safeParse(body);
-      const details = FixtureByIdDetailsSchema.safeParse(
-        envelope.success ? envelope.data.response[0] : undefined,
-      );
+      const details = FixtureByIdDetailsSchema.safeParse(entry);
       if (!details.success) {
         logger.warn(
           { externalId, issues: details.error.issues },
           'Zod validation failed on events/lineups/players — left pending',
         );
         return;
+      }
+      if (droppedCount(details.data) > 0) {
+        logger.warn(
+          { externalId, dropped: details.data.dropped },
+          'Invalid events/lineups/players left out — the rest is written',
+        );
       }
       const written = await this.fixtureEvents.persistDetails({
         fixtureExternalId: externalId,
