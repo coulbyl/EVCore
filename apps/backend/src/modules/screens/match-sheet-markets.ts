@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js';
 import {
-  BetStatus,
+  type BetStatus,
   OPERATOR_BOOKMAKERS,
   playerIdOfPick,
   resolveCornersBetStatus,
@@ -17,6 +17,7 @@ import {
 } from '@config/screens.constants';
 import type { MarketPriceRow } from '@modules/betting-engine/pricing/playable-odds.repository';
 import type { SheetPick } from './match-sheet.types';
+import { groupBy, resultOf as settledResultOf } from './matches-reading';
 
 // « Autres paris », the markets ingested since 03/11 (decided 2026-11-04):
 // a few readable lines per market, chosen on the prices of one book. The
@@ -26,13 +27,6 @@ import type { SheetPick } from './match-sheet.types';
 // from the same book and the same reading (review-expectations § 6).
 
 export type SheetNewMarket = (typeof SHEET_NEW_MARKETS)[number];
-
-const OVER_UNDER_MARKETS: readonly SheetNewMarket[] = [
-  'CORNERS',
-  'CORNERS_HOME',
-  'CORNERS_AWAY',
-  'CARDS',
-];
 
 const RESULT_PICKS = ['HOME', 'DRAW', 'AWAY'] as const;
 
@@ -79,18 +73,11 @@ export function newMarketPicksOf(input: {
   settle: Settle;
 }): SheetPick[] {
   const picks: SheetPick[] = [];
+  const byMarket = groupBy(input.rows, (row) => row.market);
   for (const market of SHEET_NEW_MARKETS) {
-    const rows = input.rows.filter((row) => row.market === market);
-    if (rows.length === 0) continue;
-    const chosen = OVER_UNDER_MARKETS.includes(market)
-      ? overUnderLine(rows)
-      : market === 'CORNERS_1X2'
-        ? completeResult(rows)
-        : market === 'MINUTE_1X2'
-          ? minuteGroup(rows)
-          : market === 'PLAYER_SHOTS' || market === 'PLAYER_SHOTS_ON_TARGET'
-            ? shotLines(rows, input.playerNames)
-            : scorers(rows, input.playerNames);
+    const rows = byMarket.get(market);
+    if (!rows) continue;
+    const chosen = CHOOSERS[market](rows, input.playerNames);
     for (const { row, chance } of chosen) {
       const playerId = playerIdOfPick(row.pick);
       picks.push({
@@ -110,6 +97,25 @@ export function newMarketPicksOf(input: {
 }
 
 type Chosen = { row: MarketPriceRow; chance: number | null };
+
+type Chooser = (
+  rows: readonly MarketPriceRow[],
+  names: ReadonlyMap<number, string>,
+) => Chosen[];
+
+/** How each market chooses its lines (one market's rows, every book). */
+const CHOOSERS: Record<SheetNewMarket, Chooser> = {
+  CORNERS: overUnderLine,
+  CORNERS_HOME: overUnderLine,
+  CORNERS_AWAY: overUnderLine,
+  CARDS: overUnderLine,
+  CORNERS_1X2: completeResult,
+  MINUTE_1X2: minuteGroup,
+  GOAL_SCORER_ANYTIME: scorers,
+  GOAL_SCORER_FIRST: scorers,
+  PLAYER_SHOTS: shotLines,
+  PLAYER_SHOTS_ON_TARGET: shotLines,
+};
 
 const at = (row: MarketPriceRow) => new Date(row.snapshotAt).getTime();
 
@@ -140,14 +146,14 @@ const chanceOf = (fair: Map<string, Decimal> | null, pick: string) =>
 function overUnderLine(rows: readonly MarketPriceRow[]): Chosen[] {
   type Pair = { over: MarketPriceRow; under: MarketPriceRow };
   const pairs = new Map<string, Pair[]>();
-  for (const over of rows.filter((row) => row.pick === 'OVER')) {
-    const under = rows.find(
-      (row) =>
-        row.pick === 'UNDER' &&
-        row.bookmaker === over.bookmaker &&
-        row.line === over.line,
-    );
-    if (!under || over.line === null) continue;
+  const byBookLine = groupBy(
+    rows.filter((row) => row.line !== null),
+    (row) => `${row.bookmaker}|${row.line}`,
+  );
+  for (const group of byBookLine.values()) {
+    const over = group.find((row) => row.pick === 'OVER');
+    const under = group.find((row) => row.pick === 'UNDER');
+    if (!over || !under) continue;
     pairs.set(over.bookmaker, [
       ...(pairs.get(over.bookmaker) ?? []),
       { over, under },
@@ -177,16 +183,20 @@ function overUnderLine(rows: readonly MarketPriceRow[]): Chosen[] {
   }));
 }
 
+/** One book's rows price all three outcomes. */
+function isComplete(group: readonly MarketPriceRow[]): boolean {
+  const picks = new Set(group.map((row) => row.pick));
+  return RESULT_PICKS.every((pick) => picks.has(pick));
+}
+
 /** Corners 1X2 and a minute's 1X2: the first book pricing all three outcomes. */
 function completeResult(rows: readonly MarketPriceRow[]): Chosen[] {
-  const byBook = new Map<string, MarketPriceRow[]>();
-  for (const row of rows) {
-    if (!(RESULT_PICKS as readonly string[]).includes(row.pick)) continue;
-    byBook.set(row.bookmaker, [...(byBook.get(row.bookmaker) ?? []), row]);
-  }
-  const complete = [...byBook].filter(
-    ([, group]) => new Set(group.map((row) => row.pick)).size === 3,
+  const outcomes = rows.filter((row) =>
+    (RESULT_PICKS as readonly string[]).includes(row.pick),
   );
+  const complete = [
+    ...groupBy(outcomes, (row) => row.bookmaker).entries(),
+  ].filter(([, group]) => isComplete(group));
   const book = bookFirst(complete.map(([name]) => name));
   const group = complete.find(([name]) => name === book)?.[1] ?? [];
   const fair = fairOf(group);
@@ -201,25 +211,27 @@ function completeResult(rows: readonly MarketPriceRow[]): Chosen[] {
  * tie), its three outcomes at one book.
  */
 function minuteGroup(rows: readonly MarketPriceRow[]): Chosen[] {
-  const minutes = [
-    ...new Set(rows.flatMap((row) => (row.line === null ? [] : [row.line]))),
-  ];
-  let best: { minute: number; books: number } | null = null;
-  for (const minute of minutes.sort((a, b) => a - b)) {
-    const ofMinute = rows.filter((row) => row.line === minute);
-    const books = [...new Set(ofMinute.map((row) => row.bookmaker))].filter(
-      (book) =>
-        new Set(
-          ofMinute.filter((row) => row.bookmaker === book).map((r) => r.pick),
-        ).size === RESULT_PICKS.length,
-    ).length;
-    if (books > 0 && (best === null || books > best.books)) {
-      best = { minute, books };
+  let best: { minute: number; books: number; rows: MarketPriceRow[] } | null =
+    null;
+  const byMinute = groupBy(
+    rows.filter((row) => row.line !== null),
+    (row) => String(row.line),
+  );
+  for (const [key, ofMinute] of byMinute) {
+    const minute = Number(key);
+    const books = [
+      ...groupBy(ofMinute, (row) => row.bookmaker).values(),
+    ].filter(isComplete).length;
+    if (
+      books > 0 &&
+      (best === null ||
+        books > best.books ||
+        (books === best.books && minute < best.minute))
+    ) {
+      best = { minute, books, rows: ofMinute };
     }
   }
-  if (best === null) return [];
-  const minute = best.minute;
-  return completeResult(rows.filter((row) => row.line === minute));
+  return best === null ? [] : completeResult(best.rows);
 }
 
 /**
@@ -309,11 +321,5 @@ export function resultOf(input: {
       facts,
     });
   }
-  return status === BetStatus.WON
-    ? 'won'
-    : status === BetStatus.LOST
-      ? 'lost'
-      : status === BetStatus.VOID
-        ? 'void'
-        : null;
+  return settledResultOf(status);
 }

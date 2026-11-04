@@ -116,6 +116,7 @@ function isSpeaking(pick: { market: string; pick: string }): boolean {
   return picks == null || picks.includes(pick.pick);
 }
 
+/** A bet's status as the player reads it; pending or unknown is null. */
 export function resultOf(
   result: ReadingCandidateRow['result'],
 ): MatchReading['result'] {
