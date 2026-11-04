@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { cn } from "@evcore/ui/cn";
+import { clsx as cn } from "clsx";
 import { useUnreadCount } from "@/domains/notifications/use-unread-count";
 
 /**
