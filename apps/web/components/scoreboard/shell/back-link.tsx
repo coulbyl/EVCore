@@ -10,6 +10,7 @@ import {
   subscribeInAppHistory,
 } from "../sheet/in-app-history";
 import { isPlainClick } from "../sheet/sheet-constants";
+import { useSheetClose } from "../sheet/use-sheet-close";
 import { backLabelOf, type BackPlaces } from "./back-places";
 
 /**
@@ -48,6 +49,8 @@ export function BackLink({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  // Back, as a sheet closes; without history, `href` in place of the page.
+  const back = useSheetClose(href, { scroll: true });
   const shown = useSyncExternalStore(
     subscribeInAppHistory,
     () =>
@@ -62,13 +65,8 @@ export function BackLink({
       onClick={(event) => {
         if (!isPlainClick(event)) return;
         event.preventDefault();
-        if (hasInAppHistory()) {
-          router.back();
-        } else if (under) {
-          openOver(router, { under, href });
-        } else {
-          router.replace(href);
-        }
+        if (under && !hasInAppHistory()) openOver(router, { under, href });
+        else back();
       }}
     >
       {children}
