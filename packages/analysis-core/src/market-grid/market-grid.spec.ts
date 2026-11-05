@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 import Decimal from "decimal.js";
 import { Market } from "../types";
 import type { RawOddsRow } from "../pricing/odds-assembly";
-import { computePoissonMarkets } from "../probability/poisson";
+import {
+  computePoissonMarkets,
+  FIRST_HALF_GOAL_FRACTION,
+} from "../probability/poisson";
 import {
   computeMarketGrid,
   fitMarketGridLambdas,
+  marketGridProbabilities,
   selectMarketGridQuotes,
   summarizeMarketGrid,
 } from "./market-grid";
@@ -239,6 +243,124 @@ describe("computeMarketGrid", () => {
     expect(result.status).toBe("unavailable");
     if (result.status === "unavailable")
       expect(result.reason).toBe("fit_error");
+  });
+});
+
+/** A book's half-time prices for first-half λ (independent Poisson). */
+function halfTimeRows(input: {
+  lambdaHome: number;
+  lambdaAway: number;
+  snapshotAt?: Date;
+}): RawOddsRow[] {
+  const snapshotAt = input.snapshotAt ?? BEFORE;
+  const p = computePoissonMarkets(input.lambdaHome, input.lambdaAway);
+  const row = (market: Market, pick: string, odds: number | undefined) => ({
+    bookmaker: "Pinnacle",
+    market,
+    pick,
+    odds: odds ?? null,
+    snapshotAt,
+    homeOdds: null,
+    drawOdds: null,
+    awayOdds: null,
+  });
+  const [home, draw, away] = shinOdds([
+    p.home.toNumber(),
+    p.draw.toNumber(),
+    p.away.toNumber(),
+  ]);
+  const over05 = 1 - Math.exp(-(input.lambdaHome + input.lambdaAway));
+  const [o05, u05] = shinOdds([over05, 1 - over05]);
+  const [o15, u15] = shinOdds([p.over15.toNumber(), p.under15.toNumber()]);
+  return [
+    row(Market.FIRST_HALF_WINNER, "HOME", home),
+    row(Market.FIRST_HALF_WINNER, "DRAW", draw),
+    row(Market.FIRST_HALF_WINNER, "AWAY", away),
+    row(Market.OVER_UNDER_HT, "OVER_0_5", o05),
+    row(Market.OVER_UNDER_HT, "UNDER_0_5", u05),
+    row(Market.OVER_UNDER_HT, "OVER_1_5", o15),
+    row(Market.OVER_UNDER_HT, "UNDER_1_5", u15),
+  ];
+}
+
+describe("computeMarketGrid, first half", () => {
+  const full = () =>
+    bookRows({ bookmaker: "Pinnacle", lambdaHome: 1.55, lambdaAway: 1.05 });
+
+  it("splits λ by FIRST_HALF_GOAL_FRACTION without half-time prices", () => {
+    const result = computeMarketGrid(full(), AT);
+    expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
+    expect(result.firstHalf).toEqual({
+      source: "fraction",
+      fraction: FIRST_HALF_GOAL_FRACTION,
+      reason: null,
+    });
+    const explicit = marketGridProbabilities(
+      { ...result.fit, firstHalf: { fraction: FIRST_HALF_GOAL_FRACTION } },
+      result.quotes.fairOneXTwo,
+    );
+    expect(result.probabilities.ouHT.OVER_1_5?.toString()).toBe(
+      explicit.ouHT.OVER_1_5?.toString(),
+    );
+  });
+
+  it("uses a league fraction when given one", () => {
+    const at44 = computeMarketGrid(full(), AT);
+    const at40 = computeMarketGrid(full(), AT, { firstHalfFraction: 0.4 });
+    if (at44.status !== "ok" || at40.status !== "ok") throw new Error();
+    expect(at40.probabilities.ouHT.OVER_0_5?.toNumber()).toBeLessThan(
+      at44.probabilities.ouHT.OVER_0_5?.toNumber() ?? 0,
+    );
+    // Full-time markets do not move.
+    expect(at40.probabilities.over25.toString()).toBe(
+      at44.probabilities.over25.toString(),
+    );
+  });
+
+  it("fits first-half λ on the book's half-time prices", () => {
+    const result = computeMarketGrid(
+      [...full(), ...halfTimeRows({ lambdaHome: 0.62, lambdaAway: 0.4 })],
+      AT,
+    );
+    if (result.status !== "ok") throw new Error();
+    expect(result.firstHalf.source).toBe("prices");
+    if (result.firstHalf.source !== "prices") return;
+    expect(result.firstHalf.lambdaHome).toBeCloseTo(0.62, 3);
+    expect(result.firstHalf.lambdaAway).toBeCloseTo(0.4, 3);
+    const truth = computePoissonMarkets(0.62, 0.4);
+    expect(result.probabilities.firstHalfWinner.home.toNumber()).toBeCloseTo(
+      truth.home.toNumber(),
+      4,
+    );
+    expect(result.probabilities.ouHT.OVER_1_5?.toNumber()).toBeCloseTo(
+      truth.over15.toNumber(),
+      4,
+    );
+  });
+
+  it("falls back to the fraction when half-time λ exceed full-time λ", () => {
+    const result = computeMarketGrid(
+      [...full(), ...halfTimeRows({ lambdaHome: 1.6, lambdaAway: 0.5 })],
+      AT,
+    );
+    if (result.status !== "ok") throw new Error();
+    expect(result.firstHalf).toMatchObject({
+      source: "fraction",
+      reason: "inconsistent",
+    });
+  });
+
+  it("ignores half-time prices of another book", () => {
+    const other = halfTimeRows({ lambdaHome: 0.62, lambdaAway: 0.4 }).map(
+      (row) => ({ ...row, bookmaker: "Bet365" }),
+    );
+    const result = computeMarketGrid([...full(), ...other], AT);
+    if (result.status !== "ok") throw new Error();
+    expect(result.firstHalf).toMatchObject({
+      source: "fraction",
+      reason: "no_quotes",
+    });
   });
 });
 

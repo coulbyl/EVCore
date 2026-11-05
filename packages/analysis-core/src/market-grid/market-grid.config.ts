@@ -26,6 +26,17 @@ export const MARKET_GRID_MARKETS: readonly Market[] = [
 ];
 
 /**
+ * Half-time markets of the grid book (sub-model A of lot ML-2,
+ * docs/audits/2026-11-05/ML2B-MI-TEMPS.md): when the rows handed to
+ * computeMarketGrid hold the grid book's complete first-half 1X2 and at
+ * least one complete half-time goal line, first-half λ are fitted on them.
+ */
+export const MARKET_GRID_FIRST_HALF_MARKETS: readonly Market[] = [
+  Market.FIRST_HALF_WINNER,
+  Market.OVER_UNDER_HT,
+];
+
+/**
  * Weight of each 1X2 outcome against one goal line in the least-squares fit,
  * as in the § 2.2 measurement (median squared error 0.0005 over 8.5 targets
  * a fixture).

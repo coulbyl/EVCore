@@ -17,6 +17,8 @@ export {
   computeCorrectScoreMatrix,
   scoreCells,
   type ScoreCell,
+  FIRST_HALF_GOAL_FRACTION,
+  type FirstHalfSplit,
 } from "./poisson";
 export {
   type GoalDependence,
