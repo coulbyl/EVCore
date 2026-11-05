@@ -1,0 +1,110 @@
+ML-3 corners et cartons — rejeu du 2026-11-05, matchs 2026-09-16 → 2026-11-04
+
+## Repli S : taille r_S par moments (2024-01-01 → 2026-09-15)
+CORNERS : n 36657, r_S 49.96
+CARDS : n 36031, r_S 61.75
+
+## Étape 0 : taille r sur la forme des prix Pinnacle (T − 1 h, matchs ≤ 15/10, ≥ 3 lignes)
+CORNERS : 943 échelles ; Σ écart² ∞: 0.7056 · 100: 0.3578 · 50: 0.2290 · 30: 0.2872 · 20: 0.5954 · 15: 1.0583 · 10: 2.2037 · 7: 3.7977 · 5: 5.8454 · 3: 9.8701
+CORNERS : r retenu = 50
+CARDS : 317 échelles ; Σ écart² ∞: 0.3096 · 100: 0.2474 · 50: 0.2187 · 30: 0.2242 · 20: 0.2885 · 15: 0.4037 · 10: 0.7446 · 7: 1.3228 · 5: 2.2209 · 3: 4.4607
+CARDS : r retenu = 50
+
+## Ajustements
+CORNERS|veille17h : 2321 matchs, 1017 ajustés sur Pinnacle, 17 échelles refusées
+CORNERS|T-1h : 2321 matchs, 2127 ajustés sur Pinnacle, 33 échelles refusées
+CARDS|veille17h : 753 matchs, 322 ajustés sur Pinnacle, 5 échelles refusées
+CARDS|T-1h : 753 matchs, 634 ajustés sur Pinnacle, 35 échelles refusées
+
+## Dispersion réalisée (T − 1 h, μ ajusté) : E[(Y−μ)²] ÷ E[variance du modèle]
+CORNERS : n 2127, ÷ NB(r) 1.003 · ÷ Poisson 1.204
+CARDS : n 634, ÷ NB(r) 0.807 · ÷ Poisson 0.877
+
+## Extrapolation (description) : ligne extrême Pinnacle retirée, T − 1 h, contre la clôture
+CORNERS : 2482 lignes ; écart² prédit 0.00019 [0.00016 ; 0.00021] · écart² du prix direct 0.00013 [0.00011 ; 0.00015]
+CARDS : 643 lignes ; écart² prédit 0.00061 [0.00044 ; 0.00081] · écart² du prix direct 0.00053 [0.00036 ; 0.00073]
+
+## CORNERS veille17h (base B)
+H1 M plus 0.993 [0.949 ; 1.051] · moins 1.007 [0.950 ; 1.050] (3606 lignes, 1017 matchs)
+   même jambes, base : plus 0.995 [0.950 ; 1.054] · moins 1.005 [0.948 ; 1.049]
+   ligne 4.5 : 8 matchs, plus 1.077 [1.071 ; 1.079] · moins 0.000 [0.000 ; 0.000]
+   ligne 5.5 : 69 matchs, plus 0.912 [0.862 ; 1.070] · moins 1.711 [0.379 ; 2.093]
+   ligne 6.5 : 132 matchs, plus 0.969 [0.945 ; 1.053] · moins 1.158 [0.719 ; 1.282]
+   ligne 7.5 : 216 matchs, plus 1.023 [0.959 ; 1.135] · moins 0.941 [0.725 ; 1.098] ✗
+   ligne 8.5 : 622 matchs, plus 0.982 [0.917 ; 1.049] · moins 1.027 [0.927 ; 1.121]
+   ligne 9.5 : 990 matchs, plus 0.993 [0.940 ; 1.046] · moins 1.008 [0.949 ; 1.064]
+   ligne 10.5 : 836 matchs, plus 0.992 [0.926 ; 1.063] · moins 1.006 [0.952 ; 1.057]
+   ligne 11.5 : 366 matchs, plus 0.988 [0.861 ; 1.164] · moins 1.007 [0.904 ; 1.084] ✗
+   ligne 12.5 : 162 matchs, plus 1.100 [0.932 ; 1.333] · moins 0.968 [0.885 ; 1.024]
+   ligne 13.5 : 121 matchs, plus 1.139 [0.935 ; 1.630] · moins 0.972 [0.881 ; 1.013]
+   ligne 14.5 : 70 matchs, plus 1.062 [0.752 ; 1.794] · moins 0.990 [0.879 ; 1.040]
+   ligne 15.5 : 14 matchs, plus 0.670 [0.000 ; 0.850] · moins 1.039 [1.018 ; 1.129]
+H2a Δécart² lignes Pinnacle 0.00001 [0.00000 ; 0.00001] (2420 lignes) ✗
+H2b Δécart² lignes 1xBet hors Pinnacle 0.00009 [-0.00005 ; 0.00025] (14 lignes, 14 matchs) ✗
+H3 Δlog-perte lignes 1xBet hors Pinnacle -0.0056 [-0.0092 ; 0.0021] (942 lignes) ✓
+H1 ✗
+H4 côtés 1xBet dans la bande (601, 5 jours) : M 0.995 [0.948 ; 1.010] · B 0.995 [0.947 ; 1.010] ✓
+   jambes du chasseur : 5 jours, 0 jambes différentes ; M 2 gagnées / 2.61 annoncées · B 2 / 2.59
+H5 repli S, Δlog-perte (S − B) lignes 1xBet sans Pinnacle 0.0103 [0.0051 ; 0.0230] (1123 lignes, 148 matchs) ✗
+   S (référence) sur les jambes de M : plus 1.018 [0.969 ; 1.084] ; Δlog-perte (S − M) 0.0062 [-0.0040 ; 0.0135]
+
+## CORNERS T-1h (base B2)
+H1 M plus 1.002 [0.973 ; 1.035] · moins 0.998 [0.965 ; 1.026] (7746 lignes, 2127 matchs)
+   même jambes, base : plus 1.003 [0.974 ; 1.035] · moins 0.997 [0.965 ; 1.025]
+   ligne 4.5 : 16 matchs, plus 1.018 [0.840 ; 1.085] · moins 0.795 [0.000 ; 2.774]
+   ligne 5.5 : 137 matchs, plus 0.987 [0.921 ; 1.063] · moins 1.105 [0.485 ; 1.595]
+   ligne 6.5 : 304 matchs, plus 0.982 [0.929 ; 1.057] · moins 1.091 [0.712 ; 1.360] ✗
+   ligne 7.5 : 508 matchs, plus 0.996 [0.948 ; 1.058] · moins 1.011 [0.870 ; 1.118] ✗
+   ligne 8.5 : 1308 matchs, plus 0.981 [0.939 ; 1.025] · moins 1.029 [0.963 ; 1.090]
+   ligne 9.5 : 2071 matchs, plus 1.006 [0.970 ; 1.041] · moins 0.993 [0.955 ; 1.032]
+   ligne 10.5 : 1710 matchs, plus 1.021 [0.972 ; 1.074] · moins 0.984 [0.944 ; 1.021]
+   ligne 11.5 : 801 matchs, plus 1.018 [0.938 ; 1.123] · moins 0.990 [0.928 ; 1.034]
+   ligne 12.5 : 358 matchs, plus 0.978 [0.820 ; 1.144] · moins 1.007 [0.946 ; 1.065] ✗
+   ligne 13.5 : 297 matchs, plus 1.076 [0.898 ; 1.316] · moins 0.985 [0.938 ; 1.020] ✗
+   ligne 14.5 : 186 matchs, plus 1.063 [0.875 ; 1.578] · moins 0.990 [0.910 ; 1.019]
+   ligne 15.5 : 48 matchs, plus 0.554 [0.231 ; 1.661] · moins 1.057 [0.909 ; 1.101]
+   ligne 16.5 : 2 matchs, plus 0.000 [0.000 ; 0.000] · moins 1.148 [1.148 ; 1.148]
+H2a Δécart² lignes Pinnacle -0.00001 [-0.00005 ; 0.00002] (5276 lignes) ✓
+H2b Δécart² lignes 1xBet hors Pinnacle -0.00031 [-0.00080 ; -0.00019] (20 lignes, 20 matchs) ✗
+H3 Δlog-perte lignes 1xBet hors Pinnacle -0.0028 [-0.0048 ; -0.0007] (2114 lignes) ✓
+H1 ✗
+   S (référence) sur les jambes de M : plus 1.026 [0.994 ; 1.058] ; Δlog-perte (S − M) 0.0073 [0.0021 ; 0.0140]
+
+## CARDS veille17h (base B)
+H1 M plus 0.980 [0.886 ; 1.084] · moins 1.020 [0.914 ; 1.116] (803 lignes, 322 matchs)
+   même jambes, base : plus 0.981 [0.887 ; 1.085] · moins 1.019 [0.913 ; 1.115]
+   ligne 1.5 : 3 matchs, plus 0.861 [0.861 ; 0.861] · moins 1.474 [1.474 ; 1.474]
+   ligne 2.5 : 135 matchs, plus 0.979 [0.880 ; 1.067] · moins 1.049 [0.844 ; 1.275]
+   ligne 3.5 : 288 matchs, plus 1.040 [0.945 ; 1.142] · moins 0.950 [0.821 ; 1.069] ✗
+   ligne 4.5 : 294 matchs, plus 0.966 [0.835 ; 1.124] · moins 1.023 [0.919 ; 1.111] ✗
+   ligne 5.5 : 69 matchs, plus 0.737 [0.388 ; 1.066] · moins 1.157 [0.958 ; 1.364]
+   ligne 6.5 : 13 matchs, plus 0.811 [0.000 ; 1.425] · moins 1.116 [0.766 ; 1.721]
+   ligne 7.5 : 1 matchs, plus 0.000 [0.000 ; 0.000] · moins 1.821 [1.821 ; 1.821]
+H2a Δécart² lignes Pinnacle 0.00003 [-0.00000 ; 0.00007] (700 lignes) ✓
+H2b Δécart² lignes 1xBet hors Pinnacle — [— ; —] (0 lignes, 0 matchs) ✗
+H3 Δlog-perte lignes 1xBet hors Pinnacle — [— ; —] (0 lignes) ✗
+H1 ✗
+   S (référence) sur les jambes de M : plus 0.989 [0.899 ; 1.091] ; Δlog-perte (S − M) 0.0050 [-0.0188 ; 0.0262]
+
+## CARDS T-1h (base B2)
+H1 M plus 0.983 [0.908 ; 1.045] · moins 1.018 [0.953 ; 1.093] (1602 lignes, 634 matchs)
+   même jambes, base : plus 0.983 [0.908 ; 1.045] · moins 1.018 [0.954 ; 1.094]
+   ligne 1.5 : 7 matchs, plus 1.092 [0.985 ; 1.265] · moins 0.665 [0.000 ; 1.052]
+   ligne 2.5 : 229 matchs, plus 0.971 [0.895 ; 1.034] · moins 1.067 [0.921 ; 1.240] ✗
+   ligne 3.5 : 532 matchs, plus 0.989 [0.922 ; 1.058] · moins 1.014 [0.925 ; 1.103]
+   ligne 4.5 : 585 matchs, plus 0.968 [0.867 ; 1.053] · moins 1.023 [0.961 ; 1.096] ✗
+   ligne 5.5 : 198 matchs, plus 1.025 [0.807 ; 1.219] · moins 0.984 [0.858 ; 1.122]
+   ligne 6.5 : 48 matchs, plus 1.026 [0.581 ; 1.362] · moins 0.985 [0.790 ; 1.242]
+   ligne 7.5 : 3 matchs, plus 0.000 [0.000 ; 0.000] · moins 1.594 [1.474 ; 1.673]
+H2a Δécart² lignes Pinnacle 0.00007 [0.00005 ; 0.00008] (1460 lignes) ✗
+H2b Δécart² lignes 1xBet hors Pinnacle — [— ; —] (0 lignes, 0 matchs) ✗
+H3 Δlog-perte lignes 1xBet hors Pinnacle — [— ; —] (0 lignes) ✗
+H1 ✗
+   S (référence) sur les jambes de M : plus 0.991 [0.915 ; 1.057] ; Δlog-perte (S − M) 0.0168 [0.0020 ; 0.0306]
+
+## Verdict (règle de l'en-tête)
+Chasseur Corners (veille 17 h, base B) : neutre
+Feuille corners (T − 1 h, base B2) : neutre
+Cartons : neutres (pas de prix 1xBet à juger) — H1–H3 rapportés ci-dessus
+Repli S : non expédié
+Tailles retenues : CORNERS r = 50, CARDS r = 50

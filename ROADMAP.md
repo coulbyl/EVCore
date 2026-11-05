@@ -117,6 +117,8 @@ fréquence réelle est mesurée (IC ≤ ± 8 points sur la bande visée).
   - [x] **D** (dépendance, ML-2a) mesuré le 04/11, **expédié** (décision de l'utilisateur, D2 non mesurable remplacé par un suivi du nul contre la clôture Pinnacle relu le 10/12) : ρ par championnat (global −0,05) corrige la moitié du défaut des petits scores (nul 1,100 → 1,058, log-perte du score exact −0,0012 [−0,0020 ; −0,0004]), canaux inchangés, D2 (BTTS contre Pinnacle) non mesurable en 2026 ([ML2A-DEPENDANCE-BUTS.md](docs/audits/2026-11-04/ML2A-DEPENDANCE-BUTS.md)).
   - [ ] **A** (mi-temps).
 - [ ] **ML-3** corners et cartons (sous-modèle B).
+  - [x] Mesuré le 05/11, **neutre** : NB(μ, r = 50) ajusté sur l'échelle Pinnacle (`count-market`, non branché) recopie le marché là où Pinnacle cote (réalisé ÷ annoncé 1,002, chasseur inchangé sur 5 jours) ; lignes 1xBet hors Pinnacle : log-perte −0,0028 [−0,0048 ; −0,0007] mais 20 matchs jugeables (100 requis) ; repli stats pire que le prix ([ML3-CORNERS-CARTONS.md](docs/audits/2026-11-05/ML3-CORNERS-CARTONS.md)).
+  - [ ] Relire vers le 10/12 avec 6 semaines de 1xBet (`backtest:corners-cards`) : feuille de match sur les lignes 1xBet hors Pinnacle si H1–H3 tiennent.
 - [ ] **ML-4** retrait de marge appris sur 1xBet (sous-modèle C).
 
 ### Relectures datées

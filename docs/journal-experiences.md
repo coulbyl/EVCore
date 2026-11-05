@@ -890,3 +890,19 @@ forme, pas d'avantage sur le marché. La fraction par championnat (0,41–0,46,
 médiane 0,444) seule éloigne la grille de la clôture (+0,00008) : elle n'est que
 le repli (7 % des matchs), retour à 0,44 proposé. Source :
 [ML2B-MI-TEMPS.md](audits/2026-11-05/ML2B-MI-TEMPS.md).
+
+## 2026-11-05 — Corners et cartons sur un modèle de comptage (ML-3, sous-modèle B)
+
+### Une binomiale négative ajustée sur l'échelle Pinnacle fait-elle mieux que la fréquence du marché ?
+
+**Verdict : neutre** (règle figée avant le rejeu). Le total de corners suit
+NB(μ, r = 50), r lu sur la forme des prix (variance réalisée 1,003 × NB contre
+1,204 × Poisson) ; μ ajusté sur l'échelle Pinnacle (Shin, moindres carrés). Sur
+2 127 matchs à T − 1 h, réalisé ÷ annoncé 1,002 [0,973 ; 1,035] côté plus, comme
+la base (1,003) : là où Pinnacle cote, le modèle le recopie. Le chasseur rejoué
+(5 jours de 1xBet) ne change aucune jambe. Sur les lignes que 1xBet ajoute,
+log-perte −0,0028 [−0,0048 ; −0,0007] contre sa propre paire, mais 8 jours de
+1xBet et 20 matchs jugeables contre la clôture (100 requis). Repli par les stats
+d'équipe pire que le prix 1xBet (+0,0103). Cartons calibrés, lissage un peu plus
+loin de la clôture que la paire Pinnacle. Relu vers le 10/12. Source :
+[ML3-CORNERS-CARTONS.md](audits/2026-11-05/ML3-CORNERS-CARTONS.md).

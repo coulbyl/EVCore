@@ -40,6 +40,7 @@
     "backtest:market-grid": "tsx scripts/backtest-market-grid.ts",
     "backtest:goal-dependence": "tsx scripts/backtest-goal-dependence.ts",
     "backtest:half-time": "tsx scripts/backtest-half-time.ts",
+    "backtest:corners-cards": "tsx scripts/backtest-corners-cards.ts",
     "probe:extras": "tsx --env-file=../../apps/backend/.env scripts/probe-api-football.ts --extras",
     "probe:inventory": "tsx --env-file-if-exists=../../apps/backend/.env scripts/probe-api-football.ts --inventory"
   },
