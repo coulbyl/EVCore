@@ -14,7 +14,7 @@
 
 ## Dépendances
 
-- [ ] Retirer de `minimumReleaseAgeExclude` (`pnpm-workspace.yaml`) `multer@2.5.0` et `body-parser@2.4.0` après le 05/11, `@nestjs/*@12.3.2` après le 10/11 ; `pnpm install` ne doit rien changer au lockfile.
+- [ ] Retirer de `minimumReleaseAgeExclude` (`pnpm-workspace.yaml`) `@nestjs/*@12.3.2` après le 10/11 ; `pnpm install` ne doit rien changer au lockfile. _multer et body-parser retirés le 05/11, lockfile inchangé ; audit prod : plus aucun avis élevé (restent fast-uri sous `prisma > @prisma/dev`, outil de dev, correctif 3.1.9 admissible le 16/11, et deepmerge sans correctif publié)._
 - [ ] A10c : finir l'audit des dépendances quand la garde de délai laisse passer les correctifs (`pnpm update -r --no-save` puis `pnpm audit`) ; à décider à part : js-yaml sous `@nestjs/swagger`, uuid sous testcontainers, zod 3 sous la CLI shadcn, deepmerge (`docs/refonte-ui/15-todo.md`).
 
 ## Produit (questions de mesure, `docs/refonte-ui/15-todo.md`)
