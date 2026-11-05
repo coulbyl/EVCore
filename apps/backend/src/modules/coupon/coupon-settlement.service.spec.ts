@@ -66,6 +66,8 @@ function makeHarness(input: {
   closingLines?: ClosingLineRow[];
   quotes?: Map<string, PlayableQuote>;
   facts?: Map<string, MatchFacts>;
+  /** Latest kickoff at composition; the fixtures' latest by default. */
+  lastFixtureScheduledAt?: Date;
 }) {
   const settleLeg = vi.fn().mockResolvedValue(undefined);
   const updateResult = vi.fn().mockResolvedValue(undefined);
@@ -74,6 +76,9 @@ function makeHarness(input: {
   const findByIdWithLegs = vi.fn().mockResolvedValue({
     id: 'proposal-1',
     generatedAt: GENERATED_AT,
+    lastFixtureScheduledAt:
+      input.lastFixtureScheduledAt ??
+      new Date(Math.max(...input.fixtures.map((f) => f.scheduledAt.getTime()))),
     legs: input.legs,
   });
 
@@ -357,6 +362,70 @@ describe('CouponSettlementService.settleProposal — transient POSTPONED and mis
     expect(updateResult).not.toHaveBeenCalled();
   });
 
+  it('voids a leg whose match was moved a day or more past the coupon (Coritiba)', async () => {
+    // Composed for 29/10 22:30, the match was moved and played on 31/10:
+    // the same rule as a match still postponed a day after its kickoff.
+    const composedKickoff = new Date('2026-10-29T22:30:00Z');
+    const harness = () =>
+      makeHarness({
+        legs: [
+          makeLeg({ id: 'leg-1', fixtureId: 'f1', isCorrect: false }),
+          makeLeg({ id: 'leg-2', fixtureId: 'f2', isCorrect: true }),
+        ],
+        fixtures: [
+          makeFixture({
+            id: 'f1',
+            status: FixtureStatus.FINISHED,
+            scheduledAt: new Date('2026-10-31T19:00:00Z'),
+            homeScore: 0,
+            awayScore: 0,
+          }),
+          makeFixture({
+            id: 'f2',
+            status: FixtureStatus.FINISHED,
+            scheduledAt: composedKickoff,
+            homeScore: 3,
+            awayScore: 1,
+          }),
+        ],
+        lastFixtureScheduledAt: composedKickoff,
+      });
+    const first = harness();
+    await first.service.settleProposal('proposal-1');
+    expect(first.settleLeg).toHaveBeenCalledWith('leg-1', null);
+    expect(first.updateResult).toHaveBeenCalledWith(
+      'proposal-1',
+      'PARTIAL',
+      expect.anything(),
+    );
+
+    // Second pass on the same rows: the same outcome, nothing new.
+    const second = harness();
+    await second.service.settleProposal('proposal-1');
+    expect(second.updateResult.mock.calls).toEqual(
+      first.updateResult.mock.calls,
+    );
+  });
+
+  it('still settles a match moved by less than a day', async () => {
+    const composedKickoff = new Date('2026-10-29T18:00:00Z');
+    const { service, settleLeg } = makeHarness({
+      legs: [makeLeg({ id: 'leg-1', fixtureId: 'f1' })],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          scheduledAt: new Date('2026-10-30T12:00:00Z'),
+          homeScore: 2,
+          awayScore: 1,
+        }),
+      ],
+      lastFixtureScheduledAt: composedKickoff,
+    });
+    await service.settleProposal('proposal-1');
+    expect(settleLeg).toHaveBeenCalledWith('leg-1', true);
+  });
+
   it('voids a fixture still postponed a day after its original kickoff', async () => {
     const { service, settleLeg, updateResult } = makeHarness({
       legs: [makeLeg({ id: 'leg-1', fixtureId: 'f1' })],
@@ -447,6 +516,7 @@ describe('CouponSettlementService.settleProposal — ligne de clôture par jambe
     bookmaker: 'Pinnacle',
     market: Market.ONE_X_TWO,
     pick,
+    line: null,
     odds,
     observedAt: new Date('2026-10-04T17:48:00.000Z'),
   });
@@ -506,6 +576,47 @@ describe('CouponSettlementService.settleProposal — ligne de clôture par jambe
     expect(closing.closingLineValue).toBeCloseTo(
       2.1 * (1 / 1.9 / overround) - 1,
       10,
+    );
+  });
+
+  it('reads the corners close at the leg line', async () => {
+    const corner = (pick: string, line: number, odds: number) => ({
+      ...closingRow(pick, odds),
+      market: Market.CORNERS,
+      line,
+    });
+    const { service, updateLegClosingLine } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-1',
+          fixtureId: 'f1',
+          market: Market.CORNERS,
+          pick: 'UNDER',
+          line: 9.5,
+          oddsSnapshot: 1.88,
+        }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          scheduledAt: kickoff,
+          homeScore: 1,
+          awayScore: 0,
+        }),
+      ],
+      closingLines: [
+        corner('OVER', 9.5, 1.9),
+        corner('UNDER', 9.5, 1.95),
+        corner('UNDER', 10.5, 1.6),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(updateLegClosingLine).toHaveBeenCalledWith(
+      'leg-1',
+      expect.objectContaining({ closingOdds: 1.95 }),
     );
   });
 

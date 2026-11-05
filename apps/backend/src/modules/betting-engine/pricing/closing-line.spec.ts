@@ -12,6 +12,7 @@ function row(bookmaker: string, pick: string, odds: number): ClosingLineRow {
     bookmaker,
     market: Market.ONE_X_TWO,
     pick,
+    line: null,
     odds,
     observedAt: new Date('2026-10-04T17:48:00.000Z'),
   };
@@ -129,6 +130,53 @@ describe('resolveClosingLine', () => {
       1.3 * (1 / 1.25 / overround) - 1,
       10,
     );
+  });
+});
+
+describe('resolveClosingLine on corners', () => {
+  const corner = (
+    pick: string,
+    line: number,
+    odds: number,
+  ): ClosingLineRow => ({
+    ...row('Pinnacle', pick, odds),
+    market: Market.CORNERS,
+    line,
+  });
+
+  it('reads the corner close at the leg line only', () => {
+    const result = resolveClosingLine({
+      market: Market.CORNERS,
+      pick: 'UNDER',
+      line: 9.5,
+      takenOdds: 1.88,
+      preferredBookmaker: null,
+      rows: [
+        corner('OVER', 9.5, 1.9),
+        corner('UNDER', 9.5, 1.95),
+        corner('OVER', 10.5, 2.3),
+        corner('UNDER', 10.5, 1.6),
+      ],
+    });
+    const overround = 1 / 1.9 + 1 / 1.95;
+    expect(result?.closingOdds).toBe(1.95);
+    expect(result?.closingLineValue).toBeCloseTo(
+      1.88 * (1 / 1.95 / overround) - 1,
+      10,
+    );
+  });
+
+  it('stays null without the leg line or without its opposite at that line', () => {
+    const rows = [corner('OVER', 9.5, 1.9), corner('UNDER', 10.5, 1.6)];
+    const base = {
+      market: Market.CORNERS,
+      pick: 'UNDER',
+      takenOdds: 1.88,
+      preferredBookmaker: null,
+      rows,
+    };
+    expect(resolveClosingLine({ ...base, line: 10.5 })).toBeNull();
+    expect(resolveClosingLine({ ...base, line: null })).toBeNull();
   });
 });
 

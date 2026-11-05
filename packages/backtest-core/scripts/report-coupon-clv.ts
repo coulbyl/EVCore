@@ -35,6 +35,8 @@ type Row = {
   meanOdds: number | null;
   meanClosingOdds: number | null;
   withOperator: number;
+  operatorClv: number | null;
+  operatorClvSe: number | null;
   meanOperatorOdds: number | null;
   meanOperatorMargin: number | null;
   operatorFair: number | null;
@@ -122,6 +124,7 @@ function render(rows: readonly Row[]): string {
     "Jambes cotées 1xBet",
     "Cote 1xBet",
     "Marge 1xBet",
+    "CLV au prix 1xBet (± ET)",
     "Marché (sans marge)",
     "Réalisé",
     "Écart au marché",
@@ -134,6 +137,9 @@ function render(rows: readonly Row[]): string {
       `${row.withOperator} (${pct(row.withOperator / row.legs, 0)})`,
       num(row.meanOperatorOdds),
       pct(row.meanOperatorMargin),
+      row.operatorClv === null
+        ? "—"
+        : `${(row.operatorClv * 100).toFixed(2)}${row.operatorClvSe === null ? "" : ` ± ${(row.operatorClvSe * 100).toFixed(1)}`} %`,
       pct(row.operatorFair),
       pct(row.operatorHitRate),
       row.operatorFair === null || row.operatorHitRate === null
@@ -174,7 +180,9 @@ cible de ${pct(COVERAGE_TARGET, 0)} (acceptation de E-2).
 
 ## Au prix 1xBet
 
-Le prix que paie le joueur, connu à la publication du coupon. Les sources se
+Le prix que paie le joueur, connu à la publication du coupon. Le CLV de la
+première table est au prix de référence (la colonne stockée) ; celui-ci est
+le même relevé de clôture rapporté à la cote 1xBet jouée. Les sources se
 comparent jambe à jambe à ce même prix : le réalisé face à la fréquence du
 marché sans marge, et le résultat d'une mise fixe sur chaque jambe.
 

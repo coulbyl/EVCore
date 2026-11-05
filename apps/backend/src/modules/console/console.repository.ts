@@ -267,7 +267,11 @@ export class ConsoleRepository {
     >`
       SELECT pd.product::text AS product,
              count(l.id) AS legs,
-             avg(l."closingLineValue")::float AS clv,
+             -- CLV at the 1xBet price the player takes (2026-11-05):
+             -- the stored value is on the reference price, its closing
+             -- frequency is (CLV + 1) / reference odds.
+             avg(coalesce(l."operatorOdds", l."oddsSnapshot")
+                   * (l."closingLineValue" + 1) / l."oddsSnapshot" - 1)::float AS clv,
              avg(l."operatorMargin")::float AS margin
       FROM public.product_day pd
       JOIN public.coupon_proposal_leg l ON l."couponProposalId" = pd."couponProposalId"

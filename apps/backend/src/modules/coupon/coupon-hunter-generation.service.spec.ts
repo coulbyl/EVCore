@@ -80,6 +80,8 @@ function makeHarness(
       },
     ]),
     findAvoidedFixtureIds: vi.fn().mockResolvedValue(avoided),
+    // Nothing published yet for the day, unless a test says so.
+    findProposalFixtureIds: vi.fn().mockResolvedValue([]),
     // f4 en championnat fiable (c1), f5 dans un championnat sans stats (c2).
     findCornersQuotes: vi
       .fn()
@@ -318,5 +320,79 @@ describe('CouponHunterGenerationService', () => {
       'a2',
       'a3',
     ]);
+  });
+
+  it('never puts the draw and the exact score on the same match', async () => {
+    // A 1:1 on f2 is also a draw: the score hunter keeps off the draw's match.
+    const { service, repository } = makeHarness();
+    PRICES.set('f2|CORRECT_SCORE|1:1', 7);
+    vi.mocked(repository.findEngineComboCandidates).mockResolvedValue([
+      {
+        fixtureId: 'f2',
+        competition: 'PL',
+        channel: 'CORRECT_SCORE',
+        market: 'CORRECT_SCORE',
+        pick: '1:1',
+        odds: 7,
+        probability: 0.12,
+        scheduledAt: KICKOFF,
+      },
+    ] as never);
+    // The draw hunter published f2 (this pass or an earlier one).
+    vi.mocked(repository.findProposalFixtureIds).mockImplementation((opts) =>
+      Promise.resolve(
+        opts.source === CouponSource.PRICE_COMPOSER ? ['f2'] : [],
+      ),
+    );
+    const outcomes = await service.generateForDate(new Date('2026-10-29'));
+    expect(outcomes.find((o) => o.hunter === 'HUNTER_DRAW')?.outcome).toBe(
+      'composed',
+    );
+    expect(outcomes.find((o) => o.hunter === 'HUNTER_SCORE')?.outcome).toBe(
+      'abstained',
+    );
+    expect(repository.findProposalFixtureIds).toHaveBeenCalledWith(
+      expect.objectContaining({ targetOddsMin: 2.9 }),
+    );
+  });
+
+  it('keeps the draw off the match of an exact score already published', async () => {
+    // Second pass: the score hunter published f2 at 17:00, the draw abstained
+    // then; at 21:00 the draw cannot take f2, its only draw in band.
+    const { service, repository } = makeHarness();
+    vi.mocked(repository.findProposalFixtureIds).mockImplementation((opts) =>
+      Promise.resolve(opts.source === CouponSource.ENGINE ? ['f2'] : []),
+    );
+    const outcomes = await service.generateForDate(new Date('2026-10-29'));
+    expect(outcomes.find((o) => o.hunter === 'HUNTER_DRAW')?.outcome).toBe(
+      'abstained',
+    );
+  });
+
+  it('defers the AI combo to the 21:00 pass, writing nothing at 17:00', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-10-28T17:03:00Z'));
+      const { service, repository } = makeHarness();
+      const outcomes = await service.generateForDate(new Date('2026-10-29'));
+      expect(outcomes.at(-1)).toMatchObject({
+        hunter: 'AI_COMBO',
+        outcome: 'deferred',
+      });
+      expect(repository.findAiPlays).not.toHaveBeenCalled();
+      expect(repository.recordPriceComposerAttempt).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          pass: expect.objectContaining({ name: 'ai-combo' }),
+        }),
+      );
+
+      vi.setSystemTime(new Date('2026-10-28T21:00:30Z'));
+      const later = makeHarness();
+      const again = await later.service.generateForDate(new Date('2026-10-29'));
+      expect(again.at(-1)?.outcome).toBe('abstained');
+      expect(later.repository.findAiPlays).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -327,7 +327,19 @@ export const HUNTER_POLICY = {
 
 /** Combiné IA (2026-11-03, AI_COMBO_COUPON_CLASS d'@evcore/analysis-core). */
 export const AI_COMBO_POLICY = {
-  version: 'ai-combo-v1',
+  version: 'ai-combo-v2',
+  /**
+   * Not composed before 21:00 UTC the day before (2026-11-05): the 17:00
+   * horizon pass composed it at 17:03, three minutes before VANTAGE reads the
+   * runs that pass just wrote, so it froze the previous evening's opinions
+   * (2 of 3 legs on 04/11 were no longer the AI's opinion at kickoff). The
+   * 21:00 analysis pass composes it on the opinions given after 17:00.
+   * Replay 06/10–04/11: 24 of 30 days composed (23 at 17:03), realised ÷
+   * announced per leg 0.896 (n = 87) against 0.875 (n = 79). Keeping only an
+   * opinion repeated on two passes in a row (0.929, n = 24) composed 7 days
+   * out of 30: not shipped (docs/audits/2026-11-05/PERTES-CHASSEURS-COTE2-IA.md).
+   */
+  composeFromHoursBeforeDay: 3,
 } as const;
 
 /**
@@ -393,7 +405,9 @@ export const ENGINE_COMBO_POLICY = {
  * POSTPONED de façon transitoire (cas réel du 2026-08-22 : réglé reporté à
  * 01:00, finalement joué et FINISHED 5-2) ; voider au premier passage
  * inventait un remboursement sur des jambes perdantes. CANCELLED reste
- * remboursé immédiatement.
+ * remboursé immédiatement. Le même délai rembourse une jambe dont le match a
+ * été déplacé et rejoué au moins un jour après le dernier coup d'envoi du
+ * coupon à sa composition (2026-11-05, Coritiba–Vitória).
  */
 export const COUPON_SETTLEMENT_POLICY = {
   postponedVoidDelayMs: 24 * 60 * 60 * 1_000,

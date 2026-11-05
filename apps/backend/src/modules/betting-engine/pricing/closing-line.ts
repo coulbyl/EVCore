@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import type { Market } from '@evcore/db';
+import { Market } from '@evcore/db';
 import {
   bookmakerRank,
   closingValue,
@@ -16,6 +16,8 @@ export type ClosingLineRow = {
   bookmaker: string;
   market: Market;
   pick: string;
+  /** Ligne des marchés qui la portent en colonne (corners) ; null sinon. */
+  line: number | null;
   odds: number;
   /** Heure d'observation du prix (capture, ou `snapshotAt` avant la migration `observedAt`). */
   observedAt: Date;
@@ -47,16 +49,21 @@ export type ResolvedClosingLine = {
 export function resolveClosingLine(opts: {
   market: Market;
   pick: string;
+  /** Ligne d'un marché à ligne en colonne (corners), null sinon. */
+  line?: number | null;
   takenOdds: Decimal.Value;
   preferredBookmaker: string | null;
   rows: readonly ClosingLineRow[];
 }): ResolvedClosingLine | null {
-  const group = outcomeGroup(opts.market, opts.pick);
+  const line = opts.line ?? null;
+  const group = closingGroup(opts.market, opts.pick, line);
   if (!group) return null;
 
   const byBookmaker = new Map<string, ClosingLineRow[]>();
   for (const row of opts.rows) {
     if (row.market !== opts.market || !group.picks.includes(row.pick)) continue;
+    // Une seule ligne : 9,5 et 10,5 corners ne forment pas un groupe.
+    if ((row.line ?? null) !== line) continue;
     const rows = byBookmaker.get(row.bookmaker) ?? [];
     rows.push(row);
     byBookmaker.set(row.bookmaker, rows);
@@ -93,6 +100,30 @@ export function resolveClosingLine(opts: {
   }
   return null;
 }
+
+/**
+ * Marchés à ligne en colonne dont le groupe d'issues est un Plus/Moins à
+ * cette ligne (2026-11-05) : le Chasseur Corners. Leur identité tient dans
+ * (choix, ligne), pas dans `pick` seul, d'où leur absence d'`outcomeGroup`.
+ */
+const LINE_OVER_UNDER_MARKETS: ReadonlySet<Market> = new Set([Market.CORNERS]);
+
+function closingGroup(
+  market: Market,
+  pick: string,
+  line: number | null,
+): { picks: readonly string[]; outcomeTotal: number } | null {
+  if (line === null) return outcomeGroup(market, pick);
+  if (!LINE_OVER_UNDER_MARKETS.has(market)) return null;
+  return pick === 'OVER' || pick === 'UNDER'
+    ? { picks: ['OVER', 'UNDER'], outcomeTotal: 1 }
+    : null;
+}
+
+/** Marchés dont la clôture se lit avec sa ligne (lecteur de la vue). */
+export const CLOSING_LINE_MARKETS_WITH_LINE: readonly Market[] = [
+  ...LINE_OVER_UNDER_MARKETS,
+];
 
 /**
  * Book qui a servi le prix d'une jambe LLM, s'il est connu : le vivier
