@@ -487,7 +487,8 @@ async function main() {
           rho: scoreProbabilities(dep.fit, fixture),
         },
         closeBtts: fair.get(`${Market.BTTS}|YES`) ?? null,
-        closeOver25: fair.get(`${Market.OVER_UNDER}|OVER_2_5`) ?? null,
+        // The 2.5 line is stored under the bare OVER key (totalPickLine).
+        closeOver25: fair.get(`${Market.OVER_UNDER}|OVER`) ?? null,
         closeDraw: fair.get(`${Market.ONE_X_TWO}|DRAW`) ?? null,
       });
 
