@@ -83,6 +83,7 @@ import {
 } from './math/probability';
 import {
   computeMarketGrid,
+  marketGridFirstHalfFraction,
   marketGridRho,
   getLeagueThreeWayEmpiricalBlendWeight,
   summarizeMarketGrid,
@@ -776,8 +777,11 @@ export class BettingEngineService {
     //   - the « Données suspectes » coherence gates below, which compare the
     //     statistics output to the market: their job is to catch corrupted
     //     inputs (team stats, λ), and the grid is the market itself.
+    // First half (ML-2b, docs/audits/2026-11-05/ML2B-MI-TEMPS.md): λ fitted
+    // on the grid book's half-time prices, else the league's first-half share.
     const marketGrid = computeMarketGrid(marketGridRows, oddsCutoff, {
       rho: marketGridRho(competitionCode),
+      firstHalfFraction: marketGridFirstHalfFraction(competitionCode),
     });
     const {
       source: predictionSource,

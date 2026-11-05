@@ -1,4 +1,5 @@
 import { Market } from "../types";
+import { FIRST_HALF_GOAL_FRACTION } from "../probability/poisson";
 import { BOOKMAKER_PREFERENCE } from "../pricing/odds-assembly";
 
 /**
@@ -24,6 +25,34 @@ export const MARKET_GRID_MARKETS: readonly Market[] = [
   Market.TEAM_TOTAL_HOME,
   Market.TEAM_TOTAL_AWAY,
 ];
+
+/**
+ * Half-time markets of the grid book (sub-model A of lot ML-2,
+ * docs/audits/2026-11-05/ML2B-MI-TEMPS.md): when the rows handed to
+ * computeMarketGrid hold the grid book's complete first-half 1X2 and at
+ * least one complete half-time goal line, first-half λ are fitted on them.
+ */
+export const MARKET_GRID_FIRST_HALF_MARKETS: readonly Market[] = [
+  Market.FIRST_HALF_WINNER,
+  Market.OVER_UNDER_HT,
+];
+
+/**
+ * Share of the full-time λ in the first half, per competition, when the
+ * grid book does not price the half (sub-model A of lot ML-2,
+ * docs/audits/2026-11-05/ML2B-MI-TEMPS.md). Output of
+ * `pnpm --filter @evcore/backtest-core backtest:half-time`: first-half goals
+ * over full-time goals of the competition's finished fixtures since 2018,
+ * shrunk towards FIRST_HALF_GOAL_FRACTION (0.44) by 500 fixtures; a
+ * competition below 200 fixtures reads 0.44.
+ */
+export const MARKET_GRID_FIRST_HALF_FRACTION: Readonly<Record<string, number>> =
+  // Emptied on 05/11: the per-league fraction measured worse than the 0.44
+  // constant against the Pinnacle half-time close (+0.00008 [+0.00004 ;
+  // +0.00011], docs/audits/2026-11-05/ML2B-MI-TEMPS.md), so the 7 % of grids
+  // without a half-time price keep FIRST_HALF_GOAL_FRACTION. The fitted map
+  // is in ml2b-mi-temps.txt if a better fallback is ever measured.
+  {};
 
 /**
  * Weight of each 1X2 outcome against one goal line in the least-squares fit,
@@ -123,5 +152,15 @@ export function marketGridRho(
   if (!competitionCode) return MARKET_GRID_RHO.global;
   return (
     MARKET_GRID_RHO.byCompetition[competitionCode] ?? MARKET_GRID_RHO.global
+  );
+}
+
+/** First-half share of λ of a competition's market grid (0.44 without one). */
+export function marketGridFirstHalfFraction(
+  competitionCode: string | null | undefined,
+): number {
+  if (!competitionCode) return FIRST_HALF_GOAL_FRACTION;
+  return (
+    MARKET_GRID_FIRST_HALF_FRACTION[competitionCode] ?? FIRST_HALF_GOAL_FRACTION
   );
 }

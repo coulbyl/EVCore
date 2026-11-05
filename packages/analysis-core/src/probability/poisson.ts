@@ -21,7 +21,17 @@ import { boundedDixonColesRho, dixonColesTau } from "./dixon-coles";
 // First-Half Winner). At 0.44, P(HT Over 1.5) lands on the empirical base rate
 // (~0.351 modeled vs 0.353 actual). The second half carries the complement so the
 // two halves still sum to the full-time lambda (coherent with 1X2).
-const FIRST_HALF_GOAL_FRACTION = 0.44;
+export const FIRST_HALF_GOAL_FRACTION = 0.44;
+
+/**
+ * How the full-time λ split into halves: a share of λ for the first half
+ * (FIRST_HALF_GOAL_FRACTION when absent), or first-half λ given directly
+ * (fitted on half-time prices, market-grid.ts). The second half carries the
+ * rest of the full-time λ either way.
+ */
+export type FirstHalfSplit =
+  | { fraction: number }
+  | { lambdaHome: number; lambdaAway: number };
 
 /** P(home = h, away = a) of a full-time score grid. */
 export type ScoreCell = (h: number, a: number) => number;
@@ -72,7 +82,11 @@ export function computePoissonMarkets(
     maxGoals,
   );
   const oneXTwo = poissonProbaFromDistributions(homeDist, awayDist);
-  const derived = deriveMarketsFromDistributions(homeDist, awayDist, oneXTwo);
+  const derived = deriveMarketsFromDistributions({
+    homeDist,
+    awayDist,
+    oneXTwo,
+  });
   return { ...oneXTwo, ...derived };
 }
 
@@ -83,6 +97,8 @@ export function deriveMarketsFromPoisson(input: {
   maxGoals?: number;
   /** Dixon-Coles dependence (dixon-coles.ts); 0 or absent = independent. */
   rho?: number;
+  /** Half split of λ; absent = FIRST_HALF_GOAL_FRACTION. */
+  firstHalf?: FirstHalfSplit;
 }): DerivedMarketsProba {
   const { lambdaHome, lambdaAway, oneXTwo, maxGoals = 10, rho } = input;
   const { homeDist, awayDist } = normalizedPoissonDistributions(
@@ -91,7 +107,13 @@ export function deriveMarketsFromPoisson(input: {
     maxGoals,
   );
   const cell = scoreCells({ homeDist, awayDist, lambdaHome, lambdaAway, rho });
-  return deriveMarketsFromDistributions(homeDist, awayDist, oneXTwo, cell);
+  return deriveMarketsFromDistributions({
+    homeDist,
+    awayDist,
+    oneXTwo,
+    cell,
+    firstHalf: input.firstHalf,
+  });
 }
 
 export function poissonProbaFromDistributions(
@@ -128,12 +150,16 @@ export function poissonProbaFromDistributions(
   };
 }
 
-function deriveMarketsFromDistributions(
-  homeDist: number[],
-  awayDist: number[],
-  oneXTwo: ThreeWayProba,
-  cell: ScoreCell = (h, a) => (homeDist[h] ?? 0) * (awayDist[a] ?? 0),
-): DerivedMarketsProba {
+function deriveMarketsFromDistributions(input: {
+  homeDist: number[];
+  awayDist: number[];
+  oneXTwo: ThreeWayProba;
+  cell?: ScoreCell;
+  firstHalf?: FirstHalfSplit;
+}): DerivedMarketsProba {
+  const { homeDist, awayDist, oneXTwo } = input;
+  const cell: ScoreCell =
+    input.cell ?? ((h, a) => (homeDist[h] ?? 0) * (awayDist[a] ?? 0));
   let under15 = 0;
   let under25 = 0;
   let under35 = 0;
@@ -172,7 +198,11 @@ function deriveMarketsFromDistributions(
     (1 - (homeDist[0] ?? 0)) * (1 - (awayDist[0] ?? 0)) + nilNilShift;
   const bttsNo = 1 - bttsYes;
   const { htft, ouHT, firstHalfWinner, secondHalfWinner } =
-    computeFirstHalfMarketsFromMatchDistributions(homeDist, awayDist);
+    computeFirstHalfMarketsFromMatchDistributions(
+      homeDist,
+      awayDist,
+      input.firstHalf,
+    );
 
   // Draw No Bet: renormalize home/away over the non-draw mass only — distinct
   // from dc1X/dc12 below, which are unnormalized sums that still include the
@@ -357,38 +387,49 @@ function computeResultBttsProba(
 // Derives HT/FT, Over/Under HT, and First Half Winner from the full-time
 // Poisson distributions. All three share the same homeHalfDist/awayHalfDist
 // so the computation is done in a single pass.
+/** First- and second-half λ of each side from the full-time λ and a split. */
+function halfLambdas(
+  lambdaHome: number,
+  lambdaAway: number,
+  split: FirstHalfSplit = { fraction: FIRST_HALF_GOAL_FRACTION },
+): { first: [number, number]; second: [number, number] } {
+  if ("fraction" in split) {
+    const f = split.fraction;
+    return {
+      first: [lambdaHome * f, lambdaAway * f],
+      second: [lambdaHome * (1 - f), lambdaAway * (1 - f)],
+    };
+  }
+  return {
+    first: [split.lambdaHome, split.lambdaAway],
+    second: [
+      Math.max(0, lambdaHome - split.lambdaHome),
+      Math.max(0, lambdaAway - split.lambdaAway),
+    ],
+  };
+}
+
 function computeFirstHalfMarketsFromMatchDistributions(
   homeDist: number[],
   awayDist: number[],
+  split?: FirstHalfSplit,
 ): FirstHalfMarkets {
   const maxGoals = Math.max(0, homeDist.length - 1, awayDist.length - 1);
   const factorialCache = buildFactorialCache(maxGoals);
-  const lambdaHome = expectedGoalsFromDistribution(homeDist);
-  const lambdaAway = expectedGoalsFromDistribution(awayDist);
-
-  const homeHalfDist = normalizedPoissonDistribution(
-    lambdaHome * FIRST_HALF_GOAL_FRACTION,
-    maxGoals,
-    factorialCache,
-  );
-  const awayHalfDist = normalizedPoissonDistribution(
-    lambdaAway * FIRST_HALF_GOAL_FRACTION,
-    maxGoals,
-    factorialCache,
-  );
   // Halves are independent but NOT identical: the second half carries the larger
   // share (1 − FIRST_HALF_GOAL_FRACTION) so 1H + 2H sums back to the full-time
   // lambda, keeping HT/FT coherent with the 1X2 distribution.
-  const homeSecondDist = normalizedPoissonDistribution(
-    lambdaHome * (1 - FIRST_HALF_GOAL_FRACTION),
-    maxGoals,
-    factorialCache,
+  const { first, second } = halfLambdas(
+    expectedGoalsFromDistribution(homeDist),
+    expectedGoalsFromDistribution(awayDist),
+    split,
   );
-  const awaySecondDist = normalizedPoissonDistribution(
-    lambdaAway * (1 - FIRST_HALF_GOAL_FRACTION),
-    maxGoals,
-    factorialCache,
-  );
+  const [homeHalfDist, awayHalfDist, homeSecondDist, awaySecondDist] = [
+    ...first,
+    ...second,
+  ].map((lambda) =>
+    normalizedPoissonDistribution(lambda, maxGoals, factorialCache),
+  ) as [number[], number[], number[], number[]];
 
   // Second Half Winner: independent of the first half in this model, so it's
   // a plain marginal pair over homeSecondDist/awaySecondDist — no need to

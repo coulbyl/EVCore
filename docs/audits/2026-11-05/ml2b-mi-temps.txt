@@ -1,0 +1,111 @@
+Mi-temps sur la grille — 2026-11-05T00:26:00.131Z — entraînement de la fraction : 41444 matchs depuis 2018-01-01 ; rejeu : 12704 matchs du 2026-01-01 au 2026-11-04
+
+== FRACTION DE MI-TEMPS WALK-FORWARD (début de chaque mois) ==
+2026-01  championnats ajustés 50  médiane 0.443
+2026-02  championnats ajustés 50  médiane 0.442
+2026-03  championnats ajustés 50  médiane 0.443
+2026-04  championnats ajustés 50  médiane 0.444
+2026-05  championnats ajustés 50  médiane 0.444
+2026-06  championnats ajustés 50  médiane 0.444
+2026-07  championnats ajustés 50  médiane 0.444
+2026-08  championnats ajustés 50  médiane 0.445
+2026-09  championnats ajustés 50  médiane 0.444
+2026-10  championnats ajustés 51  médiane 0.444
+2026-11  championnats ajustés 51  médiane 0.444
+
+== FRACTION FINALE (tout l'historique) — à recopier si « frac » ou « ht » est expédié ==
+  ARG1: 0.441, // n 1745, f̂ 0.441
+  AUS1: 0.439, // n 525, f̂ 0.438
+  AUT1: 0.447, // n 651, f̂ 0.452
+  BEL1: 0.451, // n 1040, f̂ 0.456
+  BL1: 0.451, // n 996, f̂ 0.456
+  BRA1: 0.448, // n 1312, f̂ 0.451
+  BRA2: 0.45, // n 1500, f̂ 0.454
+  CH: 0.455, // n 1827, f̂ 0.460
+  CHI1: 0.437, // n 926, f̂ 0.436
+  CSL: 0.447, // n 848, f̂ 0.451
+  CZE1: 0.456, // n 918, f̂ 0.464
+  D2: 0.447, // n 1014, f̂ 0.450
+  D3: 0.447, // n 1260, f̂ 0.450
+  DEN1: 0.455, // n 656, f̂ 0.466
+  EL1: 0.44, // n 1826, f̂ 0.440
+  EL2: 0.447, // n 1834, f̂ 0.449
+  ERD: 0.437, // n 1054, f̂ 0.435
+  F2: 0.445, // n 1098, f̂ 0.447
+  FIN1: 0.436, // n 647, f̂ 0.433
+  GRE1: 0.446, // n 773, f̂ 0.450
+  I2: 0.445, // n 1269, f̂ 0.447
+  IRL1: 0.442, // n 723, f̂ 0.443
+  J1: 0.428, // n 1396, f̂ 0.424
+  KOR1: 0.409, // n 810, f̂ 0.390
+  KSA1: 0.437, // n 1022, f̂ 0.436
+  L1: 0.438, // n 1006, f̂ 0.436
+  LL: 0.44, // n 1249, f̂ 0.440
+  MLS: 0.445, // n 1405, f̂ 0.447
+  MX1: 0.445, // n 1143, f̂ 0.447
+  NOR1: 0.444, // n 876, f̂ 0.446
+  NOR2: 0.443, // n 915, f̂ 0.444
+  PL: 0.441, // n 1610, f̂ 0.442
+  POL1: 0.449, // n 1030, f̂ 0.454
+  POL2: 0.449, // n 1037, f̂ 0.453
+  POR: 0.44, // n 1014, f̂ 0.440
+  RUS1: 0.442, // n 835, f̂ 0.443
+  SA: 0.436, // n 1239, f̂ 0.435
+  SCO1: 0.446, // n 771, f̂ 0.450
+  SP2: 0.436, // n 1534, f̂ 0.434
+  SRB1: 0.45, // n 981, f̂ 0.455
+  SUI1: 0.438, // n 760, f̂ 0.436
+  SUI2: 0.444, // n 593, f̂ 0.447
+  SVN1: 0.444, // n 583, f̂ 0.448
+  SWE1: 0.441, // n 899, f̂ 0.441
+  SWE2: 0.437, // n 908, f̂ 0.435
+  TUR1: 0.439, // n 1117, f̂ 0.438
+  TUR2: 0.446, // n 1208, f̂ 0.449
+  UCL: 0.444, // n 918, f̂ 0.446
+  UECL: 0.419, // n 1527, f̂ 0.413
+  UEL: 0.454, // n 848, f̂ 0.462
+  UNL: 0.443, // n 291, f̂ 0.448
+
+== COUVERTURE (grille à T − 1 h) ==
+grilles 7435  prix MT ajustés 6926 (93.2 %)  sans prix MT complets 508  écart > 0,02 0  λ_MT ≥ λ 1
+
+== ISSUES MI-TEMPS, 7435 matchs (réalisé ÷ annoncé) ==
+issue          réalisé   base [IC]                frac [IC]                ht [IC]
+MT dom.        0.3450    1.001 [0.967 ; 1.035]    0.999 [0.965 ; 1.033]    0.990 [0.956 ; 1.023]   
+MT nul         0.4007    1.008 [0.980 ; 1.036]    1.011 [0.982 ; 1.039]    1.012 [0.983 ; 1.040]   
+MT ext.        0.2543    0.986 [0.954 ; 1.020]    0.985 [0.952 ; 1.018]    0.995 [0.962 ; 1.029]   
+MT plus 0,5    0.7225    1.009 [0.994 ; 1.023]    1.007 [0.992 ; 1.021]    1.008 [0.993 ; 1.022]   
+MT plus 1,5    0.3731    1.027 [0.997 ; 1.057]    1.020 [0.991 ; 1.051]    1.024 [0.994 ; 1.055]   
+  dont matchs à prix MT (6926) :
+  MT dom.               0.993 [0.957 ; 1.029]    0.991 [0.955 ; 1.026]    0.981 [0.945 ; 1.015]   
+  MT nul                1.015 [0.986 ; 1.043]    1.018 [0.989 ; 1.047]    1.020 [0.991 ; 1.048]   
+  MT ext.               0.986 [0.952 ; 1.021]    0.984 [0.951 ; 1.019]    0.996 [0.962 ; 1.031]   
+  MT plus 0,5           1.006 [0.991 ; 1.021]    1.003 [0.988 ; 1.018]    1.005 [0.990 ; 1.020]   
+  MT plus 1,5           1.029 [1.000 ; 1.062]    1.021 [0.992 ; 1.054]    1.026 [0.996 ; 1.059]   
+
+== CRITÈRES D'EXPÉDITION ==
+-- ht --
+H1 ratio des jambes mi-temps 1.012 [0.993 ; 1.031] (7877 jambes, borne basse ≥ 0,97) → OK
+H2 écart² à la clôture, T − 1 h, ht − base -0.00014 [-0.00016 ; -0.00012] (2492 matchs, IC sous 0) → OK
+H3 écart² à la clôture, veille 17 h, ht − base -0.00015 [-0.00019 ; -0.00012] (2424 matchs, IC sous 0) → OK
+H4 aucun canal mi-temps dégradé → OK
+H5 canaux plein-match identiques : 0 matchs différents sur 49742 jambes → OK
+H6 log-perte du résultat MT, ht − base +0.00065 [-0.00025 ; +0.00153] (pas entièrement au-dessus de 0) → OK
+-- frac --
+H1 ratio des jambes mi-temps 1.014 [0.995 ; 1.033] (7871 jambes, borne basse ≥ 0,97) → OK
+H2 écart² à la clôture, T − 1 h, frac − base +0.00008 [+0.00004 ; +0.00011] (2492 matchs, IC sous 0) → NON
+H3 écart² à la clôture, veille 17 h, frac − base +0.00007 [+0.00003 ; +0.00010] (2424 matchs, IC sous 0) → NON
+H4 aucun canal mi-temps dégradé → OK
+H5 canaux plein-match identiques : 0 matchs différents sur 49742 jambes → OK
+H6 log-perte du résultat MT, frac − base -0.00026 [-0.00107 ; +0.00060] (pas entièrement au-dessus de 0) → OK
+
+== CANAUX MI-TEMPS (mêmes matchs) ==
+canal                  jambes b/f/h      base [IC]                frac [IC]                ht [IC]                  ΔBrier ht − base vs clôture
+FIRST_HALF                  847/850/852  1.025 [0.949 ; 1.096]    1.017 [0.943 ; 1.093]    1.001 [0.931 ; 1.070]    +0.0001 [-0.0012 ; +0.0011]
+OVER_UNDER_HT            1163/1163/1163  1.012 [0.980 ; 1.044]    1.007 [0.976 ; 1.039]    1.008 [0.976 ; 1.040]    +0.0001 [-0.0004 ; +0.0005]
+HALF_TIME_FULL_TIME      1219/1219/1219  0.990 [0.892 ; 1.092]    0.986 [0.888 ; 1.088]    0.977 [0.880 ; 1.074]    —
+WIN_EITHER_HALF          4638/4639/4643  1.018 [0.999 ; 1.036]    1.019 [1.000 ; 1.036]    1.019 [1.000 ; 1.036]    —
+TOUS                     7867/7871/7877  1.015 [0.997 ; 1.035]    1.014 [0.995 ; 1.033]    1.012 [0.993 ; 1.031]    +0.0001 [-0.0008 ; +0.0008]
+plein-match (base)                48642  1.002 [0.991 ; 1.012]   
+
+VERDICT → « ht » EXPÉDIÉ

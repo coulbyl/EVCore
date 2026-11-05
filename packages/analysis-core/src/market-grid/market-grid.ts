@@ -6,6 +6,8 @@ import { overUnderPickLine } from "../pricing/outcome-groups";
 import {
   buildPoissonDistributions,
   deriveMarketsFromPoisson,
+  FIRST_HALF_GOAL_FRACTION,
+  type FirstHalfSplit,
   poissonProbaFromDistributions,
   scoreCells,
 } from "../probability/poisson";
@@ -13,6 +15,7 @@ import type { ThreeWayProba } from "../probability/markets";
 import type { MatchProbabilities } from "../selection/types";
 import {
   MARKET_GRID_BOOKMAKERS,
+  MARKET_GRID_FIRST_HALF_MARKETS,
   MARKET_GRID_LAMBDA_MAX,
   MARKET_GRID_LAMBDA_MIN,
   MARKET_GRID_MARKETS,
@@ -75,11 +78,28 @@ export type MarketGridFit = {
   rmse: number;
 };
 
+/** How the grid's first-half λ were obtained. */
+export type MarketGridFirstHalf =
+  | {
+      source: "prices";
+      lambdaHome: number;
+      lambdaAway: number;
+      rmse: number;
+      snapshotAt: Date;
+    }
+  | {
+      source: "fraction";
+      fraction: number;
+      /** Why the half-time prices were not used (null: none were read). */
+      reason: "no_quotes" | "fit_error" | "inconsistent" | null;
+    };
+
 export type MarketGridResult =
   | {
       status: "ok";
       quotes: MarketGridQuotes;
       fit: MarketGridFit;
+      firstHalf: MarketGridFirstHalf;
       probabilities: MatchProbabilities;
     }
   | {
@@ -444,11 +464,146 @@ export function fitMarketGridLambdas(
 }
 
 /**
+ * The grid book's half-time prices at `cutoff`: the latest complete
+ * first-half 1X2, and the half-time goal lines priced within
+ * MARKET_GRID_SAME_INSTANT_MINUTES of it (latest row per pick), margin
+ * removed by Shin per group. `null` without a complete first-half 1X2 and
+ * at least one complete line.
+ */
+export function selectFirstHalfQuotes(
+  rows: readonly RawOddsRow[],
+  options: { bookmaker: string; cutoff: Date },
+): {
+  snapshotAt: Date;
+  fairFirstHalf: ThreeWayProba;
+  lines: Array<{ market: Market; line: number; fairOver: Decimal }>;
+} | null {
+  const { bookmaker, cutoff } = options;
+  const since = cutoff.getTime() - MARKET_GRID_LOOKBACK_DAYS * 86_400_000;
+  const usable = rows.filter(
+    (row) =>
+      row.bookmaker === bookmaker &&
+      MARKET_GRID_FIRST_HALF_MARKETS.includes(row.market) &&
+      row.pick !== null &&
+      toDecimal(row.odds) !== null &&
+      row.snapshotAt.getTime() <= cutoff.getTime() &&
+      row.snapshotAt.getTime() >= since,
+  );
+  const anchorRow = latest(
+    usable.filter((row) => row.market === Market.FIRST_HALF_WINNER),
+  );
+  if (!anchorRow) return null;
+  const anchor = anchorRow.snapshotAt.getTime();
+  const tolerance = MARKET_GRID_SAME_INSTANT_MINUTES * 60_000;
+  const byPick = new Map<string, RawOddsRow[]>();
+  for (const row of usable) {
+    if (Math.abs(row.snapshotAt.getTime() - anchor) > tolerance) continue;
+    const key = `${row.market}|${row.pick}`;
+    const bucket = byPick.get(key);
+    if (bucket) bucket.push(row);
+    else byPick.set(key, [row]);
+  }
+  const priced = shinOutcomeGroups(
+    [...byPick.values()].map((bucket) => {
+      const row = latest(bucket) as RawOddsRow;
+      return {
+        fixtureId: "",
+        market: row.market,
+        pick: row.pick as string,
+        odds: Number(row.odds),
+      };
+    }),
+  );
+  const fair = new Map(priced.map((r) => [`${r.market}|${r.pick}`, r.fair]));
+  const home = fair.get(`${Market.FIRST_HALF_WINNER}|HOME`);
+  const draw = fair.get(`${Market.FIRST_HALF_WINNER}|DRAW`);
+  const away = fair.get(`${Market.FIRST_HALF_WINNER}|AWAY`);
+  if (!home || !draw || !away) return null;
+  const lines: Array<{ market: Market; line: number; fairOver: Decimal }> = [];
+  for (const r of priced) {
+    if (r.market !== Market.OVER_UNDER_HT) continue;
+    const parsed = overUnderPickLine(r.pick);
+    if (!parsed || parsed.side !== "OVER") continue;
+    // Fitted as a total-goals line of the first-half grid.
+    lines.push({
+      market: Market.OVER_UNDER,
+      line: parsed.line,
+      fairOver: r.fair,
+    });
+  }
+  if (lines.length === 0) return null;
+  lines.sort((a, b) => a.line - b.line);
+  return {
+    snapshotAt: new Date(anchor),
+    fairFirstHalf: { home, draw, away },
+    lines,
+  };
+}
+
+/**
+ * First-half λ of the grid: fitted on the grid book's half-time prices when
+ * it has them (same least squares as the full-time grid, refused above
+ * MARKET_GRID_MAX_RMSE or when a first-half λ is not below its full-time
+ * λ), else the full-time λ times `fraction`.
+ */
+function gridFirstHalf(input: {
+  rows: readonly RawOddsRow[];
+  cutoff: Date;
+  quotes: MarketGridQuotes;
+  fit: MarketGridFit;
+  fraction: number;
+}): MarketGridFirstHalf {
+  const half = selectFirstHalfQuotes(input.rows, {
+    bookmaker: input.quotes.bookmaker,
+    cutoff: input.cutoff,
+  });
+  const fallback = (
+    reason: "no_quotes" | "fit_error" | "inconsistent" | null,
+  ): MarketGridFirstHalf => ({
+    source: "fraction",
+    fraction: input.fraction,
+    reason,
+  });
+  if (!half) {
+    const anyRow = input.rows.some((row) =>
+      MARKET_GRID_FIRST_HALF_MARKETS.includes(row.market),
+    );
+    return fallback(anyRow ? "no_quotes" : null);
+  }
+  const fit = fitMarketGridLambdas({
+    oneXTwo: half.fairFirstHalf,
+    lines: half.lines,
+  });
+  if (!(fit.rmse <= MARKET_GRID_MAX_RMSE)) return fallback("fit_error");
+  if (
+    fit.lambdaHome >= input.fit.lambdaHome - MARKET_GRID_LAMBDA_MIN ||
+    fit.lambdaAway >= input.fit.lambdaAway - MARKET_GRID_LAMBDA_MIN
+  ) {
+    return fallback("inconsistent");
+  }
+  return {
+    source: "prices",
+    lambdaHome: fit.lambdaHome,
+    lambdaAway: fit.lambdaAway,
+    rmse: fit.rmse,
+    snapshotAt: half.snapshotAt,
+  };
+}
+
+const firstHalfSplit = (half: MarketGridFirstHalf): FirstHalfSplit =>
+  half.source === "prices"
+    ? { lambdaHome: half.lambdaHome, lambdaAway: half.lambdaAway }
+    : { fraction: half.fraction };
+
+/**
  * Every market probability from a fitted grid, in the statistics engine's
  * shape: the book's fair 1X2, everything else derived from the grid.
  */
 export function marketGridProbabilities(
-  fit: Pick<MarketGridFit, "lambdaHome" | "lambdaAway"> & { rho?: number },
+  fit: Pick<MarketGridFit, "lambdaHome" | "lambdaAway"> & {
+    rho?: number;
+    firstHalf?: FirstHalfSplit;
+  },
   fairOneXTwo: ThreeWayProba,
 ): MatchProbabilities {
   return {
@@ -459,6 +614,7 @@ export function marketGridProbabilities(
       oneXTwo: fairOneXTwo,
       maxGoals: MARKET_GRID_MAX_GOALS,
       rho: fit.rho,
+      firstHalf: fit.firstHalf,
     }),
   };
 }
@@ -469,12 +625,15 @@ export function marketGridProbabilities(
  * prices a complete 1X2 and a total-goals line, or when its prices
  * contradict each other beyond MARKET_GRID_MAX_RMSE; the caller then keeps
  * its statistics engine. `options.rho`: the league's Dixon-Coles dependence
- * (`marketGridRho`), 0 or absent = independent.
+ * (`marketGridRho`), 0 or absent = independent. First-half λ come from the
+ * grid book's half-time prices among `rows` (MARKET_GRID_FIRST_HALF_MARKETS)
+ * when they fit, else from `options.firstHalfFraction` of the full-time λ
+ * (FIRST_HALF_GOAL_FRACTION when absent).
  */
 export function computeMarketGrid(
   rows: readonly RawOddsRow[],
   cutoff: Date,
-  options: { rho?: number } = {},
+  options: { rho?: number; firstHalfFraction?: number } = {},
 ): MarketGridResult {
   const quotes = selectMarketGridQuotes(rows, cutoff);
   if (!quotes) {
@@ -492,11 +651,22 @@ export function computeMarketGrid(
   if (!(fit.rmse <= MARKET_GRID_MAX_RMSE)) {
     return { status: "unavailable", reason: "fit_error", quotes, fit };
   }
+  const firstHalf = gridFirstHalf({
+    rows,
+    cutoff,
+    quotes,
+    fit,
+    fraction: options.firstHalfFraction ?? FIRST_HALF_GOAL_FRACTION,
+  });
   return {
     status: "ok",
     quotes,
     fit,
-    probabilities: marketGridProbabilities(fit, quotes.fairOneXTwo),
+    firstHalf,
+    probabilities: marketGridProbabilities(
+      { ...fit, firstHalf: firstHalfSplit(firstHalf) },
+      quotes.fairOneXTwo,
+    ),
   };
 }
 
@@ -513,6 +683,14 @@ export function summarizeMarketGrid(result: MarketGridResult): {
   lambdaAway: number | null;
   rho: number | null;
   rmse: number | null;
+  /** First-half λ source: half-time prices or the league fraction. */
+  firstHalf: {
+    source: MarketGridFirstHalf["source"];
+    lambdaHome: number | null;
+    lambdaAway: number | null;
+    fraction: number | null;
+    reason: string | null;
+  } | null;
   prices: {
     oneXTwo: { home: number; draw: number; away: number };
     lines: { market: string; line: number; over: number; under: number }[];
@@ -528,6 +706,24 @@ export function summarizeMarketGrid(result: MarketGridResult): {
     lambdaAway: fit?.lambdaAway ?? null,
     rho: fit?.rho ?? null,
     rmse: fit?.rmse ?? null,
+    firstHalf:
+      result.status !== "ok"
+        ? null
+        : result.firstHalf.source === "prices"
+          ? {
+              source: "prices",
+              lambdaHome: result.firstHalf.lambdaHome,
+              lambdaAway: result.firstHalf.lambdaAway,
+              fraction: null,
+              reason: null,
+            }
+          : {
+              source: "fraction",
+              lambdaHome: null,
+              lambdaAway: null,
+              fraction: result.firstHalf.fraction,
+              reason: result.firstHalf.reason,
+            },
     prices: quotes
       ? {
           oneXTwo: {

@@ -4,6 +4,7 @@ import Decimal from 'decimal.js';
 import {
   assembleFullOddsSnapshot,
   MARKET_GRID_BOOKMAKERS,
+  MARKET_GRID_FIRST_HALF_MARKETS,
   MARKET_GRID_LOOKBACK_DAYS,
   MARKET_GRID_MARKETS,
   OVER_UNDER_PICKS,
@@ -111,8 +112,8 @@ export class OddsSnapshotLoader {
 
   /**
    * The market grid's input rows (lot ML-1): every PREMATCH row of the
-   * grid books (MARKET_GRID_BOOKMAKERS) on the 1X2 and the two-way goal
-   * lines, captured and priced before `cutoff`. computeMarketGrid
+   * grid books (MARKET_GRID_BOOKMAKERS) on the 1X2, the two-way goal
+   * lines and the half-time 1X2 and goal lines (ML-2b), captured and priced before `cutoff`. computeMarketGrid
    * (@evcore/analysis-core) picks the book and the latest row per pick.
    */
   async findMarketGridRows(
@@ -123,7 +124,9 @@ export class OddsSnapshotLoader {
       where: {
         fixtureId,
         bookmaker: { in: [...MARKET_GRID_BOOKMAKERS] },
-        market: { in: [...MARKET_GRID_MARKETS] },
+        market: {
+          in: [...MARKET_GRID_MARKETS, ...MARKET_GRID_FIRST_HALF_MARKETS],
+        },
         line: null,
         ...pointInTimeOddsWhere(cutoff),
         // Lower bound: the grid ignores older prices (selectMarketGridQuotes),

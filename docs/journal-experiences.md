@@ -874,3 +874,19 @@ D2, BTTS contre Pinnacle, n'est pas mesurable : Pinnacle ne clôture pas BTTS
 dans le flux de 2026. L'agent concluait « non expédié » ; l'utilisateur a choisi
 d'expédier avec ce suivi (retour à ρ = 0 si le nul se dégrade). Source :
 [ML2A-DEPENDANCE-BUTS.md](audits/2026-11-04/ML2A-DEPENDANCE-BUTS.md).
+
+## 2026-11-05 — La mi-temps sur la grille (ML-2b, sous-modèle A)
+
+### Le prix de mi-temps de Pinnacle fait-il mieux que λ × 0,44 ?
+
+**Verdict : expédié** (règle figée avant le rejeu, six critères tenus). Sur
+7 435 matchs de 2026 à grille, 93 % ont un 1X2 MT et une ligne plus/moins MT
+Pinnacle (Bet365 sinon) ; λ_MT y sont ajustés comme la grille (Shin, moindres
+carrés). Écart² à la clôture Pinnacle MT −0,00014 [−0,00016 ; −0,00012] à
+T − 1 h et −0,00015 [−0,00019 ; −0,00012] la veille à 17 h (pas mécanique) ;
+jambes mi-temps 1,015 → 1,012, aucun canal dégradé, plein-match identique au
+bit près ; log-perte du résultat MT inchangée (+0,0007 ± 0,0009). Petit gain de
+forme, pas d'avantage sur le marché. La fraction par championnat (0,41–0,46,
+médiane 0,444) seule éloigne la grille de la clôture (+0,00008) : elle n'est que
+le repli (7 % des matchs), retour à 0,44 proposé. Source :
+[ML2B-MI-TEMPS.md](audits/2026-11-05/ML2B-MI-TEMPS.md).

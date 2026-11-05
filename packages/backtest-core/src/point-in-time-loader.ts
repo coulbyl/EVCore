@@ -625,16 +625,18 @@ export class PointInTimeLoader {
    * the production rule (OddsSnapshotLoader keeps PREMATCH rows created
    * before the cutoff; every HISTORICAL row was imported after its kickoff,
    * so the capture bound excludes them too). One query for the batch, one
-   * array per request, in request order.
+   * array per request, in request order. `markets` widens the read (the
+   * half-time markets of MARKET_GRID_FIRST_HALF_MARKETS).
    */
   async loadMarketGridRowsBatch(
     requests: ReadonlyArray<{ fixtureId: string; asOf: Date }>,
+    markets: readonly Market[] = MARKET_GRID_MARKETS,
   ): Promise<RawOddsRow[][]> {
     if (requests.length === 0) return [];
     const rows = await this.oddsRows(
       [...new Set(requests.map((r) => r.fixtureId))],
       undefined,
-      { bookmakers: MARKET_GRID_BOOKMAKERS, markets: MARKET_GRID_MARKETS },
+      { bookmakers: MARKET_GRID_BOOKMAKERS, markets },
     );
     const byFixture = new Map<string, ArchivedOddsRow[]>();
     for (const row of rows) {
