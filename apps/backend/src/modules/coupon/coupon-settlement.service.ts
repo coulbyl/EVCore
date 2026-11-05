@@ -252,11 +252,28 @@ export class CouponSettlementService {
         fixture.status === FixtureStatus.POSTPONED &&
         now - fixture.scheduledAt.getTime() >=
           COUPON_SETTLEMENT_POLICY.postponedVoidDelayMs;
-      if (fixture.status === FixtureStatus.POSTPONED && !postponedLongEnough) {
+      // Same rule for a match moved and replayed (2026-11-05, Coritiba–
+      // Vitória, coupon of 29/10 played on 31/10): the fixture's kickoff is
+      // rewritten on rescheduling, so the coupon's latest kickoff at
+      // composition stands for the original one. A match now kicking off a
+      // day or more after it was never played within the window: void.
+      const movedOffCoupon =
+        fixture.scheduledAt.getTime() -
+          proposal.lastFixtureScheduledAt.getTime() >=
+        COUPON_SETTLEMENT_POLICY.postponedVoidDelayMs;
+      if (
+        fixture.status === FixtureStatus.POSTPONED &&
+        !postponedLongEnough &&
+        !movedOffCoupon
+      ) {
         allResolved = false;
         continue;
       }
-      if (fixture.status === FixtureStatus.CANCELLED || postponedLongEnough) {
+      if (
+        fixture.status === FixtureStatus.CANCELLED ||
+        postponedLongEnough ||
+        movedOffCoupon
+      ) {
         // Unlike the resolved-leg case below, `isCorrect === null` can't
         // distinguish "never settled" from "already voided" — always write
         // rather than skip, so a freshly-voided leg's settledAt actually gets set.

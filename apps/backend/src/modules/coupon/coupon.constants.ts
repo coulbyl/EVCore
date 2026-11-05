@@ -405,7 +405,9 @@ export const ENGINE_COMBO_POLICY = {
  * POSTPONED de façon transitoire (cas réel du 2026-08-22 : réglé reporté à
  * 01:00, finalement joué et FINISHED 5-2) ; voider au premier passage
  * inventait un remboursement sur des jambes perdantes. CANCELLED reste
- * remboursé immédiatement.
+ * remboursé immédiatement. Le même délai rembourse une jambe dont le match a
+ * été déplacé et rejoué au moins un jour après le dernier coup d'envoi du
+ * coupon à sa composition (2026-11-05, Coritiba–Vitória).
  */
 export const COUPON_SETTLEMENT_POLICY = {
   postponedVoidDelayMs: 24 * 60 * 60 * 1_000,
