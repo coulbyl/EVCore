@@ -12,9 +12,11 @@ import {
   clockLabelsOf,
   displayLocaleOf,
   formatClock,
+  formatCorners,
   formatOdds,
   formatTime,
   type ClockLabels,
+  type CornersLabels,
   type DisplayLocale,
 } from "@/helpers/scoreboard-format";
 import type {
@@ -160,6 +162,10 @@ export async function CouponSheetBody({
             won: t("won"),
             lost: t("lost"),
             refunded: t("refunded"),
+            corners: {
+              counted: (home, away) => t("corners", { home, away }),
+              pending: t("cornersPending"),
+            },
           }}
         />
       ))}
@@ -200,6 +206,7 @@ async function LegBlock({
     won: string;
     lost: string;
     refunded: string;
+    corners: CornersLabels;
   };
 }) {
   const bets = await getTranslations("betLabels");
@@ -245,6 +252,11 @@ async function LegBlock({
           )}
         </div>
       ))}
+      {leg.corners ? (
+        <p className="score ps-[2.375rem] text-meta text-muted-foreground">
+          {formatCorners(leg.corners, labels.corners)}
+        </p>
+      ) : null}
       <div className="flex items-baseline justify-between gap-3 ps-[2.375rem]">
         <span className="text-body font-medium">{legPickLabel(leg, bets)}</span>
         <span className="flex items-center gap-2">

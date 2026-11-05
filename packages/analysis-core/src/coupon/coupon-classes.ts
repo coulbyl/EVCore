@@ -200,42 +200,33 @@ export const FAVOURITE_COUPON_CLASS: CouponClass = {
 };
 
 /**
- * Le combiné du jour : TROIS sélections du moteur, prises telles que l'écran
- * Décisions les met en avant (« Notre sélection » : canal calibré sur la
- * compétition — ratio réel/annoncé ≥ 0,70 sur 90 jours — et cote sous 1,50),
- * une par championnat, les moins chères d'abord. Abstention sous trois.
+ * Le combiné du jour, composé depuis le 2026-11-05 à partir des LECTURES
+ * (« Notre lecture » de chaque match, `readingOf` côté backend) : le même
+ * pari que la lecture du match, partout. Deux lectures, une par championnat,
+ * cotées chez 1xBet de 1,30 à 1,80, classées sur la fréquence du marché
+ * (Shin, 1xBet), puis la première paire dans cet ordre dont la cote combinée
+ * tombe de 1,80 à 2,60 (`composeReadingCombo`, READING_COMBO_CONFIG). Aucune
+ * jambe sans cote 1xBet : la lecture les écarte déjà.
  *
- * Mesuré le 2026-10-12 sur 87 jours (2026-07-01 → 10-10, calibration
- * glissante sur les 90 jours précédents, `docs/audits/2026-10-12/
- * MESURES-DECISIONS-COUPONS.md` §5) : 78,2 % ± 4,4 de jours gagnants, cote
- * 1,39, pire série 3 jours, retour 1,048 par unité (dans le bruit : « ne
- * coûte pas plus que la marge »). Jambes réalisées 0,85 pour 0,83 annoncé.
- *
- * Pourquoi trois et pas plus : la quatrième jambe fait tomber les jours
- * gagnants à 63 % et la série à 6 ; viser une cote 2,5 avec les mêmes jambes
- * ne gagne plus qu'un jour sur quatre. Pourquoi les moins chères : classées
- * par probabilité du moteur, les mêmes trois jambes gagnent 67 % des jours
- * avec une série de 8 — le prix classe mieux que le moteur, comme partout.
- *
- * 2026-11-03 : dans un championnat, à chance égale (2 points près), la
- * marge 1xBet la plus basse plutôt que la cote la plus courte
- * (COMBO_CONFIG.marginTieBreak, docs/audits/2026-11-03/COMBINE-MARGE.md).
+ * Mesuré le 2026-11-05 sur 41 jours (rejeu de la lecture depuis le 01/09,
+ * `docs/audits/2026-11-05/COMBINE-ET-LECTURE.md` § 3, règle B2) : 61 % ± 15
+ * de jours gagnants à cote 1xBet médiane 1,82, pire série 4, jambes 1,096
+ * ± 0,141 sur la fréquence du marché (la sous-annonce connue de 1,45–1,80,
+ * pas un avantage). Le combiné v2 (sélections du moteur 1,20–1,50, les
+ * moins chères) payait 1,35 réels chez 1xBet et divergeait de la lecture
+ * sur 44 jambes sur 52.
  *
  * `targetOddsMin`/`targetOddsMax` composent la clé unique de
- * `coupon_proposal` avec la source ENGINE : disjoints des autres classes.
+ * `coupon_proposal` avec la source ENGINE : inchangés (1,20 / 3,40) pour que
+ * les anciens combinés restent le même produit ; la bande réelle de la cote
+ * combinée est dans READING_COMBO_CONFIG.
  */
 export const COMBO_COUPON_CLASS: CouponClass = {
   name: "COMBO",
-  // 2026-10-18 : plancher 1,20 (voir FAVOURITE_COUPON_CLASS) et DEUX jambes
-  // au lieu de trois. Avec le plancher, trois jambes tombent à 48 % de jours
-  // gagnants ; deux en gardent 71 % à cote 1,55, pire série 3, toutes les
-  // jambes jouables chez l'opérateur (docs/audits/2026-10-18/
-  // COTES-JOUABLES.md §3). Sans plancher, 10 jambes sur 12 des combinés
-  // publiés étaient sous 1,10 chez le moins bon des books relevés.
-  minLegOdds: 1.2,
-  maxLegOdds: 1.5,
+  minLegOdds: 1.3,
+  maxLegOdds: 1.8,
   maxLegs: 2,
-  targetCombinedOdds: 1.4,
+  targetCombinedOdds: 1.8,
   targetOddsMin: 1.2,
   targetOddsMax: 3.4,
 };

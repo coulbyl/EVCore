@@ -44,6 +44,9 @@ const ABSTENTION_REASON: Readonly<Record<string, string>> = {
   no_home_favourite_in_band: 'aucun favori à domicile entre 1,20 et 1,35',
   not_enough_calibrated_short_legs:
     'pas assez de paris fiables à cote courte, dans des championnats différents',
+  not_enough_readings:
+    'pas assez de lectures entre 1,30 et 1,80, dans des championnats différents',
+  no_combination_in_band: 'aucune paire de lectures entre 1,80 et 2,60',
   no_priced_candidate: 'pas assez de paris cotés dans la bande',
   no_combination_in_window: 'aucune combinaison entre 2 et 3',
   no_candidate_in_band: 'aucun pari dans sa bande de cote',

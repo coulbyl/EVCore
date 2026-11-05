@@ -63,8 +63,9 @@ test.describe("Aujourd'hui", () => {
     await page.goto("/today");
     const rows = page.getByRole("list", { name: "Autres coupons du jour" });
     await expect(rows.getByText("Combiné du jour")).toBeVisible();
-    await expect(rows.getByText("3 matchs")).toBeVisible();
-    await expect(rows.getByText("1,41")).toBeVisible();
+    const combo = rows.getByRole("link", { name: /Combiné du jour/ });
+    await expect(combo).toContainText("2 matchs");
+    await expect(combo).toContainText("2,03");
     await expect(rows.getByText("Chasseur Nul", { exact: true })).toBeVisible();
     await expect(rows.getByText("Lazio – Torino")).toBeVisible();
     await expect(rows.getByText("Chasseur Nul à la mi-temps")).toBeVisible();
@@ -219,7 +220,7 @@ test.describe("Feuille du coupon", () => {
       .click();
     const sheet = sheetNamed(page, "Combiné du jour");
     await expect(sheet).toBeVisible();
-    for (const team of ["Arsenal", "Inter", "Benfica"]) {
+    for (const team of ["Arsenal", "Inter"]) {
       await expect(sheet.getByText(team, { exact: true })).toBeVisible();
     }
   });

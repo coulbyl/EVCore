@@ -93,7 +93,7 @@ const FR: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
     title: "Le Favori, le Combiné, le Cote 2, les chasseurs",
     paragraphs: [
       "**Le Favori** : un seul match, un favori qui joue à domicile, coté entre 1,20 et 1,35. Il perd rarement, mais il rapporte peu.",
-      "**Le Combiné** : quelques matchs de championnats différents, chacun coté entre 1,20 et 1,50.",
+      "**Le Combiné** : deux matchs de championnats différents, avec le pari de notre lecture sur chacun, coté entre 1,30 et 1,80, pour une cote totale entre 1,80 et 2,60. Il gagne environ 6 jours sur 10.",
       "**Le Cote 2** : jusqu'à trois matchs, pour une cote totale entre 2 et 3.",
       "**Les chasseurs** : un seul pari, mais à plus grosse cote : le nul, les deux équipes marquent, le score exact, les corners. Ils perdent souvent, c'est normal : quand ils passent, ils rapportent plus.",
     ],
@@ -184,7 +184,7 @@ const EN: Record<HelpSlug, Omit<HelpSheet, "slug">> = {
     title: "The Favourite, the Combo, the Odds-2, the hunters",
     paragraphs: [
       "**The Favourite**: one match, a home favourite priced between 1.20 and 1.35. It rarely loses, but it pays little.",
-      "**The Combo**: a few matches from different leagues, each priced between 1.20 and 1.50.",
+      "**The Combo**: two matches from different leagues, with our reading's bet on each, priced between 1.30 and 1.80, for total odds between 1.80 and 2.60. It wins about 6 days out of 10.",
       "**The Odds-2**: up to three matches, for total odds between 2 and 3.",
       "**The hunters**: one bet, at bigger odds: the draw, both teams score, the exact score, corners. They lose often, that's normal: when they land, they pay more.",
     ],

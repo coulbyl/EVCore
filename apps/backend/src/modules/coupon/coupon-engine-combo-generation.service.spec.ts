@@ -1,48 +1,72 @@
+import { Prisma } from '@evcore/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   PlayableOddsRepository,
   PlayableQuote,
 } from '../betting-engine/pricing/playable-odds.repository';
+import type {
+  MatchesRepository,
+  ReadingCandidateRow,
+} from '../screens/matches.repository';
 import { CouponEngineComboGenerationService } from './coupon-engine-combo-generation.service';
 import type {
-  ChannelCompetitionCalibrationRow,
   CouponRepository,
-  EngineComboCandidateRow,
+  ReadingComboFixtureRow,
 } from './coupon.repository';
 
-const FOR_DATE = new Date('2026-10-13T00:00:00.000Z');
+const FOR_DATE = new Date('2026-11-06T00:00:00.000Z');
 
-function row(
-  over: Partial<EngineComboCandidateRow> = {},
-): EngineComboCandidateRow {
-  return {
-    fixtureId: 'f-1',
-    competition: 'L1',
-    channel: 'GOALS',
-    market: 'OVER_UNDER',
-    pick: 'OVER_1_5',
-    odds: 1.2,
-    probability: 0.8,
-    scheduledAt: new Date('2026-10-13T18:00:00.000Z'),
-    ...over,
-  };
-}
-const cell = (
-  over: Partial<ChannelCompetitionCalibrationRow> = {},
-): ChannelCompetitionCalibrationRow => ({
-  channel: 'GOALS',
-  competition: 'L1',
-  sampleSize: 120,
-  ratio: 0.97,
+const fixture = (
+  fixtureId: string,
+  competition: string,
+): ReadingComboFixtureRow => ({
+  fixtureId,
+  competition,
+  scheduledAt: new Date(`2026-11-06T${fixtureId === 'b' ? 20 : 18}:00:00Z`),
+});
+
+const candidate = (
+  over: Partial<ReadingCandidateRow> = {},
+): ReadingCandidateRow => ({
+  fixtureId: 'a',
+  avoided: false,
+  channel: 'DOMINANT',
+  market: 'ONE_X_TWO',
+  pick: 'HOME',
+  probability: new Prisma.Decimal(0.7),
+  result: 'PENDING',
   ...over,
 });
 
+const quote = (input: {
+  fixtureId: string;
+  market?: string;
+  pick?: string;
+  odds: number;
+  fair: number | null;
+}): [string, PlayableQuote] => {
+  const market = input.market ?? 'ONE_X_TWO';
+  const pick = input.pick ?? 'HOME';
+  return [
+    `${input.fixtureId}|${market}|${pick}`,
+    {
+      fixtureId: input.fixtureId,
+      market,
+      pick,
+      operatorOdds: input.odds,
+      operatorBookmaker: '1xBet',
+      operatorMargin: 0.05,
+      operatorFairProbability: input.fair,
+      lowestOdds: input.odds,
+      lowestBookmaker: '1xBet',
+    },
+  ];
+};
+
 function makeRepository() {
   return {
-    findEngineComboCandidates:
-      vi.fn<CouponRepository['findEngineComboCandidates']>(),
-    findChannelCompetitionCalibration:
-      vi.fn<CouponRepository['findChannelCompetitionCalibration']>(),
+    findReadingComboFixtures:
+      vi.fn<CouponRepository['findReadingComboFixtures']>(),
     upsertPriceComposerProposal:
       vi.fn<CouponRepository['upsertPriceComposerProposal']>(),
     recordPriceComposerAttempt:
@@ -52,6 +76,10 @@ function makeRepository() {
 
 describe('CouponEngineComboGenerationService', () => {
   let repository: ReturnType<typeof makeRepository>;
+  let findReadingCandidates: ReturnType<
+    typeof vi.fn<MatchesRepository['findReadingCandidates']>
+  >;
+  let quotes: Map<string, PlayableQuote>;
   let service: CouponEngineComboGenerationService;
 
   beforeEach(() => {
@@ -61,112 +89,126 @@ describe('CouponEngineComboGenerationService', () => {
       created: true,
     });
     repository.recordPriceComposerAttempt.mockResolvedValue();
+    findReadingCandidates = vi.fn<MatchesRepository['findReadingCandidates']>();
+    quotes = new Map();
     service = new CouponEngineComboGenerationService(
       repository as unknown as CouponRepository,
       {
-        findPlayableQuotes: vi.fn().mockResolvedValue(new Map()),
+        findPlayableQuotes: vi.fn(() => Promise.resolve(quotes)),
       } as unknown as PlayableOddsRepository,
+      { findReadingCandidates } as unknown as MatchesRepository,
     );
   });
 
-  it('writes an ENGINE proposal with two legs at 1.20 or more, each carrying its channel', async () => {
-    repository.findEngineComboCandidates.mockResolvedValue([
-      row({ fixtureId: 'a', odds: 1.3 }),
-      row({ fixtureId: 'b', odds: 1.21, competition: 'PL' }),
-      row({
-        fixtureId: 'c',
-        odds: 1.25,
-        competition: 'SA',
-        channel: 'DOUBLE_CHANCE',
-      }),
-      row({ fixtureId: 'd', odds: 1.9 }),
+  it("writes an ENGINE proposal from the matches' readings, priced and announced at 1xBet", async () => {
+    repository.findReadingComboFixtures.mockResolvedValue([
+      fixture('a', 'L1'),
+      fixture('b', 'PL'),
     ]);
-    repository.findChannelCompetitionCalibration.mockResolvedValue([
-      cell(),
-      cell({ competition: 'PL' }),
-      cell({ competition: 'SA', channel: 'DOUBLE_CHANCE' }),
+    findReadingCandidates.mockResolvedValue([
+      candidate({ fixtureId: 'a' }),
+      candidate({
+        fixtureId: 'b',
+        channel: 'DOUBLE_CHANCE',
+        market: 'DOUBLE_CHANCE',
+        pick: 'HOME_DRAW',
+      }),
+    ]);
+    quotes = new Map([
+      quote({ fixtureId: 'a', odds: 1.4, fair: 0.68 }),
+      quote({
+        fixtureId: 'b',
+        market: 'DOUBLE_CHANCE',
+        pick: 'HOME_DRAW',
+        odds: 1.45,
+        fair: 0.66,
+      }),
+    ]);
+
+    const result = await service.generateForDate(FOR_DATE);
+
+    expect(result).toMatchObject({ outcome: 'composed', candidateCount: 2 });
+    const input = repository.upsertPriceComposerProposal.mock.calls[0]?.[0];
+    expect(input?.legs.map((l) => [l.fixtureId, l.market, l.pick])).toEqual([
+      ['a', 'ONE_X_TWO', 'HOME'],
+      ['b', 'DOUBLE_CHANCE', 'HOME_DRAW'],
+    ]);
+    expect(input?.legs[0]).toMatchObject({
+      odds: 1.4,
+      probability: 0.68,
+      canal: 'DOMINANT',
+      operatorOdds: 1.4,
+    });
+    expect(input?.legs[1]?.canal).toBe('DOUBLE_CHANCE');
+    expect(input?.combinedOdds).toBeCloseTo(1.4 * 1.45, 6);
+    expect(input?.lastFixtureScheduledAt).toEqual(
+      new Date('2026-11-06T20:00:00Z'),
+    );
+    expect(input?.profile).toMatchObject({
+      source: 'ENGINE',
+      targetOddsMin: 1.2,
+      policyVersion: 'engine-combo-v3',
+    });
+    expect(findReadingCandidates).toHaveBeenCalledWith(
+      expect.objectContaining({ fixtureIds: ['a', 'b'] }),
+    );
+  });
+
+  it('ignores a match without a reading and never swaps in another pick', async () => {
+    repository.findReadingComboFixtures.mockResolvedValue([
+      fixture('a', 'L1'),
+      fixture('b', 'PL'),
+      fixture('c', 'SA'),
+    ]);
+    findReadingCandidates.mockResolvedValue([
+      candidate({ fixtureId: 'a' }),
+      // AVOID fired: no reading on this match.
+      candidate({ fixtureId: 'b', avoided: true }),
+      candidate({ fixtureId: 'c' }),
+    ]);
+    quotes = new Map([
+      quote({ fixtureId: 'a', odds: 1.4, fair: 0.68 }),
+      quote({ fixtureId: 'b', odds: 1.5, fair: 0.64 }),
+      quote({ fixtureId: 'c', odds: 1.6, fair: 0.6 }),
+    ]);
+
+    await service.generateForDate(FOR_DATE);
+
+    const input = repository.upsertPriceComposerProposal.mock.calls[0]?.[0];
+    expect(input?.legs.map((l) => l.fixtureId)).toEqual(['a', 'c']);
+  });
+
+  it('abstains when a reading is under 1.30 at 1xBet or not priced there', async () => {
+    repository.findReadingComboFixtures.mockResolvedValue([
+      fixture('a', 'L1'),
+      fixture('b', 'PL'),
+      fixture('c', 'SA'),
+    ]);
+    findReadingCandidates.mockResolvedValue([
+      candidate({ fixtureId: 'a' }),
+      candidate({ fixtureId: 'b' }),
+      candidate({ fixtureId: 'c' }),
+    ]);
+    quotes = new Map([
+      quote({ fixtureId: 'a', odds: 1.4, fair: 0.68 }),
+      // A reading at 1.25: shown on the match, too short for the combo.
+      quote({ fixtureId: 'b', odds: 1.25, fair: 0.77 }),
+      // c has no 1xBet price: no reading, never a leg.
     ]);
 
     const result = await service.generateForDate(FOR_DATE);
 
     expect(result).toMatchObject({
-      outcome: 'composed',
-      proposalId: 'proposal-1',
+      outcome: 'abstained',
+      reason: 'not_enough_readings',
+      candidateCount: 1,
     });
-    const input = repository.upsertPriceComposerProposal.mock.calls[0]?.[0];
-    expect(input?.legs.map((l) => l.fixtureId)).toEqual(['b', 'c']);
-    expect(input?.legs[1]?.canal).toBe('DOUBLE_CHANCE');
-    expect(input?.combinedOdds).toBeCloseTo(1.21 * 1.25, 6);
-    expect(input?.profile).toMatchObject({
-      source: 'ENGINE',
-      targetOddsMin: 1.2,
-      policyVersion: 'engine-combo-v2',
-    });
-    expect(repository.findChannelCompetitionCalibration).toHaveBeenCalledWith(
-      new Date('2026-07-15T00:00:00.000Z'),
-    );
-  });
-
-  it('abstains and records it when fewer than two calibrated legs at 1.20 or more exist', async () => {
-    repository.findEngineComboCandidates.mockResolvedValue([
-      row({ fixtureId: 'a' }),
-      // Sous le plancher de 1,20 : jamais éligible.
-      row({ fixtureId: 'b', odds: 1.1, competition: 'PL' }),
-    ]);
-    repository.findChannelCompetitionCalibration.mockResolvedValue([cell()]);
-
-    const result = await service.generateForDate(FOR_DATE);
-
-    expect(result).toMatchObject({ outcome: 'abstained', candidateCount: 1 });
     expect(repository.upsertPriceComposerProposal).not.toHaveBeenCalled();
     expect(repository.recordPriceComposerAttempt).toHaveBeenCalledWith(
       expect.objectContaining({
         outcome: 'abstained',
-        pass: { name: 'engine-combo', policyVersion: 'engine-combo-v2' },
+        pass: { name: 'engine-combo', policyVersion: 'engine-combo-v3' },
       }),
     );
-  });
-
-  it('breaks a near tie inside a competition on the lowest 1xBet margin', async () => {
-    repository.findEngineComboCandidates.mockResolvedValue([
-      row({ fixtureId: 'a', odds: 1.22, probability: 0.82 }),
-      row({ fixtureId: 'b', odds: 1.25, probability: 0.81 }),
-      row({ fixtureId: 'c', odds: 1.3, competition: 'PL' }),
-    ]);
-    repository.findChannelCompetitionCalibration.mockResolvedValue([
-      cell(),
-      cell({ competition: 'PL' }),
-    ]);
-    const quote = (
-      fixtureId: string,
-      operatorMargin: number,
-    ): [string, PlayableQuote] => [
-      `${fixtureId}|OVER_UNDER|OVER_1_5`,
-      {
-        fixtureId,
-        market: 'OVER_UNDER',
-        pick: 'OVER_1_5',
-        operatorOdds: 1.2,
-        operatorBookmaker: '1xBet',
-        operatorMargin,
-        operatorFairProbability: 0.8,
-        lowestOdds: 1.2,
-        lowestBookmaker: '1xBet',
-      },
-    ];
-    service = new CouponEngineComboGenerationService(
-      repository as unknown as CouponRepository,
-      {
-        findPlayableQuotes: vi
-          .fn()
-          .mockResolvedValue(new Map([quote('a', 0.09), quote('b', 0.04)])),
-      } as unknown as PlayableOddsRepository,
-    );
-
-    await service.generateForDate(FOR_DATE);
-
-    const input = repository.upsertPriceComposerProposal.mock.calls[0]?.[0];
-    expect(input?.legs.map((l) => l.fixtureId)).toEqual(['b', 'c']);
-    expect(input?.legs[0]?.operatorMargin).toBe(0.04);
   });
 });

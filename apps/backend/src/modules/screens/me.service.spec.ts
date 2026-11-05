@@ -45,6 +45,8 @@ function leg(
     awayScore: settled ? 0 : null,
     liveStatus: null,
     liveElapsed: null,
+    homeCorners: null,
+    awayCorners: null,
     homeName: 'Paris Saint-Germain',
     homeShortName: 'PSG',
     homeLogoUrl: null,

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { cornersColumns } from './match-corners';
 
 /** A match of the day, in screen order. */
 export type MatchRow = {
@@ -52,6 +53,9 @@ export type SheetHeaderRow = MatchRow & {
   /** The API's clock while in progress (fixture.liveStatus, liveElapsed). */
   liveStatus: string | null;
   liveElapsed: number | null;
+  /** Corners per team from fixture_statistic; null until collected. */
+  homeCorners: number | null;
+  awayCorners: number | null;
   /** Last finished meetings, most recent first: goals of this sheet's home and away teams. */
   meetings: { homeGoals: number; awayGoals: number }[] | null;
 };
@@ -193,6 +197,7 @@ export class MatchesRepository {
              f."homeHtScore" AS "homeHalfTimeScore",
              f."awayHtScore" AS "awayHalfTimeScore",
              f."liveStatus", f."liveElapsed",
+             ${cornersColumns('f')},
              f."homeTeamId", f."awayTeamId",
              ht.name AS "homeName", ht."shortName" AS "homeShortName",
              ht."logoUrl" AS "homeLogoUrl",

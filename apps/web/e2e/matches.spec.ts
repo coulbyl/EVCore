@@ -287,7 +287,8 @@ test.describe("Fiche du match", () => {
     await page.goto("/matches?day=yesterday");
     await page.getByRole("link", { name: /Paris SG – Lens/ }).click();
     const sheet = sheetNamed(page, "Paris SG – Lens");
-    await expect(sheet.getByText("mi-temps 1-0")).toBeVisible();
+    // À côté de la mi-temps, les corners relevés après le match.
+    await expect(sheet.getByText("mi-temps 1-0 · Corners 7-4")).toBeVisible();
     // Sous le score : un but par ligne, le csc et le penalty marqués, puis
     // le carton rouge.
     const goals = sheet.getByRole("list", { name: "Buts" });
