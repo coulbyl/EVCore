@@ -226,6 +226,8 @@ PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G,
 - [ ] **ρ de la grille (ML-2a) en suivi** : nul réalisé contre la clôture Pinnacle par mois sur les matchs à ρ non nul ; relu le 10/12, retour à ρ = 0 si le biais repasse sous −0,01.
 - [x] **Repli mi-temps de la grille (ML-2b)** : la fraction par championnat (`MARKET_GRID_FIRST_HALF_FRACTION`) était moins bonne que 0,44 contre la clôture Pinnacle (+0,00008). _Vidée le 05/11 (décision prudente du lead, retour à l'existant sur les 7 % de matchs sans prix MT) ; à confirmer par l'utilisateur._ HT/FT à 0,977 [0,880 ; 1,074] à relire avec plus de volume.
 
+- [ ] **Corners (ML-3) à relire vers le 10/12** : `pnpm --filter @evcore/backtest-core backtest:corners-cards` sur une copie fraîche (6 semaines de 1xBet). Brancher `count-market` sur la feuille « Autres paris » pour les seules lignes 1xBet que Pinnacle ne cote pas si H1–H3 tiennent (H2b ≥ 100 matchs). Chasseur Corners : rien à gagner tant que sa bande reste 1,70–2,10.
+
 ## À relire plus tard (hors lots)
 
 - **Blessures : étudier le branchement** (décidé le 01/11). `league-sync` les collecte chaque jour à 06:00 (un appel API-Football par championnat) et les écrit en ombre sur l'analyse (`shadow_injuries`), mais ni le moteur, ni l'IA, ni un écran ne les lit. On ne coupe pas la collecte. À étudier : quoi en faire (contexte de l'IA, fiche de match, facteur du moteur jugé sur le résidu contre le marché) et comment le mesurer avant de le montrer. Inventaire : `docs/refonte-ui/exploitation-inventaire.md`.
