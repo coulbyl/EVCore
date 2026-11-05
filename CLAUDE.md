@@ -29,7 +29,7 @@ It is a disciplined probabilistic decision system — not a tip generator or AI 
 Coupons are composed by the backend (`apps/backend/src/modules/coupon`, classes in `packages/analysis-core/src/coupon/coupon-classes.ts`) and separated by `coupon_proposal.source`:
 
 - `PRICE_COMPOSER`: Favori du jour (`FAVOURITE`, one leg 1.20–1.35), Coupon cote 2 (`DOUBLE`), the hunters (`HUNTER_BTTS`, `HUNTER_DRAW`, `HUNTER_HT_DRAW`, `HUNTER_CORNERS`) and the Combiné IA (`AI_COMBO`, legs 1.45–1.80, combined 4–10, composed from the AI's played opinions).
-- `ENGINE`: Combiné du jour (`COMBO`, 2 legs 1.20–1.50 from the engine's calibrated picks, `engine-combo-v2` breaks ties on the 1xBet margin) and the Chasseur Score exact (`HUNTER_SCORE`).
+- `ENGINE`: Combiné du jour (`COMBO`, since 2026-11-05 two match readings, one per league, 1.30–1.80 at 1xBet, combined 1.80–2.60, ranked on the market's frequency, `engine-combo-v3`) and the Chasseur Score exact (`HUNTER_SCORE`).
 - `LLM`: no longer written — the LLM combo was cut on 2026-11-03; old rows stay for history.
 
 The price coupon 5–15 (`UNIQUE`) and the engine long coupon (`LONG`) are no longer written since 2026-11-04; their old rows stay visible to admins in Résultats. Compare products **per leg**, never by coupon ROI.

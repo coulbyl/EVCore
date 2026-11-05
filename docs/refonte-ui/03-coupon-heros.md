@@ -2,6 +2,8 @@
 
 _Sauvegarde de prod du 29/10/2026, coupons de rang 1, produits actuels depuis le 13/10 (date de mise en ligne du Favori et du Combiné)._
 
+_05/11 : le Combiné du jour est désormais composé à partir des lectures des matchs (deux lectures, 1,30–1,80 chez 1xBet, combinée 1,80–2,60, `engine-combo-v3`) ; rejeu 61 % ± 15 de jours gagnés à 1,82, pire série 4 ([COMBINE-ET-LECTURE.md](../audits/2026-11-05/COMBINE-ET-LECTURE.md)). Les mesures ci-dessous sont celles du combiné v2._
+
 | Critère | Favori du jour | Combiné du jour (moteur) | Combiné IA | Coupon long 2,5–5 |
 | --- | ---: | ---: | ---: | ---: |
 | **Présence** (jours avec coupon / jours depuis le lancement) | 14 / 16 · **88 %** | 16 / 17 · **94 %** | 12 / 16 · 75 % | 11 / 11 · 100 % |

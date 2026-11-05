@@ -62,7 +62,7 @@ généreuses par rapport à 1xBet, `docs/audits/2026-10-18/COTES-JOUABLES.md`).
 | Produit (écran Aujourd'hui) | Classe           | Source         | Bande                                                                                                                     |
 | --------------------------- | ---------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Favori du jour              | `FAVOURITE`      | PRICE_COMPOSER | 1 jambe, 1,20–1,35                                                                                                        |
-| Combiné du jour             | `COMBO`          | ENGINE         | 2 jambes 1,20–1,50, sélections calibrées du moteur, une par championnat, départage par la marge 1xBet (`engine-combo-v2`) |
+| Combiné du jour             | `COMBO`          | ENGINE         | 2 lectures des matchs (« Notre lecture »), une par championnat, 1,30–1,80 chez 1xBet, combinée 1,80–2,60, classées sur la fréquence du marché (`engine-combo-v3`, 05/11) |
 | Coupon cote 2               | `DOUBLE`         | PRICE_COMPOSER | 2 jambes (3 si aucune paire) 1,20–1,80, cote combinée 2–3, tout le coté classé par la probabilité du marché sans marge    |
 | Chasseur Les deux marquent  | `HUNTER_BTTS`    | PRICE_COMPOSER | 1 sélection 1,45–1,90 ou abstention                                                                                       |
 | Chasseur Nul                | `HUNTER_DRAW`    | PRICE_COMPOSER | 1 sélection 2,90–3,60                                                                                                     |
