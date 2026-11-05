@@ -23,6 +23,7 @@ export * from "./pricing";
 export * from "./coupon";
 export * from "./model-run";
 export * from "./market-grid";
+export * from "./count-market";
 export * from "./pricing/closing-line-value";
 export * from "./pricing/asian-handicap-settlement";
 export * from "./coupon/price-composer";
