@@ -65,6 +65,30 @@ export function overUnderPickLine(
   return { side, line };
 }
 
+/**
+ * Côté et ligne d'une ligne de total stockée, tous marchés de total.
+ *
+ * - La colonne `line`, quand elle est posée (corners, cartons, tirs), est la
+ *   seule source : le pick n'y vaut que `OVER` / `UNDER`.
+ * - Sinon la ligne est dans le pick (`OVER_1_5`, marchés d'avant le 15/09).
+ * - Le pick nu `OVER` / `UNDER` sans colonne n'est la ligne 2.5 que sur
+ *   OVER_UNDER : c'est la clé qu'écrit l'ingestion (`extractOverUnderOdds`,
+ *   odds-prematch-sync, et l'import historique). Ailleurs, `null` plutôt
+ *   qu'une ligne devinée.
+ */
+export function totalPickLine(
+  market: Market | string,
+  pick: string,
+  line: number | null,
+): { side: "OVER" | "UNDER"; line: number } | null {
+  const match = OVER_UNDER_PICK.exec(pick);
+  if (!match) return null;
+  const side = match[1] as "OVER" | "UNDER";
+  if (line !== null) return { side, line };
+  if (match[2]) return overUnderPickLine(pick);
+  return market === Market.OVER_UNDER ? { side, line: 2.5 } : null;
+}
+
 // Résultat × total sur UNE ligne : six issues exclusives et exhaustives.
 function resultTotalGoalsGroup(pick: string): OutcomeGroup | null {
   const match = RESULT_TOTAL_GOALS_PICK.exec(pick);

@@ -1,3 +1,4 @@
+import { totalPickLine } from '@evcore/analysis-core';
 import {
   LEG_FACT_HISTORY_MATCHES,
   LEG_FACT_MAX_LENGTH,
@@ -162,7 +163,7 @@ function claimOf(
     case 'CORNERS':
     case 'TEAM_TOTAL_HOME':
     case 'TEAM_TOTAL_AWAY': {
-      const total = totalOf(pick, input.line);
+      const total = totalOf(market, pick, input.line);
       if (!total) return null;
       if (market === 'OVER_UNDER') {
         return { claim: matchGoals(total), sides: both };
@@ -182,17 +183,10 @@ function claimOf(
 
 type Total = { over: boolean; line: number };
 
-/**
- * OVER_2_5 carries its line in the pick (markets added before 2026-09-15);
- * the line column, when set, is the only source for the others.
- */
-function totalOf(pick: string, line: number | null): Total | null {
-  const match = /^(OVER|UNDER)(?:_(\d+)_(\d+))?$/.exec(pick);
-  if (!match) return null;
-  const over = match[1] === 'OVER';
-  if (line !== null) return { over, line };
-  if (match[2] === undefined || match[3] === undefined) return null;
-  return { over, line: Number(`${match[2]}.${match[3]}`) };
+/** Side and line of a stored total; the bare 2.5 key is OVER_UNDER only. */
+function totalOf(market: string, pick: string, line: number | null): Total | null {
+  const total = totalPickLine(market, pick, line);
+  return total ? { over: total.side === 'OVER', line: total.line } : null;
 }
 
 /** « de PSG », « d'Austin » : the elision before a vowel. */

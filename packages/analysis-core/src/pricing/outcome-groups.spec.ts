@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { Market } from "../types";
-import { outcomeGroup, overUnderPickLine } from "./outcome-groups";
+import {
+  outcomeGroup,
+  overUnderPickLine,
+  totalPickLine,
+} from "./outcome-groups";
 
 describe("outcomeGroup", () => {
   it("rend le triplet 1X2 pour un choix à trois issues", () => {
@@ -82,5 +86,32 @@ describe("overUnderPickLine", () => {
     });
     expect(overUnderPickLine("OVER_0_5")).toEqual({ side: "OVER", line: 0.5 });
     expect(overUnderPickLine("YES")).toBeNull();
+  });
+});
+
+describe("totalPickLine", () => {
+  it("lit la clé nue comme 2.5 sur OVER_UNDER seulement", () => {
+    expect(totalPickLine(Market.OVER_UNDER, "OVER", null)).toEqual({
+      side: "OVER",
+      line: 2.5,
+    });
+    expect(totalPickLine(Market.OVER_UNDER, "UNDER", null)).toEqual({
+      side: "UNDER",
+      line: 2.5,
+    });
+    expect(totalPickLine(Market.CORNERS, "OVER", null)).toBeNull();
+    expect(totalPickLine(Market.TEAM_TOTAL_HOME, "OVER", null)).toBeNull();
+  });
+
+  it("lit la ligne du pick, puis la colonne quand elle est posée", () => {
+    expect(totalPickLine(Market.TEAM_TOTAL_AWAY, "UNDER_1_5", null)).toEqual({
+      side: "UNDER",
+      line: 1.5,
+    });
+    expect(totalPickLine(Market.CORNERS, "OVER", 9.5)).toEqual({
+      side: "OVER",
+      line: 9.5,
+    });
+    expect(totalPickLine(Market.OVER_UNDER, "YES", null)).toBeNull();
   });
 });

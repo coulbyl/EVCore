@@ -143,9 +143,10 @@ describe('legFact', () => {
   });
 
   it('totals are said in whole goals, the line read from the pick', () => {
+    // The 2.5 line is stored under the bare OVER / UNDER keys (ingestion).
     const fact = legFact({
       market: 'OVER_UNDER',
-      pick: 'OVER_2_5',
+      pick: 'OVER',
       line: null,
       home: PSG([
         m('3-1'),
@@ -171,6 +172,18 @@ describe('legFact', () => {
         away: LENS([]),
       }),
     ).toBe('Au plus 3 buts lors des 6 derniers matchs de PSG à domicile');
+  });
+
+  it('a bare total without a line is 2.5 on OVER_UNDER only', () => {
+    expect(
+      legFact({
+        market: 'CORNERS',
+        pick: 'OVER',
+        line: null,
+        home: PSG(repeat(10, m('3-1', { corners: 12 }))),
+        away: LENS([]),
+      }),
+    ).toBe('');
   });
 
   it('the line column wins when the market carries it', () => {
@@ -314,7 +327,7 @@ describe('legFact', () => {
       ['ONE_X_TWO', 'HOME', null, true],
       ['DOUBLE_CHANCE', '1X', null, true],
       ['DOUBLE_CHANCE', '12', null, true],
-      ['OVER_UNDER', 'OVER_2_5', null, true],
+      ['OVER_UNDER', 'OVER', null, true],
       ['TEAM_TOTAL_HOME', 'OVER_1_5', null, true],
       // « Les deux ont marqué… » runs past 60 with a ten-letter short
       // name: nothing rather than a cut sentence.

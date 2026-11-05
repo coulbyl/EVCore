@@ -2,7 +2,7 @@ import Decimal from "decimal.js";
 import { Market } from "../types";
 import type { RawOddsRow } from "../pricing/odds-assembly";
 import { shinOneXTwo, shinOutcomeGroups } from "../pricing/shin";
-import { overUnderPickLine } from "../pricing/outcome-groups";
+import { totalPickLine } from "../pricing/outcome-groups";
 import {
   buildPoissonDistributions,
   deriveMarketsFromPoisson,
@@ -177,7 +177,7 @@ function quotesForBook(
   >();
   let snapshotAt = oneXTwoRow.snapshotAt;
   for (const entry of priced) {
-    const parsed = overUnderPickLine(entry.pick);
+    const parsed = totalPickLine(entry.row.market, entry.pick, null);
     if (!parsed) continue;
     const key = `${entry.market}|${parsed.line}`;
     const pair = pairs.get(key) ?? {
