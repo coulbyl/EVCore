@@ -281,6 +281,8 @@
     "weekProduct": "{product}: {won} days won out of {played}",
     "inProgress": "In play",
     "halfTimeShort": "HT",
+    "corners": "Corners {home}-{away}",
+    "cornersPending": "corners not counted yet",
     "follow": "Follow",
     "followed": "Following",
     "followError": "Following did not go through. Try again.",
@@ -390,6 +392,8 @@
       "finished": "Finished",
       "postponed": "Postponed",
       "halfTime": "half-time {home}-{away}",
+      "corners": "Corners {home}-{away}",
+      "cornersPending": "corners not counted yet",
       "events": {
         "scorers": "Goals",
         "redCards": "Red cards",

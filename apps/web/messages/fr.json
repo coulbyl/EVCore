@@ -281,6 +281,8 @@
     "weekProduct": "{product} : {won} jours gagnés sur {played}",
     "inProgress": "En cours",
     "halfTimeShort": "MT",
+    "corners": "Corners {home}-{away}",
+    "cornersPending": "corners pas encore relevés",
     "follow": "Suivre",
     "followed": "Suivi",
     "followError": "Le suivi n'est pas passé. Réessaie.",
@@ -390,6 +392,8 @@
       "finished": "Terminé",
       "postponed": "Reporté",
       "halfTime": "mi-temps {home}-{away}",
+      "corners": "Corners {home}-{away}",
+      "cornersPending": "corners pas encore relevés",
       "events": {
         "scorers": "Buts",
         "redCards": "Cartons rouges",

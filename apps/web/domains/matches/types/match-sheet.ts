@@ -1,4 +1,4 @@
-import type { MatchClock } from "@/helpers/scoreboard-format";
+import type { MatchClock, MatchCorners } from "@/helpers/scoreboard-format";
 import type { TodayTeam } from "@/domains/today/types/today";
 import type { MatchState, MatchWithoutReading } from "./matches";
 
@@ -72,6 +72,8 @@ export type MatchSheet = {
   /** « 67' », « MT » while played. */
   clock: MatchClock | null;
   halfTimeScore: { home: number; away: number } | null;
+  /** A finished match's corners; null before the end. */
+  corners: MatchCorners | null;
   competition: { code: string; name: string };
   home: TodayTeam;
   away: TodayTeam;

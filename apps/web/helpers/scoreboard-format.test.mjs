@@ -6,6 +6,7 @@ import { describe, it } from "node:test";
 import {
   chanceOf,
   formatClock,
+  formatCorners,
   formatOdds,
   formatShortDate,
   formatKickoff,
@@ -176,6 +177,25 @@ describe("formatKickoff", () => {
     assert.equal(
       formatKickoff(late, at("2026-11-06T20:00:00Z", "fr", "Africa/Douala")),
       "sam. 07/11 · 00:30",
+    );
+  });
+});
+
+describe("formatCorners", () => {
+  const labels = {
+    counted: (home, away) => `Corners ${home}-${away}`,
+    pending: "corners pas encore relevés",
+  };
+  it("gives the count once it is in, zero included", () => {
+    assert.equal(
+      formatCorners({ state: "counted", home: 7, away: 0 }, labels),
+      "Corners 7-0",
+    );
+  });
+  it("says it is not counted yet before", () => {
+    assert.equal(
+      formatCorners({ state: "pending" }, labels),
+      "corners pas encore relevés",
     );
   });
 });

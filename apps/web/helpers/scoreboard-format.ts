@@ -117,6 +117,26 @@ export type MatchClock =
   | { kind: "finished" };
 
 /** Les mots de l'horloge (formatClock), tirés des messages de l'écran. */
+/** A finished match's corners: counted, or not collected yet. */
+export type MatchCorners =
+  | { state: "counted"; home: number; away: number }
+  | { state: "pending" };
+
+/** « Corners 7-4 », or « corners pas encore relevés » until they are in. */
+export function formatCorners(
+  corners: MatchCorners,
+  labels: CornersLabels,
+): string {
+  return corners.state === "counted"
+    ? labels.counted(corners.home, corners.away)
+    : labels.pending;
+}
+
+export type CornersLabels = {
+  counted: (home: number, away: number) => string;
+  pending: string;
+};
+
 export type ClockLabels = {
   inProgress: string;
   halfTime: string;
