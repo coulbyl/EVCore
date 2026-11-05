@@ -184,7 +184,11 @@ function claimOf(
 type Total = { over: boolean; line: number };
 
 /** Side and line of a stored total; the bare 2.5 key is OVER_UNDER only. */
-function totalOf(market: string, pick: string, line: number | null): Total | null {
+function totalOf(
+  market: string,
+  pick: string,
+  line: number | null,
+): Total | null {
   const total = totalPickLine(market, pick, line);
   return total ? { over: total.side === 'OVER', line: total.line } : null;
 }
