@@ -327,7 +327,19 @@ export const HUNTER_POLICY = {
 
 /** Combiné IA (2026-11-03, AI_COMBO_COUPON_CLASS d'@evcore/analysis-core). */
 export const AI_COMBO_POLICY = {
-  version: 'ai-combo-v1',
+  version: 'ai-combo-v2',
+  /**
+   * Not composed before 21:00 UTC the day before (2026-11-05): the 17:00
+   * horizon pass composed it at 17:03, three minutes before VANTAGE reads the
+   * runs that pass just wrote, so it froze the previous evening's opinions
+   * (2 of 3 legs on 04/11 were no longer the AI's opinion at kickoff). The
+   * 21:00 analysis pass composes it on the opinions given after 17:00.
+   * Replay 06/10–04/11: 24 of 30 days composed (23 at 17:03), realised ÷
+   * announced per leg 0.896 (n = 87) against 0.875 (n = 79). Keeping only an
+   * opinion repeated on two passes in a row (0.929, n = 24) composed 7 days
+   * out of 30: not shipped (docs/audits/2026-11-05/PERTES-CHASSEURS-COTE2-IA.md).
+   */
+  composeFromHoursBeforeDay: 3,
 } as const;
 
 /**
@@ -363,22 +375,18 @@ export const CORNERS_HUNTER_POLICY = {
 } as const;
 
 /**
- * Politique du combiné du jour sur les sélections du moteur (règle et
- * mesure dans COMBO_COUPON_CLASS / composeEngineCombo, @evcore/analysis-core).
- *
- * Le vivier est celui de l'écran Décisions (sélections retenues des canaux
- * affichés, dernière analyse d'avant coup d'envoi), la calibration canal ×
- * compétition est celle de la pastille de confiance : 90 jours glissants,
- * mêmes seuils que le tableau de bord.
+ * Politique du combiné du jour (règle et mesure dans COMBO_COUPON_CLASS /
+ * composeReadingCombo, @evcore/analysis-core).
  */
 export const ENGINE_COMBO_POLICY = {
-  // v2 (2026-11-03) : départage par la marge 1xBet à chance égale
-  // (COMBO_CONFIG.marginTieBreak) ; les jambes se comparent par version.
-  version: 'engine-combo-v2',
+  // v2 (2026-11-03) : départage par la marge 1xBet à chance égale.
+  // v3 (2026-11-05) : composé à partir des lectures des matchs, 1,30–1,80
+  // chez 1xBet, combiné 1,80–2,60 ; les jambes se comparent par version.
+  version: 'engine-combo-v3',
   pass: 'engine-combo',
-  calibrationWindowDays: 90,
   /** Canaux jamais mis en avant sur Décisions (méta-canaux, VALUE/SAFE,
-   * VANTAGE) — même liste que `isExcludedFromDecisions` côté web. */
+   * VANTAGE) — même liste que `isExcludedFromDecisions` côté web. Lu par le
+   * vivier des chasseurs. */
   excludedChannels: [
     'VALUE',
     'SAFE',
@@ -397,7 +405,9 @@ export const ENGINE_COMBO_POLICY = {
  * POSTPONED de façon transitoire (cas réel du 2026-08-22 : réglé reporté à
  * 01:00, finalement joué et FINISHED 5-2) ; voider au premier passage
  * inventait un remboursement sur des jambes perdantes. CANCELLED reste
- * remboursé immédiatement.
+ * remboursé immédiatement. Le même délai rembourse une jambe dont le match a
+ * été déplacé et rejoué au moins un jour après le dernier coup d'envoi du
+ * coupon à sa composition (2026-11-05, Coritiba–Vitória).
  */
 export const COUPON_SETTLEMENT_POLICY = {
   postponedVoidDelayMs: 24 * 60 * 60 * 1_000,

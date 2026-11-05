@@ -41,6 +41,8 @@ function leg(overrides: Partial<TodayLegRow>): TodayLegRow {
     awayScore: null,
     liveStatus: null,
     liveElapsed: null,
+    homeCorners: null,
+    awayCorners: null,
     homeName: 'Paris Saint-Germain',
     homeShortName: 'PSG',
     homeLogoUrl: null,
@@ -271,6 +273,47 @@ describe('TodayService', () => {
       score: { home: 0, away: 2 },
       clock: { kind: 'live', minute: 67 },
     });
+  });
+
+  it('a corners leg shows the corner count once the match is over, nothing on other bets', async () => {
+    const { service } = harness({
+      legs: [
+        leg({
+          legId: 'leg-c',
+          market: 'CORNERS',
+          pick: 'OVER',
+          fixtureStatus: 'FINISHED',
+          homeScore: 1,
+          awayScore: 1,
+          homeCorners: 7,
+          awayCorners: 4,
+          scheduledAt: new Date(NOW.getTime() - 180 * 60_000),
+        }),
+        leg({
+          legId: 'leg-d',
+          fixtureId: 'fx-2',
+          market: 'CORNERS',
+          pick: 'OVER',
+          fixtureStatus: 'FINISHED',
+          homeScore: 0,
+          awayScore: 0,
+          homeCorners: 5,
+          scheduledAt: new Date(NOW.getTime() - 120 * 60_000),
+        }),
+        leg({
+          legId: 'leg-e',
+          fixtureId: 'fx-3',
+          homeCorners: 3,
+          awayCorners: 2,
+        }),
+      ],
+    });
+    const [coupon] = (await service.getToday('user-1', NOW)).coupons;
+    expect(coupon?.legs.map((l) => l.corners)).toEqual([
+      { state: 'counted', home: 7, away: 4 },
+      { state: 'pending' },
+      null,
+    ]);
   });
 
   it('a won leg without a 1xBet price leaves the paid odds unknown', async () => {

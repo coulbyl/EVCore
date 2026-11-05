@@ -43,6 +43,8 @@ function header(overrides: Partial<SheetHeaderRow> = {}): SheetHeaderRow {
     homeHalfTimeScore: null,
     liveStatus: null,
     liveElapsed: null,
+    homeCorners: null,
+    awayCorners: null,
     awayHalfTimeScore: null,
     homeTeamId: 'ars',
     awayTeamId: 'che',
@@ -700,6 +702,20 @@ describe('MatchSheetService — scorers and red cards', () => {
     expect(sheet.redCards).toEqual([
       { minute: 30, extraMinute: null, player: 'Caicedo', team: 'away' },
     ]);
+  });
+
+  it('a finished match carries its corners, « pending » until they are in', async () => {
+    const counted = await harness({
+      header: { ...finished, homeCorners: 7, awayCorners: 4 },
+    }).service.getSheet(FX, NOW);
+    expect(counted.corners).toEqual({ state: 'counted', home: 7, away: 4 });
+    const pending = await harness({ header: finished }).service.getSheet(
+      FX,
+      NOW,
+    );
+    expect(pending.corners).toEqual({ state: 'pending' });
+    const upcoming = await harness({}).service.getSheet(FX, NOW);
+    expect(upcoming.corners).toBeNull();
   });
 
   it('reads no event for a match still to come', async () => {

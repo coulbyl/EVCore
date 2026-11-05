@@ -1,3 +1,4 @@
+import type { MatchCorners } from './match-corners';
 import type { MatchClock } from './match-clock';
 import type { MatchState, MatchWithoutReading } from './matches.types';
 import type { TodayTeam } from './today.types';
@@ -106,6 +107,8 @@ export type MatchSheet = {
   /** « 67' », « MT » while played (same rule as the coupons' legs). */
   clock: MatchClock | null;
   halfTimeScore: { home: number; away: number } | null;
+  /** A finished match's corners (« Corners 7-4 »); null before the end. */
+  corners: MatchCorners | null;
   competition: { code: string; name: string };
   home: TodayTeam;
   away: TodayTeam;

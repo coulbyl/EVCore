@@ -2,7 +2,7 @@ import Decimal from "decimal.js";
 import { Market } from "../types";
 import type { RawOddsRow } from "../pricing/odds-assembly";
 import { shinOneXTwo, shinOutcomeGroups } from "../pricing/shin";
-import { totalPickLine } from "../pricing/outcome-groups";
+import { overUnderPickLine, totalPickLine } from "../pricing/outcome-groups";
 import {
   buildPoissonDistributions,
   deriveMarketsFromPoisson,

@@ -39,11 +39,13 @@ import {
   type PricedPool,
 } from './coupon-priced-pool.service';
 
-const DAY_MS = 24 * 60 * 60 * 1_000;
+const HOUR_MS = 60 * 60 * 1_000;
+const DAY_MS = 24 * HOUR_MS;
 
 export type HunterPassOutcome = {
   hunter: string;
-  outcome: 'composed' | 'abstained';
+  /** `deferred` : le Combiné IA attend la passe de 21 h (rien d'écrit). */
+  outcome: 'composed' | 'abstained' | 'deferred';
   candidateCount: number;
 };
 
@@ -114,9 +116,12 @@ export class CouponHunterGenerationService {
     const avoided = new Set(avoidedIds);
     // Un match signalé reste dans son groupe (pour la marge) mais ne peut
     // plus devenir une jambe.
-    const playable = (pool: PricedPool) =>
+    const playable = (
+      pool: PricedPool,
+      excluded: ReadonlySet<string> = avoided,
+    ) =>
       pool.candidates.map((c) =>
-        avoided.has(c.fixtureId) ? { ...c, playableOdds: 0 } : c,
+        excluded.has(c.fixtureId) ? { ...c, playableOdds: 0 } : c,
       );
     const marketCandidates = playable(priced);
     const quotes = new Map([
@@ -139,11 +144,29 @@ export class CouponHunterGenerationService {
         source: CouponSource.PRICE_COMPOSER,
         composition: composeHunterByMarket(marketCandidates, BTTS_HUNTER),
       }),
+      // Nul et Score exact jamais sur le même match le même jour (05/11) :
+      // un 1:1 est aussi un nul, les deux perdent ensemble. Le Nul écarte le
+      // match du Score exact déjà publié, le Score exact celui du Nul publié
+      // (la proposition du jour est immuable : on lit celle qui est publiée,
+      // pas la composition de cette passe).
       await this.persist({
         ...context,
         spec: DRAW_HUNTER,
         source: CouponSource.PRICE_COMPOSER,
-        composition: composeHunterByMarket(marketCandidates, DRAW_HUNTER),
+        composition: composeHunterByMarket(
+          playable(
+            priced,
+            new Set([
+              ...avoided,
+              ...(await this.publishedFixtureIds(
+                dayStart,
+                SCORE_HUNTER,
+                CouponSource.ENGINE,
+              )),
+            ]),
+          ),
+          DRAW_HUNTER,
+        ),
       }),
       ...(halfTime
         ? [
@@ -163,7 +186,14 @@ export class CouponHunterGenerationService {
         spec: SCORE_HUNTER,
         source: CouponSource.ENGINE,
         composition: composeScoreHunter(
-          scoreCandidates.filter((c) => !avoided.has(c.fixtureId)),
+          await this.withoutFixtures(
+            scoreCandidates.filter((c) => !avoided.has(c.fixtureId)),
+            this.publishedFixtureIds(
+              dayStart,
+              DRAW_HUNTER,
+              CouponSource.PRICE_COMPOSER,
+            ),
+          ),
         ),
       }),
       await this.persistCorners({ dayStart, avoided }),
@@ -171,10 +201,35 @@ export class CouponHunterGenerationService {
     ];
   }
 
+  private async withoutFixtures<T extends { fixtureId: string }>(
+    candidates: readonly T[],
+    excluded: Promise<ReadonlySet<string>>,
+  ): Promise<T[]> {
+    const ids = await excluded;
+    return candidates.filter((c) => !ids.has(c.fixtureId));
+  }
+
+  /** Les matchs du coupon publié d'un chasseur pour le jour. */
+  private async publishedFixtureIds(
+    dayStart: Date,
+    spec: HunterSpec,
+    source: CouponSource,
+  ): Promise<Set<string>> {
+    return new Set(
+      await this.repository.findProposalFixtureIds({
+        forDate: dayStart,
+        source,
+        targetOddsMin: spec.coupon.targetOddsMin,
+      }),
+    );
+  }
+
   /**
    * Combiné IA (2026-11-03) : trois ou quatre avis joués par l'IA sur les
    * matchs du jour, au prix 1xBet de 1,45 à 1,80, un par championnat, les
-   * moins chers d'abord, cote combinée 4 à 10 ; hors matchs AVOID. Un avis
+   * moins chers d'abord, cote combinée 4 à 10 ; hors matchs AVOID et
+   * « Données suspectes » (lus par `findAiPlays`). Composé à la passe de
+   * 21 h, après celle de l'IA (AI_COMBO_POLICY.composeFromHoursBeforeDay). Un avis
    * sans fréquence du marché chez 1xBet (groupe incomplet) n'entre pas : sa
    * chance serait inconnue.
    */
@@ -183,6 +238,17 @@ export class CouponHunterGenerationService {
     avoided: ReadonlySet<string>;
   }): Promise<HunterPassOutcome> {
     const { dayStart } = input;
+    const opensAt =
+      dayStart.getTime() - AI_COMBO_POLICY.composeFromHoursBeforeDay * HOUR_MS;
+    if (Date.now() < opensAt) {
+      // La passe de 17 h n'écrit rien : ni coupon, ni abstention, que la
+      // passe de 21 h remplacerait de toute façon.
+      return {
+        hunter: AI_COMBO_COUPON_CLASS.name,
+        outcome: 'deferred',
+        candidateCount: 0,
+      };
+    }
     const plays = (
       await this.repository.findAiPlays({
         from: dayStart,

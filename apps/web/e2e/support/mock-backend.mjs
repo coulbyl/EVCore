@@ -453,6 +453,8 @@ function todayLeg(id, home, away, pick, odds, extra = {}) {
     fact: extra.fact ?? null,
     state: "upcoming",
     score: null,
+    clock: null,
+    corners: null,
   };
 }
 
@@ -632,6 +634,12 @@ function matchSheet(fixtureId) {
     state: item.state,
     score: item.score,
     halfTimeScore: finished ? { home: 1, away: 0 } : null,
+    // Corners : relevés sur Paris SG – Lens, pas encore sur les autres.
+    corners: finished
+      ? item.home.name === "Paris SG"
+        ? { state: "counted", home: 7, away: 4 }
+        : { state: "pending" }
+      : null,
     competition: item.competition,
     home: item.home,
     away: item.away,
@@ -1340,21 +1348,21 @@ function todayScreen() {
         "com",
         "COMBO",
         [
-          todayLeg("com1", "Arsenal", "Brentford", "HOME", 1.12, {
+          // Le combiné du jour (engine-combo-v3, 05/11) : deux lectures,
+          // 1,30 à 1,80 chez 1xBet, chance = fréquence du marché.
+          todayLeg("com1", "Arsenal", "Brentford", "HOME", 1.4, {
             hours: 6,
             competition: "Premier League",
+            chance: 0.68,
           }),
-          todayLeg("com2", "Inter", "Lecce", "HOME", 1.1, {
+          todayLeg("com2", "Inter", "Lecce", "HOME", 1.45, {
             hours: 7,
             competition: "Serie A",
-          }),
-          todayLeg("com3", "Benfica", "Arouca", "HOME", 1.14, {
-            hours: 8,
-            competition: "Liga Portugal",
+            chance: 0.66,
           }),
         ],
-        1.41,
-        0.7,
+        2.03,
+        0.45,
       ),
       todayCoupon(
         "c2",

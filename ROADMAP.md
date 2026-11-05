@@ -92,6 +92,8 @@ SaaS, multi-tenant, API interne. Rien de commencé.
 
 Ordre décidé le 04/11 : [docs/plan-2026-11-04.md](docs/plan-2026-11-04.md) — 1. le 15-todo, 2. le moteur (force des championnats, puis ML), 3. les produits datés, 4. plus tard.
 
+Fait le 05/11 : Combiné du jour composé à partir des lectures des matchs (`engine-combo-v3`, deux lectures 1,30–1,80 chez 1xBet, combinée 1,80–2,60, rejeu 61 % ± 15 des jours à 1,82, [COMBINE-ET-LECTURE.md](docs/audits/2026-11-05/COMBINE-ET-LECTURE.md)) et score corners sur le Chasseur Corners et la fiche d'un match fini.
+
 Fait le 04/11, étape 2 (premier lot) : force des championnats sur λ en coupe d'Europe ([FORCE-CHAMPIONNATS.md](docs/audits/2026-11-04/FORCE-CHAMPIONNATS.md)) — `LEAGUE_STRENGTH_MAP` à ré-ajuster chaque juillet avec `backtest:league-strength`. Puis ML-1 (grille de marché, expédiée). Suite : lots ML-2 → ML-4.
 
 ### Plan stratégies — phase 4 (après mesure)

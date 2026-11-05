@@ -5,6 +5,7 @@ import {
   TODAY_HERO_RELAY,
 } from '@config/screens.constants';
 import { matchClockOf, shownScoreOf } from './match-clock';
+import { cornersOf, isCornersMarket } from './match-corners';
 import { CouponService } from '@modules/coupon/coupon.service';
 import { ProductWeekService } from '@modules/coupon/product-day/product-week.service';
 import {
@@ -295,6 +296,9 @@ function legOf(row: TodayLegRow, now: Date): TodayLeg {
     state: legState(row, now),
     score: shownScoreOf({ ...row, status: row.fixtureStatus }),
     clock: matchClockOf({ ...row, status: row.fixtureStatus }, now),
+    corners: isCornersMarket(row.market)
+      ? cornersOf({ ...row, status: row.fixtureStatus })
+      : null,
   };
 }
 

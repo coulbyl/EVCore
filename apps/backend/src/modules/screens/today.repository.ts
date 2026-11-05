@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
+import { cornersColumns } from './match-corners';
 
 /** One leg of a coupon of « Aujourd'hui », with its coupon and its match. */
 export type TodayLegRow = {
@@ -34,6 +35,9 @@ export type TodayLegRow = {
   /** The API's clock while in progress (fixture.liveStatus, liveElapsed). */
   liveStatus: string | null;
   liveElapsed: number | null;
+  /** Corners per team from fixture_statistic; null until collected. */
+  homeCorners: number | null;
+  awayCorners: number | null;
   homeName: string;
   homeShortName: string;
   homeLogoUrl: string | null;
@@ -68,6 +72,7 @@ function legColumns(userId: string | null): Prisma.Sql {
            f.id AS "fixtureId", f."scheduledAt",
            f.status::text AS "fixtureStatus", f."homeScore", f."awayScore",
            f."liveStatus", f."liveElapsed",
+           ${cornersColumns('f')},
            ht.name AS "homeName", ht."shortName" AS "homeShortName",
            ht."logoUrl" AS "homeLogoUrl",
            at.name AS "awayName", at."shortName" AS "awayShortName",

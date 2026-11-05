@@ -1,7 +1,7 @@
 // The answer of GET /today (apps/backend/src/modules/screens/today.types.ts),
 // dates as ISO strings.
 
-import type { MatchClock } from "@/helpers/scoreboard-format";
+import type { MatchClock, MatchCorners } from "@/helpers/scoreboard-format";
 
 export type TodayProductKey =
   | "FAVOURITE"
@@ -50,6 +50,8 @@ export type TodayLeg = {
   score: { home: number; away: number } | null;
   /** « 67' », « MT », « Terminé »; null before kick-off and once postponed. */
   clock: MatchClock | null;
+  /** A corners bet's count once the match is over; null on other bets. */
+  corners: MatchCorners | null;
 };
 
 export type TodayCoupon = {

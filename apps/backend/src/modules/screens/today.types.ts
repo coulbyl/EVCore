@@ -1,4 +1,5 @@
 import type { MatchClock } from './match-clock';
+import type { MatchCorners } from './match-corners';
 import type { TODAY_PRODUCTS } from '@config/screens.constants';
 
 /** A product of « Aujourd'hui » (screens.constants.ts). */
@@ -50,6 +51,8 @@ export type TodayLeg = {
   score: { home: number; away: number } | null;
   /** « 67' », « MT », « Terminé »; null before kick-off and once postponed. */
   clock: MatchClock | null;
+  /** A corners bet's count once the match is over; null on other bets. */
+  corners: MatchCorners | null;
 };
 
 export type TodayCoupon = {

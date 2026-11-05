@@ -20,6 +20,7 @@ import {
   clockLabelsOf,
   displayLocaleOf,
   formatClock,
+  formatCorners,
   formatOdds,
   formatKickoff,
   formatShortDate,
@@ -215,6 +216,20 @@ export async function MatchSheetView({ id }: { id: string }) {
   );
 }
 
+/** A finished match: « mi-temps 1-0 · Corners 7-4 », either alone, or none. */
+function finishedStatus(sheet: MatchSheet, t: Translate): string | null {
+  const parts = [
+    sheet.halfTimeScore ? t("halfTime", sheet.halfTimeScore) : null,
+    sheet.corners
+      ? formatCorners(sheet.corners, {
+          counted: (home, away) => t("corners", { home, away }),
+          pending: t("cornersPending"),
+        })
+      : null,
+  ].filter((part) => part !== null);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 /**
  * On the band: the competition, the two teams, then the time, « En cours »,
  * « Reporté », or the score with the half-time score in small (06 § 3),
@@ -243,15 +258,13 @@ function SheetHeader({
         : t("inProgress")
       : sheet.state === "postponed"
         ? t("postponed")
-        : sheet.state === "finished" && sheet.halfTimeScore
-          ? t("halfTime", sheet.halfTimeScore)
-          : sheet.state === "finished"
-            ? null
-            : formatKickoff(new Date(sheet.kickoffAt), {
-                now,
-                locale,
-                timeZone,
-              });
+        : sheet.state === "finished"
+          ? finishedStatus(sheet, t)
+          : formatKickoff(new Date(sheet.kickoffAt), {
+              now,
+              locale,
+              timeZone,
+            });
   return (
     <div className="flex flex-col gap-2">
       <p className="flex justify-between gap-3 text-meta text-band-muted">
