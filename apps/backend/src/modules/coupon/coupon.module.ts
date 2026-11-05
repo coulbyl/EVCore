@@ -15,6 +15,7 @@ import { CouponEngineComboGenerationService } from './coupon-engine-combo-genera
 import { CouponController } from './coupon.controller';
 import { OddsClosingLineRepository } from '../betting-engine/pricing/odds-closing-line.repository';
 import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
+import { MatchesRepository } from '../screens/matches.repository';
 import { LegFactRepository } from './leg-fact/leg-fact.repository';
 import { CouponLegFactService } from './leg-fact/coupon-leg-fact.service';
 import { ProductDayRepository } from './product-day/product-day.repository';
@@ -39,6 +40,7 @@ import { ProductWeekService } from './product-day/product-week.service';
     // pour une seule requête.
     OddsClosingLineRepository,
     PlayableOddsRepository,
+    MatchesRepository,
     CouponSettlementService,
     CouponService,
     CouponFavouriteGenerationService,

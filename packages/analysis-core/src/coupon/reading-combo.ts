@@ -34,8 +34,8 @@ export const READING_COMBO_CONFIG: ReadingComboConfig = {
   maxCombinedOdds: 2.6,
 };
 
-export type ReadingComboSelection =
-  | { outcome: "picked"; legs: ReadingLeg[]; candidateCount: number }
+export type ReadingComboSelection<T extends ReadingLeg = ReadingLeg> =
+  | { outcome: "picked"; legs: T[]; candidateCount: number }
   | {
       outcome: "abstained";
       reason: "not_enough_readings" | "no_combination_in_band";
@@ -50,10 +50,10 @@ export type ReadingComboSelection =
  * combinée (Decimal) tombe dans la bande. Un match sans lecture n'est
  * jamais dans `readings` : il est ignoré, jamais remplacé par un autre pari.
  */
-export function composeReadingCombo(
-  readings: readonly ReadingLeg[],
+export function composeReadingCombo<T extends ReadingLeg>(
+  readings: readonly T[],
   config: ReadingComboConfig = READING_COMBO_CONFIG,
-): ReadingComboSelection {
+): ReadingComboSelection<T> {
   const ordered = readings
     .filter(
       (r) =>
@@ -67,9 +67,10 @@ export function composeReadingCombo(
         a.odds - b.odds ||
         a.fixtureId.localeCompare(b.fixtureId),
     );
-  const perCompetition = new Map<string, ReadingLeg>();
+  const perCompetition = new Map<string, T>();
   for (const r of ordered) {
-    if (!perCompetition.has(r.competition)) perCompetition.set(r.competition, r);
+    if (!perCompetition.has(r.competition))
+      perCompetition.set(r.competition, r);
   }
   const pool = [...perCompetition.values()];
   if (pool.length < config.legs) {
@@ -91,12 +92,12 @@ export function composeReadingCombo(
 
 /** La première combinaison de `config.legs` lectures, dans l'ordre du
  * vivier, dont la cote combinée est dans la bande. */
-function firstCombination(input: {
-  pool: readonly ReadingLeg[];
+function firstCombination<T extends ReadingLeg>(input: {
+  pool: readonly T[];
   config: ReadingComboConfig;
   start: number;
-  chosen: readonly ReadingLeg[];
-}): ReadingLeg[] | null {
+  chosen: readonly T[];
+}): T[] | null {
   const { pool, config, chosen } = input;
   if (chosen.length === config.legs) {
     const combined = chosen.reduce(

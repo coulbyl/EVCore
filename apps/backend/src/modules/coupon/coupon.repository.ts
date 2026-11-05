@@ -63,19 +63,19 @@ export type EngineComboCandidateRow = {
   scheduledAt: Date;
 };
 
+/** A match of the daily combo's day, before its reading (2026-11-05). */
+export type ReadingComboFixtureRow = {
+  fixtureId: string;
+  competition: string;
+  scheduledAt: Date;
+};
+
 export type AiPlayRow = {
   fixtureId: string;
   competition: string;
   market: string;
   pick: string;
   scheduledAt: Date;
-};
-
-export type ChannelCompetitionCalibrationRow = {
-  channel: string;
-  competition: string;
-  sampleSize: number;
-  ratio: number | null;
 };
 
 export type ClassTrackRecordRow = {
@@ -576,6 +576,27 @@ export class CouponRepository {
   }
 
   /**
+   * Les matchs à venir de la plage dont le combiné du jour lit la lecture
+   * (2026-11-05) : programmés, pas commencés, hors données suspectes.
+   */
+  async findReadingComboFixtures(opts: {
+    from: Date;
+    to: Date;
+  }): Promise<readonly ReadingComboFixtureRow[]> {
+    return this.prisma.client.$queryRaw<ReadingComboFixtureRow[]>`
+      SELECT f.id AS "fixtureId", c.code AS competition, f."scheduledAt"
+      FROM public.fixture f
+      JOIN public.season se ON se.id = f."seasonId"
+      JOIN public.competition c ON c.id = se."competitionId"
+      WHERE f.status = 'SCHEDULED'
+        AND f."scheduledAt" >= ${opts.from}
+        AND f."scheduledAt" < ${opts.to}
+        AND f."scheduledAt" > now()
+        AND f.id NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
+    `;
+  }
+
+  /**
    * Les avis joués par l'IA sur les matchs à venir de la plage (Combiné IA,
    * 2026-11-03) : son dernier avis par match, quand il joue, avec son pari.
    * Jamais un avis remplacé par une analyse plus récente qui ne joue pas.
@@ -607,31 +628,6 @@ export class CouponRepository {
       JOIN public.season se ON se.id = f."seasonId"
       JOIN public.competition c ON c.id = se."competitionId"
       WHERE l.status = 'SELECTED'
-    `;
-  }
-
-  /**
-   * Calibration canal × compétition sur une fenêtre glissante : réel /
-   * annoncé et volume, sur les sélections réglées (WON/LOST) d'avant coup
-   * d'envoi. Même matière que la pastille de confiance de l'écran.
-   */
-  async findChannelCompetitionCalibration(
-    since: Date,
-  ): Promise<readonly ChannelCompetitionCalibrationRow[]> {
-    return this.prisma.client.$queryRaw<ChannelCompetitionCalibrationRow[]>`
-      SELECT s.channel::text AS channel,
-             c.code          AS competition,
-             count(*)::int   AS "sampleSize",
-             CASE WHEN sum(s.probability) > 0
-                  THEN (sum((s.result = 'WON')::int) / sum(s.probability))::float
-                  ELSE NULL END AS ratio
-      FROM public.channel_selection_deduped s
-      JOIN public.fixture f ON f.id = s."fixtureId"
-      JOIN public.season se ON se.id = f."seasonId"
-      JOIN public.competition c ON c.id = se."competitionId"
-      WHERE s.result IN ('WON', 'LOST')
-        AND s."scheduledAt" >= ${since}
-      GROUP BY s.channel, c.code
     `;
   }
 

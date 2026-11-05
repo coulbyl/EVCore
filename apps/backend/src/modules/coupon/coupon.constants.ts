@@ -363,22 +363,18 @@ export const CORNERS_HUNTER_POLICY = {
 } as const;
 
 /**
- * Politique du combiné du jour sur les sélections du moteur (règle et
- * mesure dans COMBO_COUPON_CLASS / composeEngineCombo, @evcore/analysis-core).
- *
- * Le vivier est celui de l'écran Décisions (sélections retenues des canaux
- * affichés, dernière analyse d'avant coup d'envoi), la calibration canal ×
- * compétition est celle de la pastille de confiance : 90 jours glissants,
- * mêmes seuils que le tableau de bord.
+ * Politique du combiné du jour (règle et mesure dans COMBO_COUPON_CLASS /
+ * composeReadingCombo, @evcore/analysis-core).
  */
 export const ENGINE_COMBO_POLICY = {
-  // v2 (2026-11-03) : départage par la marge 1xBet à chance égale
-  // (COMBO_CONFIG.marginTieBreak) ; les jambes se comparent par version.
-  version: 'engine-combo-v2',
+  // v2 (2026-11-03) : départage par la marge 1xBet à chance égale.
+  // v3 (2026-11-05) : composé à partir des lectures des matchs, 1,30–1,80
+  // chez 1xBet, combiné 1,80–2,60 ; les jambes se comparent par version.
+  version: 'engine-combo-v3',
   pass: 'engine-combo',
-  calibrationWindowDays: 90,
   /** Canaux jamais mis en avant sur Décisions (méta-canaux, VALUE/SAFE,
-   * VANTAGE) — même liste que `isExcludedFromDecisions` côté web. */
+   * VANTAGE) — même liste que `isExcludedFromDecisions` côté web. Lu par le
+   * vivier des chasseurs. */
   excludedChannels: [
     'VALUE',
     'SAFE',

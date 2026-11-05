@@ -1,19 +1,20 @@
+import Decimal from 'decimal.js';
 import { Injectable, Logger } from '@nestjs/common';
 import { CouponSource, StrategyChannel } from '@evcore/db';
 import {
   COMBO_COUPON_CLASS,
-  composeEngineCombo,
-  type CalibrationCell,
-  type ComboCandidate,
+  composeReadingCombo,
   type CouponClass,
   type Market,
+  type ReadingComboSelection,
+  type ReadingLeg,
 } from '@evcore/analysis-core';
+import { READING_CHANNELS } from '@config/screens.constants';
 import { CouponRepository } from './coupon.repository';
 import { PlayableOddsRepository } from '../betting-engine/pricing/playable-odds.repository';
-import {
-  operatorPrice,
-  playableAtOperator,
-} from '../betting-engine/pricing/playable-odds.filter';
+import { operatorPrice } from '../betting-engine/pricing/playable-odds.filter';
+import { MatchesRepository } from '../screens/matches.repository';
+import { groupBy, readingOf, uniqueKeys } from '../screens/matches-reading';
 import { ENGINE_COMBO_POLICY } from './coupon.constants';
 import { startOfUtcDay } from '@utils/date.utils';
 
@@ -21,37 +22,32 @@ export type EngineComboGenerationOutcome =
   | { outcome: 'composed'; proposalId: string; candidateCount: number }
   | { outcome: 'abstained'; reason: string; candidateCount: number };
 
-type Composer = (
-  candidates: readonly ComboCandidate[],
-  calibration: readonly CalibrationCell[],
-) =>
-  | { outcome: 'picked'; legs: ComboCandidate[]; candidateCount: number }
-  | { outcome: 'abstained'; reason: string; candidateCount: number };
-
-/** Un produit composé sur les sélections du moteur : sa classe, sa règle,
- * sa politique. Le combiné (2026-10-13) seul depuis l'arrêt du coupon long
- * le 2026-11-04. */
+/** Un produit composé sur les lectures : sa classe, sa règle, sa politique.
+ * Le combiné seul depuis l'arrêt du coupon long le 2026-11-04. */
 export type EngineCouponProfile = {
   couponClass: CouponClass;
-  compose: Composer;
+  compose: <T extends ReadingLeg>(
+    readings: readonly T[],
+  ) => ReadingComboSelection<T>;
   policy: { version: string; pass: string };
   label: string;
 };
 
 export const ENGINE_COMBO_PROFILE: EngineCouponProfile = {
   couponClass: COMBO_COUPON_CLASS,
-  compose: composeEngineCombo,
+  compose: (readings) => composeReadingCombo(readings),
   policy: ENGINE_COMBO_POLICY,
   label: 'Combiné',
 };
 
+type ComboReading = ReadingLeg & { channel: string; scheduledAt: Date };
+
 /**
- * Génère le combiné du jour sur les sélections du moteur : des « Notre
- * sélection » de l'écran Décisions, une par championnat, les championnats
- * dans l'ordre de leur jambe la moins chère et, dans chacun, la marge 1xBet
- * la plus basse à chance égale (règle et mesure dans COMBO_COUPON_CLASS). Même vivier et même
- * calibration que l'écran, pour que ce que l'utilisateur voit sur un match
- * et ce qu'on lui propose en combiné soient la même chose.
+ * Génère le combiné du jour à partir des lectures (2026-11-05) : pour chaque
+ * match du jour, « Notre lecture » telle que la liste et la fiche du match
+ * la montrent (`readingOf`, même requête, mêmes cotes 1xBet), puis deux
+ * lectures par la règle de COMBO_COUPON_CLASS. Un match sans lecture est
+ * ignoré : le combiné ne propose jamais un autre pari que la lecture.
  */
 @Injectable()
 export class CouponEngineComboGenerationService {
@@ -60,6 +56,7 @@ export class CouponEngineComboGenerationService {
   constructor(
     private readonly repository: CouponRepository,
     private readonly playableOdds: PlayableOddsRepository,
+    private readonly matches: MatchesRepository,
   ) {}
 
   async generateForDate(
@@ -68,41 +65,45 @@ export class CouponEngineComboGenerationService {
   ): Promise<EngineComboGenerationOutcome> {
     const dayStart = startOfUtcDay(forDate);
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1_000);
-    const since = new Date(
-      dayStart.getTime() -
-        ENGINE_COMBO_POLICY.calibrationWindowDays * 24 * 60 * 60 * 1_000,
-    );
-    const [allRows, calibration] = await Promise.all([
-      this.repository.findEngineComboCandidates({
-        from: dayStart,
-        to: dayEnd,
-        excludedChannels: ENGINE_COMBO_POLICY.excludedChannels,
-      }),
-      this.repository.findChannelCompetitionCalibration(since),
-    ]);
-    // Jouable chez l'opérateur, ou pas proposé (playable-odds.filter.ts).
+    const fixtures = await this.repository.findReadingComboFixtures({
+      from: dayStart,
+      to: dayEnd,
+    });
+    const candidates = await this.matches.findReadingCandidates({
+      fixtureIds: fixtures.map((f) => f.fixtureId),
+      channels: READING_CHANNELS,
+    });
+    // Les cotes 1xBet seules, comme la liste des matchs.
     const quotes = await this.playableOdds.findPlayableQuotes(
-      allRows.map((r) => ({
-        fixtureId: r.fixtureId,
-        market: r.market,
-        pick: r.pick,
-      })),
+      uniqueKeys(candidates),
+      { operatorOnly: true },
     );
-    // La marge 1xBet du choix et sa fréquence sans marge (même relevé)
-    // voyagent avec lui : le combiné départage par la marge à chance égale
-    // (COMBO_CONFIG.marginTieBreak).
-    const rows = allRows
-      .filter((r) => playableAtOperator(r, quotes))
-      .map((r) => {
-        const price = operatorPrice(r, quotes);
-        return {
-          ...r,
-          margin: price.operatorMargin,
-          fairProbability: price.operatorFairProbability,
-        };
-      });
+    const byFixture = groupBy(candidates, (c) => c.fixtureId);
+    const now = new Date();
+    const readings: ComboReading[] = fixtures.flatMap((fixture) => {
+      const own = byFixture.get(fixture.fixtureId) ?? [];
+      const choice = readingOf({ candidates: own, quotes, day: 'today', now });
+      if (!('reading' in choice)) return [];
+      const { reading } = choice;
+      const channel = own.find(
+        (c) => c.market === reading.market && c.pick === reading.pick,
+      )?.channel;
+      if (!channel) return [];
+      return [
+        {
+          fixtureId: fixture.fixtureId,
+          competition: fixture.competition,
+          market: reading.market,
+          pick: reading.pick,
+          odds: reading.odds,
+          chance: reading.chance,
+          channel,
+          scheduledAt: fixture.scheduledAt,
+        },
+      ];
+    });
 
-    const selection = profile.compose(rows, calibration);
+    const selection = profile.compose(readings);
     const pass = {
       name: profile.policy.pass,
       policyVersion: profile.policy.version,
@@ -117,7 +118,7 @@ export class CouponEngineComboGenerationService {
       });
       this.logger.log(
         `${profile.label} ${dayStart.toISOString().slice(0, 10)} : abstention ` +
-          `(${selection.reason}, ${selection.candidateCount} jambes éligibles)`,
+          `(${selection.reason}, ${selection.candidateCount} lectures éligibles)`,
       );
       return {
         outcome: 'abstained',
@@ -126,14 +127,14 @@ export class CouponEngineComboGenerationService {
       };
     }
 
-    const kickoffById = new Map(rows.map((r) => [r.fixtureId, r.scheduledAt]));
     const lastFixtureScheduledAt = selection.legs.reduce((latest, leg) => {
-      const kickoff = kickoffById.get(leg.fixtureId);
-      return kickoff && kickoff > latest ? kickoff : latest;
+      return leg.scheduledAt > latest ? leg.scheduledAt : latest;
     }, dayStart);
-    const combinedOdds = selection.legs.reduce((acc, leg) => acc * leg.odds, 1);
-    // Retour attendu = 1 : la règle ne crédite aucun avantage (retour mesuré
-    // 1,048 ± bruit) ; la probabilité affichée est celle du prix.
+    const combinedOdds = selection.legs
+      .reduce((acc, leg) => acc.times(leg.odds), new Decimal(1))
+      .toNumber();
+    // Retour attendu = 1 : la règle ne crédite aucun avantage ; la chance
+    // annoncée est la fréquence du marché, celle que la lecture affiche.
     const { proposalId, created } =
       await this.repository.upsertPriceComposerProposal({
         forDate: dayStart,
@@ -146,10 +147,9 @@ export class CouponEngineComboGenerationService {
           pick: leg.pick,
           odds: leg.odds,
           expectedReturn: 1,
-          // La jambe annonce ce que son canal annonce sur Décisions : c'est
-          // cette probabilité que le règlement compare au réel, et celle du
-          // combiné LLM construit sur le même vivier.
-          probability: leg.probability,
+          // La jambe annonce la chance de la lecture (fréquence du marché,
+          // 1xBet) : c'est elle que le règlement compare au réel.
+          probability: leg.chance,
           canal: leg.channel as StrategyChannel,
           ...operatorPrice(leg, quotes),
         })),

@@ -141,6 +141,8 @@
     "reasons": {
       "no_home_favourite_in_band": "no home favourite between 1.20 and 1.35",
       "not_enough_calibrated_short_legs": "not enough reliable short-odds bets in different leagues",
+      "not_enough_readings": "not enough readings between 1.30 and 1.80 in different leagues",
+      "no_combination_in_band": "no pair of readings between 1.80 and 2.60",
       "no_priced_candidate": "not enough priced bets in the band",
       "no_combination_in_window": "no combination between 2 and 3",
       "no_candidate_in_band": "no bet in its odds band",
@@ -509,7 +511,7 @@
       },
       "definitions": {
         "FAVOURITE": "one match, home favourite, odds 1.20 to 1.35",
-        "COMBO": "matches from different leagues, each priced 1.20 to 1.50",
+        "COMBO": "two readings from different leagues, each priced 1.30 to 1.80, total odds 1.80 to 2.60",
         "DOUBLE": "up to three matches, total odds 2 to 3",
         "HUNTER_BTTS": "one match where both teams score, odds 1.45 to 1.90",
         "HUNTER_DRAW": "one draw, odds 2.90 to 3.60",
