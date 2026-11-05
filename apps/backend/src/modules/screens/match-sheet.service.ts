@@ -54,6 +54,7 @@ import {
 } from './matches.repository';
 import type { MatchesDay } from './dto/matches-query.dto';
 import { sheetEventsOf } from './match-sheet-events';
+import { cornersOf } from './match-corners';
 import { matchClockOf } from './match-clock';
 import type {
   MatchSheet,
@@ -242,6 +243,7 @@ export class MatchSheetService {
       score,
       clock: matchClockOf(header, now),
       halfTimeScore: pair(header.homeHalfTimeScore, header.awayHalfTimeScore),
+      corners: cornersOf(header),
       competition: {
         code: header.competitionCode,
         name: header.competitionName,
