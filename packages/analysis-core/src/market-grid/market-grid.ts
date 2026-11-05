@@ -683,6 +683,14 @@ export function summarizeMarketGrid(result: MarketGridResult): {
   lambdaAway: number | null;
   rho: number | null;
   rmse: number | null;
+  /** First-half λ source: half-time prices or the league fraction. */
+  firstHalf: {
+    source: MarketGridFirstHalf["source"];
+    lambdaHome: number | null;
+    lambdaAway: number | null;
+    fraction: number | null;
+    reason: string | null;
+  } | null;
   prices: {
     oneXTwo: { home: number; draw: number; away: number };
     lines: { market: string; line: number; over: number; under: number }[];
@@ -698,6 +706,24 @@ export function summarizeMarketGrid(result: MarketGridResult): {
     lambdaAway: fit?.lambdaAway ?? null,
     rho: fit?.rho ?? null,
     rmse: fit?.rmse ?? null,
+    firstHalf:
+      result.status !== "ok"
+        ? null
+        : result.firstHalf.source === "prices"
+          ? {
+              source: "prices",
+              lambdaHome: result.firstHalf.lambdaHome,
+              lambdaAway: result.firstHalf.lambdaAway,
+              fraction: null,
+              reason: null,
+            }
+          : {
+              source: "fraction",
+              lambdaHome: null,
+              lambdaAway: null,
+              fraction: result.firstHalf.fraction,
+              reason: result.firstHalf.reason,
+            },
     prices: quotes
       ? {
           oneXTwo: {

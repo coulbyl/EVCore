@@ -3,7 +3,9 @@ export {
   MARKET_GRID_FIRST_HALF_MARKETS,
   MARKET_GRID_LOOKBACK_DAYS,
   MARKET_GRID_MARKETS,
+  MARKET_GRID_FIRST_HALF_FRACTION,
   MARKET_GRID_RHO,
+  marketGridFirstHalfFraction,
   marketGridRho,
 } from "./market-grid.config";
 export {

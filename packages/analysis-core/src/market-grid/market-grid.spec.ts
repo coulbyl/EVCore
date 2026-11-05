@@ -13,6 +13,10 @@ import {
   selectMarketGridQuotes,
   summarizeMarketGrid,
 } from "./market-grid";
+import {
+  MARKET_GRID_FIRST_HALF_FRACTION,
+  marketGridFirstHalfFraction,
+} from "./market-grid.config";
 
 const AT = new Date("2026-10-20T18:00:00.000Z");
 const BEFORE = new Date("2026-10-20T15:00:00.000Z");
@@ -483,5 +487,15 @@ describe("summarizeMarketGrid", () => {
       prices: null,
       lambdaHome: null,
     });
+  });
+});
+
+describe("marketGridFirstHalfFraction", () => {
+  it("reads the league's share, 0.44 without one", () => {
+    expect(marketGridFirstHalfFraction("UECL")).toBe(
+      MARKET_GRID_FIRST_HALF_FRACTION.UECL,
+    );
+    expect(marketGridFirstHalfFraction("NOPE")).toBe(FIRST_HALF_GOAL_FRACTION);
+    expect(marketGridFirstHalfFraction(null)).toBe(FIRST_HALF_GOAL_FRACTION);
   });
 });
