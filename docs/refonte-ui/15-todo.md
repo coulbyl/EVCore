@@ -228,6 +228,9 @@ PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G,
 
 - [ ] **Corners (ML-3) à relire vers le 10/12** : `pnpm --filter @evcore/backtest-core backtest:corners-cards` sur une copie fraîche (6 semaines de 1xBet). Brancher `count-market` sur la feuille « Autres paris » pour les seules lignes 1xBet que Pinnacle ne cote pas si H1–H3 tiennent (H2b ≥ 100 matchs). Chasseur Corners : rien à gagner tant que sa bande reste 1,70–2,10.
 
+- [ ] **Coupons : `settle-range` après le déploiement de `fix/coupon-mechanics`** (05/11). Il remplit la clôture des corners déjà réglés et rembourse la jambe Coritiba du coupon cote 2 du 29/10 (7 autres jambes historiques déplacées de plus d'un jour). Commande : `POST /coupons/settle-range?from=2026-08-20&to=2026-11-05` (jeton admin). À lancer par l’utilisateur.
+- [ ] **Combiné IA, avis confirmé sur deux passages : à relire vers le 10/12.** Rejeté le 05/11 parce qu'il ne compose que 7 jours sur 30 ; le vivier est pourtant le mieux calibré (1,02 contre 0,93, n = 134). Rejouer sur 60 jours avec la cote 1xBet (`docs/audits/2026-11-05/PERTES-CHASSEURS-COTE2-IA.md`, « Correctifs livrés »).
+
 ## À relire plus tard (hors lots)
 
 - **Blessures : étudier le branchement** (décidé le 01/11). `league-sync` les collecte chaque jour à 06:00 (un appel API-Football par championnat) et les écrit en ombre sur l'analyse (`shadow_injuries`), mais ni le moteur, ni l'IA, ni un écran ne les lit. On ne coupe pas la collecte. À étudier : quoi en faire (contexte de l'IA, fiche de match, facteur du moteur jugé sur le résidu contre le marché) et comment le mesurer avant de le montrer. Inventaire : `docs/refonte-ui/exploitation-inventaire.md`.
