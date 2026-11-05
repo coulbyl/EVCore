@@ -83,6 +83,7 @@ import {
 } from './math/probability';
 import {
   computeMarketGrid,
+  marketGridRho,
   getLeagueThreeWayEmpiricalBlendWeight,
   summarizeMarketGrid,
 } from '@evcore/analysis-core';
@@ -775,7 +776,9 @@ export class BettingEngineService {
     //   - the « Données suspectes » coherence gates below, which compare the
     //     statistics output to the market: their job is to catch corrupted
     //     inputs (team stats, λ), and the grid is the market itself.
-    const marketGrid = computeMarketGrid(marketGridRows, oddsCutoff);
+    const marketGrid = computeMarketGrid(marketGridRows, oddsCutoff, {
+      rho: marketGridRho(competitionCode),
+    });
     const {
       source: predictionSource,
       lambda,

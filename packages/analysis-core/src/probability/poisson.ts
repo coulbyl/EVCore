@@ -11,6 +11,7 @@ import {
   type TeamTotalProba,
   type ThreeWayProba,
 } from "./markets";
+import { boundedDixonColesRho, dixonColesTau } from "./dixon-coles";
 
 // Empirical share of a match's goals scored in the first half. Football is not
 // half-symmetric — teams open cautiously and games break open later. Measured at
@@ -21,6 +22,30 @@ import {
 // (~0.351 modeled vs 0.353 actual). The second half carries the complement so the
 // two halves still sum to the full-time lambda (coherent with 1X2).
 const FIRST_HALF_GOAL_FRACTION = 0.44;
+
+/** P(home = h, away = a) of a full-time score grid. */
+export type ScoreCell = (h: number, a: number) => number;
+
+/**
+ * The cells of a score grid: the independent product of the two marginals,
+ * times the Dixon-Coles τ when `rho` is non-zero (dixon-coles.ts). With
+ * `rho` 0 every cell is the plain product, bit for bit.
+ */
+export function scoreCells(input: {
+  homeDist: readonly number[];
+  awayDist: readonly number[];
+  lambdaHome: number;
+  lambdaAway: number;
+  rho?: number;
+}): ScoreCell {
+  const { homeDist, awayDist, lambdaHome, lambdaAway } = input;
+  const independent: ScoreCell = (h, a) =>
+    (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+  if (!input.rho) return independent;
+  const dependence = { rho: input.rho, lambdaHome, lambdaAway };
+  const bounded = { ...dependence, rho: boundedDixonColesRho(dependence) };
+  return (h, a) => independent(h, a) * dixonColesTau(h, a, bounded);
+}
 
 export function poissonProba(
   lambdaHome: number,
@@ -56,19 +81,23 @@ export function deriveMarketsFromPoisson(input: {
   lambdaAway: number;
   oneXTwo: ThreeWayProba;
   maxGoals?: number;
+  /** Dixon-Coles dependence (dixon-coles.ts); 0 or absent = independent. */
+  rho?: number;
 }): DerivedMarketsProba {
-  const { lambdaHome, lambdaAway, oneXTwo, maxGoals = 10 } = input;
+  const { lambdaHome, lambdaAway, oneXTwo, maxGoals = 10, rho } = input;
   const { homeDist, awayDist } = normalizedPoissonDistributions(
     lambdaHome,
     lambdaAway,
     maxGoals,
   );
-  return deriveMarketsFromDistributions(homeDist, awayDist, oneXTwo);
+  const cell = scoreCells({ homeDist, awayDist, lambdaHome, lambdaAway, rho });
+  return deriveMarketsFromDistributions(homeDist, awayDist, oneXTwo, cell);
 }
 
 export function poissonProbaFromDistributions(
   homeDist: number[],
   awayDist: number[],
+  cell: ScoreCell = (h, a) => (homeDist[h] ?? 0) * (awayDist[a] ?? 0),
 ): ThreeWayProba {
   let pHome = 0;
   let pDraw = 0;
@@ -76,7 +105,7 @@ export function poissonProbaFromDistributions(
 
   for (let h = 0; h < homeDist.length; h++) {
     for (let a = 0; a < awayDist.length; a++) {
-      const p = (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+      const p = cell(h, a);
       if (h > a) pHome += p;
       else if (h === a) pDraw += p;
       else pAway += p;
@@ -103,6 +132,7 @@ function deriveMarketsFromDistributions(
   homeDist: number[],
   awayDist: number[],
   oneXTwo: ThreeWayProba,
+  cell: ScoreCell = (h, a) => (homeDist[h] ?? 0) * (awayDist[a] ?? 0),
 ): DerivedMarketsProba {
   let under15 = 0;
   let under25 = 0;
@@ -111,22 +141,22 @@ function deriveMarketsFromDistributions(
 
   for (let h = 0; h <= Math.min(1, homeDist.length - 1); h++) {
     for (let a = 0; a <= Math.min(1 - h, awayDist.length - 1); a++) {
-      under15 += (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+      under15 += cell(h, a);
     }
   }
   for (let h = 0; h <= Math.min(2, homeDist.length - 1); h++) {
     for (let a = 0; a <= Math.min(2 - h, awayDist.length - 1); a++) {
-      under25 += (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+      under25 += cell(h, a);
     }
   }
   for (let h = 0; h <= Math.min(3, homeDist.length - 1); h++) {
     for (let a = 0; a <= Math.min(3 - h, awayDist.length - 1); a++) {
-      under35 += (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+      under35 += cell(h, a);
     }
   }
   for (let h = 0; h <= Math.min(4, homeDist.length - 1); h++) {
     for (let a = 0; a <= Math.min(4 - h, awayDist.length - 1); a++) {
-      under45 += (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+      under45 += cell(h, a);
     }
   }
 
@@ -135,7 +165,11 @@ function deriveMarketsFromDistributions(
   const over35 = Math.max(0, 1 - under35);
   const over45 = Math.max(0, 1 - under45);
   // Uses the same truncated+normalized distributions for coherence with 1X2.
-  const bttsYes = (1 - (homeDist[0] ?? 0)) * (1 - (awayDist[0] ?? 0));
+  // `nilNilShift` is what the dependence adds to 0-0 (exactly 0 without it):
+  // the marginals do not move, so P(0-0) is the only joint term of BTTS.
+  const nilNilShift = cell(0, 0) - (homeDist[0] ?? 0) * (awayDist[0] ?? 0);
+  const bttsYes =
+    (1 - (homeDist[0] ?? 0)) * (1 - (awayDist[0] ?? 0)) + nilNilShift;
   const bttsNo = 1 - bttsYes;
   const { htft, ouHT, firstHalfWinner, secondHalfWinner } =
     computeFirstHalfMarketsFromMatchDistributions(homeDist, awayDist);
@@ -157,8 +191,13 @@ function deriveMarketsFromDistributions(
   // Win to Nil: wins AND keeps a clean sheet — with the opposing side held
   // to 0, any goal from this side is already a win, so it's just clean
   // sheet × "scored at least once".
-  const winToNilHome = cleanSheetHome.mul(1 - (homeDist[0] ?? 0));
-  const winToNilAway = cleanSheetAway.mul(1 - (awayDist[0] ?? 0));
+  // (minus the 0-0 the dependence adds, which is not a win).
+  const winToNilHome = cleanSheetHome
+    .mul(1 - (homeDist[0] ?? 0))
+    .minus(nilNilShift);
+  const winToNilAway = cleanSheetAway
+    .mul(1 - (awayDist[0] ?? 0))
+    .minus(nilNilShift);
 
   // To Win Either Half: home/away win at least one of the two halves.
   // Inclusion-exclusion assuming H1/H2 independence (same assumption HT/FT
@@ -174,8 +213,9 @@ function deriveMarketsFromDistributions(
     homeDist,
     awayDist,
     oneXTwo,
+    cell,
   );
-  const resultBtts = computeResultBttsProba(homeDist, awayDist);
+  const resultBtts = computeResultBttsProba(homeDist, awayDist, cell);
 
   return {
     over15: new Decimal(over15),
@@ -237,6 +277,7 @@ function computeResultTotalGoalsProba(
   homeDist: number[],
   awayDist: number[],
   oneXTwo: ThreeWayProba,
+  cell: ScoreCell,
 ): ResultTotalGoalsProba {
   const proba: ResultTotalGoalsProba = {};
   const lines = [1, 2, 3, 4] as const;
@@ -246,7 +287,7 @@ function computeResultTotalGoalsProba(
     let underAway = 0;
     for (let h = 0; h <= Math.min(line, homeDist.length - 1); h++) {
       for (let a = 0; a <= Math.min(line - h, awayDist.length - 1); a++) {
-        const p = (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+        const p = cell(h, a);
         const outcome = outcomeFromScores(h, a);
         if (outcome === "HOME") underHome += p;
         else if (outcome === "DRAW") underDraw += p;
@@ -277,6 +318,7 @@ function computeResultTotalGoalsProba(
 function computeResultBttsProba(
   homeDist: number[],
   awayDist: number[],
+  cell: ScoreCell,
 ): ResultBttsProba {
   let homeYes = 0;
   let homeNo = 0;
@@ -286,7 +328,7 @@ function computeResultBttsProba(
   let awayNo = 0;
   for (let h = 0; h < homeDist.length; h++) {
     for (let a = 0; a < awayDist.length; a++) {
-      const p = (homeDist[h] ?? 0) * (awayDist[a] ?? 0);
+      const p = cell(h, a);
       if (p <= 0) continue;
       const bttsYes = h > 0 && a > 0;
       const outcome = outcomeFromScores(h, a);
@@ -495,7 +537,8 @@ function buildFactorialCache(maxN: number): number[] {
 
 // Full-time exact-score distribution: P(home=h, away=a) for every scoreline on a
 // 0..maxGoals grid, as a map keyed "H:A". Built from the SAME normalized Poisson
-// distributions as 1X2/Over-Under/BTTS (independent product — Dixon-Coles was
+// distributions as 1X2/Over-Under/BTTS (independent product unless `rho` is set,
+// market grid only, ML2A-DEPENDANCE-BUTS.md — Dixon-Coles on stats λ was
 // empirically rejected 2026-06-30: no gain on goal markets, worse on exact score),
 // so it is coherent with them: summing cells by outcome reproduces the 1X2 vector.
 // The grid captures essentially all realistically-priced scorelines; tail cells
@@ -504,19 +547,19 @@ function buildFactorialCache(maxN: number): number[] {
 export function computeCorrectScoreMatrix(
   lambdaHome: number,
   lambdaAway: number,
-  maxGoals = 6,
+  options: { maxGoals?: number; rho?: number } = {},
 ): Record<string, Decimal> {
+  const { maxGoals = 6, rho } = options;
   const { homeDist, awayDist } = normalizedPoissonDistributions(
     lambdaHome,
     lambdaAway,
     maxGoals,
   );
+  const cell = scoreCells({ homeDist, awayDist, lambdaHome, lambdaAway, rho });
   const matrix: Record<string, Decimal> = {};
   for (let h = 0; h < homeDist.length; h++) {
     for (let a = 0; a < awayDist.length; a++) {
-      matrix[`${h}:${a}`] = new Decimal(
-        (homeDist[h] ?? 0) * (awayDist[a] ?? 0),
-      );
+      matrix[`${h}:${a}`] = new Decimal(cell(h, a));
     }
   }
   return matrix;

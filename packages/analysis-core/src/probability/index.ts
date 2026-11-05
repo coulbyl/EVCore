@@ -15,7 +15,14 @@ export {
   deriveMarketsFromPoisson,
   buildPoissonDistributions,
   computeCorrectScoreMatrix,
+  scoreCells,
+  type ScoreCell,
 } from "./poisson";
+export {
+  type GoalDependence,
+  boundedDixonColesRho,
+  dixonColesTau,
+} from "./dixon-coles";
 export {
   type OverUnderShrinkageConfig,
   type TeamTotalShrinkageBlock,

@@ -7,6 +7,7 @@ import {
   buildPoissonDistributions,
   deriveMarketsFromPoisson,
   poissonProbaFromDistributions,
+  scoreCells,
 } from "../probability/poisson";
 import type { ThreeWayProba } from "../probability/markets";
 import type { MatchProbabilities } from "../selection/types";
@@ -38,10 +39,11 @@ import {
  *    same shape; the 1X2 itself is the book's fair 1X2, which an independent
  *    Poisson pair cannot always reproduce exactly (the draw).
  *
- * The dependence ρ (Dixon-Coles) is not fitted: a per-fixture ρ on noisy
- * lines is what sub-model D of lot ML-2 replaces with a per-league value, and
- * the engine's derivations assume independent margins (Dixon-Coles was
- * rejected on our data on 2026-06-30, poisson.ts).
+ * The dependence ρ (Dixon-Coles) is never fitted per fixture (noisy lines):
+ * the caller may pass a per-league ρ (sub-model D of lot ML-2,
+ * MARKET_GRID_RHO in market-grid.config.ts); λ are then fitted under that ρ,
+ * so the grid still reproduces the 1X2 and goal-line prices, and every
+ * derived market reads the dependent grid. ρ 0 = independent Poisson.
  *
  * Solver variables are floating point, as in `shinProbabilities`; every
  * probability handed to the engine is a Decimal.
@@ -67,6 +69,8 @@ export type MarketGridQuotes = {
 export type MarketGridFit = {
   lambdaHome: number;
   lambdaAway: number;
+  /** Dixon-Coles ρ the λ were fitted under (0 = independent). */
+  rho: number;
   /** Weighted root-mean-square gap between the grid and its targets. */
   rmse: number;
 };
@@ -238,6 +242,7 @@ export function selectMarketGridQuotes(
 }
 
 type ModelTargets = {
+  rho: number;
   oneXTwo: [number, number, number];
   lines: ReadonlyArray<{ market: Market; line: number; over: number }>;
 };
@@ -256,12 +261,18 @@ function evaluate(x: [number, number], targets: ModelTargets): Evaluation {
     x[1],
     MARKET_GRID_MAX_GOALS,
   );
-  const oneXTwo = poissonProbaFromDistributions(distHome, distAway);
+  const cell = scoreCells({
+    homeDist: distHome,
+    awayDist: distAway,
+    lambdaHome: x[0],
+    lambdaAway: x[1],
+    rho: targets.rho,
+  });
+  const oneXTwo = poissonProbaFromDistributions(distHome, distAway, cell);
   const total = new Array<number>(distHome.length + distAway.length).fill(0);
   for (let h = 0; h < distHome.length; h++) {
     for (let a = 0; a < distAway.length; a++) {
-      total[h + a] =
-        (total[h + a] ?? 0) + (distHome[h] ?? 0) * (distAway[a] ?? 0);
+      total[h + a] = (total[h + a] ?? 0) + cell(h, a);
     }
   }
   const residuals = [
@@ -396,11 +407,17 @@ function levenbergMarquardt(
 
 /**
  * λ home and λ away whose independent Poisson grid reproduces the fair
- * targets best (weighted least squares from one start read off the prices).
+ * targets best (weighted least squares from one start read off the prices),
+ * under the dependence `rho` (0 = independent). Team totals do not depend on
+ * ρ (Dixon-Coles keeps the marginals); the 1X2 and the totals do.
  * Deterministic: same targets → same λ.
  */
-export function fitMarketGridLambdas(targets: FitTargets): MarketGridFit {
+export function fitMarketGridLambdas(
+  targets: FitTargets,
+  rho = 0,
+): MarketGridFit {
   const modelTargets: ModelTargets = {
+    rho,
     oneXTwo: [
       targets.oneXTwo.home.toNumber(),
       targets.oneXTwo.draw.toNumber(),
@@ -421,6 +438,7 @@ export function fitMarketGridLambdas(targets: FitTargets): MarketGridFit {
   return {
     lambdaHome: solved.x[0],
     lambdaAway: solved.x[1],
+    rho,
     rmse: Math.sqrt(solved.loss / totalWeight),
   };
 }
@@ -430,7 +448,7 @@ export function fitMarketGridLambdas(targets: FitTargets): MarketGridFit {
  * shape: the book's fair 1X2, everything else derived from the grid.
  */
 export function marketGridProbabilities(
-  fit: Pick<MarketGridFit, "lambdaHome" | "lambdaAway">,
+  fit: Pick<MarketGridFit, "lambdaHome" | "lambdaAway"> & { rho?: number },
   fairOneXTwo: ThreeWayProba,
 ): MatchProbabilities {
   return {
@@ -440,6 +458,7 @@ export function marketGridProbabilities(
       lambdaAway: fit.lambdaAway,
       oneXTwo: fairOneXTwo,
       maxGoals: MARKET_GRID_MAX_GOALS,
+      rho: fit.rho,
     }),
   };
 }
@@ -449,11 +468,13 @@ export function marketGridProbabilities(
  * book, any market: the rest is ignored). `unavailable` when no sharp book
  * prices a complete 1X2 and a total-goals line, or when its prices
  * contradict each other beyond MARKET_GRID_MAX_RMSE; the caller then keeps
- * its statistics engine.
+ * its statistics engine. `options.rho`: the league's Dixon-Coles dependence
+ * (`marketGridRho`), 0 or absent = independent.
  */
 export function computeMarketGrid(
   rows: readonly RawOddsRow[],
   cutoff: Date,
+  options: { rho?: number } = {},
 ): MarketGridResult {
   const quotes = selectMarketGridQuotes(rows, cutoff);
   if (!quotes) {
@@ -464,10 +485,10 @@ export function computeMarketGrid(
       fit: null,
     };
   }
-  const fit = fitMarketGridLambdas({
-    oneXTwo: quotes.fairOneXTwo,
-    lines: quotes.lines,
-  });
+  const fit = fitMarketGridLambdas(
+    { oneXTwo: quotes.fairOneXTwo, lines: quotes.lines },
+    options.rho ?? 0,
+  );
   if (!(fit.rmse <= MARKET_GRID_MAX_RMSE)) {
     return { status: "unavailable", reason: "fit_error", quotes, fit };
   }
@@ -490,6 +511,7 @@ export function summarizeMarketGrid(result: MarketGridResult): {
   snapshotAt: string | null;
   lambdaHome: number | null;
   lambdaAway: number | null;
+  rho: number | null;
   rmse: number | null;
   prices: {
     oneXTwo: { home: number; draw: number; away: number };
@@ -504,6 +526,7 @@ export function summarizeMarketGrid(result: MarketGridResult): {
     snapshotAt: quotes?.snapshotAt.toISOString() ?? null,
     lambdaHome: fit?.lambdaHome ?? null,
     lambdaAway: fit?.lambdaAway ?? null,
+    rho: fit?.rho ?? null,
     rmse: fit?.rmse ?? null,
     prices: quotes
       ? {

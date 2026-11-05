@@ -38,6 +38,7 @@
     "backtest:congestion-centering": "tsx scripts/backtest-congestion-centering.ts",
     "backtest:league-strength": "tsx scripts/backtest-league-strength.ts",
     "backtest:market-grid": "tsx scripts/backtest-market-grid.ts",
+    "backtest:goal-dependence": "tsx scripts/backtest-goal-dependence.ts",
     "probe:extras": "tsx --env-file=../../apps/backend/.env scripts/probe-api-football.ts --extras",
     "probe:inventory": "tsx --env-file-if-exists=../../apps/backend/.env scripts/probe-api-football.ts --inventory"
   },

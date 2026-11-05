@@ -16,7 +16,9 @@
 //
 // `minProbability` is a CONVICTION gate: if even the modal scoreline sits below it,
 // no single score is predictable (match too open) → no pick. Dixon-Coles was rejected
-// (2026-06-30): the independent Poisson matrix is as accurate on scorelines.
+// (2026-06-30) on the statistics engine's λ; on the market grid a per-league ρ
+// improves the exact-score log-loss but was not shipped (ML2A-DEPENDANCE-BUTS.md):
+// the matrix reads `scoreDependenceRho` when the grid sets one.
 export const CORRECT_SCORE_CONFIG = {
   enabled: true,
   minProbability: 0.05,
