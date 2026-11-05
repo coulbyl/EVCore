@@ -352,6 +352,7 @@ describe('ChannelDecisionService', () => {
         bookmaker,
         market: Market.ONE_X_TWO,
         pick,
+        line: null,
         odds,
         observedAt,
       });

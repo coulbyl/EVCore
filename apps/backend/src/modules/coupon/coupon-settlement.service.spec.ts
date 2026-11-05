@@ -447,6 +447,7 @@ describe('CouponSettlementService.settleProposal — ligne de clôture par jambe
     bookmaker: 'Pinnacle',
     market: Market.ONE_X_TWO,
     pick,
+    line: null,
     odds,
     observedAt: new Date('2026-10-04T17:48:00.000Z'),
   });
@@ -506,6 +507,47 @@ describe('CouponSettlementService.settleProposal — ligne de clôture par jambe
     expect(closing.closingLineValue).toBeCloseTo(
       2.1 * (1 / 1.9 / overround) - 1,
       10,
+    );
+  });
+
+  it('reads the corners close at the leg line', async () => {
+    const corner = (pick: string, line: number, odds: number) => ({
+      ...closingRow(pick, odds),
+      market: Market.CORNERS,
+      line,
+    });
+    const { service, updateLegClosingLine } = makeHarness({
+      legs: [
+        makeLeg({
+          id: 'leg-1',
+          fixtureId: 'f1',
+          market: Market.CORNERS,
+          pick: 'UNDER',
+          line: 9.5,
+          oddsSnapshot: 1.88,
+        }),
+      ],
+      fixtures: [
+        makeFixture({
+          id: 'f1',
+          status: FixtureStatus.FINISHED,
+          scheduledAt: kickoff,
+          homeScore: 1,
+          awayScore: 0,
+        }),
+      ],
+      closingLines: [
+        corner('OVER', 9.5, 1.9),
+        corner('UNDER', 9.5, 1.95),
+        corner('UNDER', 10.5, 1.6),
+      ],
+    });
+
+    await service.settleProposal('proposal-1');
+
+    expect(updateLegClosingLine).toHaveBeenCalledWith(
+      'leg-1',
+      expect.objectContaining({ closingOdds: 1.95 }),
     );
   });
 

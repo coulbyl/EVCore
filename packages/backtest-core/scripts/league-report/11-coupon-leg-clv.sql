@@ -46,6 +46,15 @@ SELECT
   -- Au prix 1xBet, celui que paie le joueur (2026-10-29) : cote et marge à
   -- la publication, fréquence du marché sans marge, et réalisé au même prix.
   count(l."operatorOdds")::int                     AS "withOperator",
+  -- CLV au prix 1xBet joué (2026-11-05) : la colonne stockée est au prix de
+  -- référence (oddsSnapshot), sa fréquence de clôture sans marge vaut
+  -- (CLV + 1) / oddsSnapshot ; on la rapporte à la cote 1xBet. Recalcul en
+  -- lecture : l'historique en base n'est pas réécrit.
+  avg(l."operatorOdds" * (l."closingLineValue" + 1) / l."oddsSnapshot" - 1)
+    FILTER (WHERE l."operatorOdds" IS NOT NULL AND l."closingLineValue" IS NOT NULL)::float AS "operatorClv",
+  (stddev_samp(l."operatorOdds" * (l."closingLineValue" + 1) / l."oddsSnapshot" - 1)
+     FILTER (WHERE l."operatorOdds" IS NOT NULL AND l."closingLineValue" IS NOT NULL)
+     / sqrt(nullif(count(*) FILTER (WHERE l."operatorOdds" IS NOT NULL AND l."closingLineValue" IS NOT NULL), 0)))::float AS "operatorClvSe",
   avg(l."operatorOdds")::float                     AS "meanOperatorOdds",
   avg(l."operatorMargin")::float                   AS "meanOperatorMargin",
   avg(1 / l."operatorOdds" / (1 + l."operatorMargin"))

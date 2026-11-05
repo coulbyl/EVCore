@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, type Market } from '@evcore/db';
 import { PrismaService } from '@/prisma.service';
-import type { ClosingLineRow } from './closing-line';
+import {
+  CLOSING_LINE_MARKETS_WITH_LINE,
+  type ClosingLineRow,
+} from './closing-line';
 
 /**
  * Lecture de la vue `odds_closing_line` : dernier prix observé AVANT le coup
@@ -22,7 +25,8 @@ export class OddsClosingLineRepository {
    * prenne un relevé de la veille pour une clôture. Le 1X2 est stocké en une
    * ligne à trois colonnes : il est déplié ici en trois choix pour que le
    * groupe d'issues se lise comme les autres marchés. Les marchés à `line`
-   * (handicap, corners) sont exclus : leur identité ne tient pas dans `pick`.
+   * sont exclus (handicap : leur identité ne tient pas dans `pick`), sauf
+   * les corners, servis avec leur ligne (CLOSING_LINE_MARKETS_WITH_LINE).
    */
   async findClosingLines(opts: {
     fixtureIds: readonly string[];
@@ -32,7 +36,7 @@ export class OddsClosingLineRepository {
     if (opts.fixtureIds.length === 0 || opts.markets.length === 0) return [];
     return this.prisma.client.$queryRaw<ClosingLineRow[]>`
       WITH closing AS (
-        SELECT c."fixtureId", c.bookmaker, c.market, c.pick, c.odds,
+        SELECT c."fixtureId", c.bookmaker, c.market, c.pick, c.line, c.odds,
                c."homeOdds", c."drawOdds", c."awayOdds",
                -- Heure d'observation déduite de la distance au coup d'envoi :
                -- observedAt une fois la migration 20261005220000 passée,
@@ -43,20 +47,22 @@ export class OddsClosingLineRepository {
         JOIN fixture f ON f.id = c."fixtureId"
         WHERE c."fixtureId" = ANY(ARRAY[${Prisma.join([...opts.fixtureIds])}]::uuid[])
           AND c.market::text = ANY(ARRAY[${Prisma.join([...opts.markets])}]::text[])
-          AND c.line IS NULL
+          AND (c.line IS NULL
+               OR c.market::text = ANY(ARRAY[${Prisma.join([...CLOSING_LINE_MARKETS_WITH_LINE])}]::text[]))
           AND c."hoursBeforeKickoff" <= ${opts.maxHoursBeforeKickoff}
       )
       SELECT closing."fixtureId"::text       AS "fixtureId",
              closing.bookmaker,
              closing.market::text            AS market,
              closing.pick,
+             closing.line::float             AS line,
              closing.odds::float             AS odds,
              closing."observedAt"
       FROM closing
       WHERE closing.pick IS NOT NULL AND closing.odds IS NOT NULL
       UNION ALL
       SELECT closing."fixtureId"::text, closing.bookmaker, closing.market::text,
-             side.pick, side.odds::float, closing."observedAt"
+             side.pick, closing.line::float, side.odds::float, closing."observedAt"
       FROM closing
       CROSS JOIN LATERAL (VALUES ('HOME', closing."homeOdds"), ('DRAW', closing."drawOdds"), ('AWAY', closing."awayOdds"))
         AS side(pick, odds)

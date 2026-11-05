@@ -482,6 +482,7 @@ export class CouponSettlementService {
       const closing = resolveClosingLine({
         market: leg.market,
         pick: leg.pick,
+        line: leg.line === null ? null : Number(leg.line),
         takenOdds: leg.oddsSnapshot.toString(),
         preferredBookmaker: readQuotedBookmaker(leg.featureSnapshot),
         rows: rows.filter((row) => row.fixtureId === leg.fixtureId),
