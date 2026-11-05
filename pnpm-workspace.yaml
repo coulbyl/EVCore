@@ -11,8 +11,8 @@ minimumReleaseAge: 20160
 # (iddia's practice, its 95a390af): NestJS 12.3.2 (27/10), the first to pin
 # multer 2.5.0, and Express's body-parser 2.4.0 (22/10) — the fixes of the two
 # high advisories that reach production (DoS). Remove each line once past the
-# delay (NestJS on 10/11, the others on 05/11): pnpm then accepts it without
-# the exception and the lockfile stays the same.
+# delay: multer and body-parser were removed on 05/11 (lockfile unchanged),
+# NestJS goes on 10/11.
 minimumReleaseAgeExclude:
   - "@nestjs/common@12.3.2"
   - "@nestjs/core@12.3.2"
@@ -20,8 +20,6 @@ minimumReleaseAgeExclude:
   - "@nestjs/websockets@12.3.2"
   - "@nestjs/platform-socket.io@12.3.2"
   - "@nestjs/testing@12.3.2"
-  - multer@2.5.0
-  - body-parser@2.4.0
 
 # Narrow security overrides: each one only matches vulnerable versions, so it
 # turns into a no-op once the tree moves past them. Remove when audit is clean
