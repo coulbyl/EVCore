@@ -491,10 +491,9 @@ describe("summarizeMarketGrid", () => {
 });
 
 describe("marketGridFirstHalfFraction", () => {
-  it("reads the league's share, 0.44 without one", () => {
-    expect(marketGridFirstHalfFraction("UECL")).toBe(
-      MARKET_GRID_FIRST_HALF_FRACTION.UECL,
-    );
+  it("is 0.44 for every league while the fallback map is empty (05/11)", () => {
+    expect(MARKET_GRID_FIRST_HALF_FRACTION).toEqual({});
+    expect(marketGridFirstHalfFraction("UECL")).toBe(FIRST_HALF_GOAL_FRACTION);
     expect(marketGridFirstHalfFraction("NOPE")).toBe(FIRST_HALF_GOAL_FRACTION);
     expect(marketGridFirstHalfFraction(null)).toBe(FIRST_HALF_GOAL_FRACTION);
   });

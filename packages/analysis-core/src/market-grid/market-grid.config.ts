@@ -47,61 +47,12 @@ export const MARKET_GRID_FIRST_HALF_MARKETS: readonly Market[] = [
  * competition below 200 fixtures reads 0.44.
  */
 export const MARKET_GRID_FIRST_HALF_FRACTION: Readonly<Record<string, number>> =
-  {
-    // Fitted on every finished fixture up to 03/11/2026; the comment is each
-    // competition's fixtures and raw fraction.
-    ARG1: 0.441, // n 1745, f̂ 0.441
-    AUS1: 0.439, // n 525, f̂ 0.438
-    AUT1: 0.447, // n 651, f̂ 0.452
-    BEL1: 0.451, // n 1040, f̂ 0.456
-    BL1: 0.451, // n 996, f̂ 0.456
-    BRA1: 0.448, // n 1312, f̂ 0.451
-    BRA2: 0.45, // n 1500, f̂ 0.454
-    CH: 0.455, // n 1827, f̂ 0.460
-    CHI1: 0.437, // n 926, f̂ 0.436
-    CSL: 0.447, // n 848, f̂ 0.451
-    CZE1: 0.456, // n 918, f̂ 0.464
-    D2: 0.447, // n 1014, f̂ 0.450
-    D3: 0.447, // n 1260, f̂ 0.450
-    DEN1: 0.455, // n 656, f̂ 0.466
-    EL1: 0.44, // n 1826, f̂ 0.440
-    EL2: 0.447, // n 1834, f̂ 0.449
-    ERD: 0.437, // n 1054, f̂ 0.435
-    F2: 0.445, // n 1098, f̂ 0.447
-    FIN1: 0.436, // n 647, f̂ 0.433
-    GRE1: 0.446, // n 773, f̂ 0.450
-    I2: 0.445, // n 1269, f̂ 0.447
-    IRL1: 0.442, // n 723, f̂ 0.443
-    J1: 0.428, // n 1396, f̂ 0.424
-    KOR1: 0.409, // n 810, f̂ 0.390
-    KSA1: 0.437, // n 1022, f̂ 0.436
-    L1: 0.438, // n 1006, f̂ 0.436
-    LL: 0.44, // n 1249, f̂ 0.440
-    MLS: 0.445, // n 1405, f̂ 0.447
-    MX1: 0.445, // n 1143, f̂ 0.447
-    NOR1: 0.444, // n 876, f̂ 0.446
-    NOR2: 0.443, // n 915, f̂ 0.444
-    PL: 0.441, // n 1610, f̂ 0.442
-    POL1: 0.449, // n 1030, f̂ 0.454
-    POL2: 0.449, // n 1037, f̂ 0.453
-    POR: 0.44, // n 1014, f̂ 0.440
-    RUS1: 0.442, // n 835, f̂ 0.443
-    SA: 0.436, // n 1239, f̂ 0.435
-    SCO1: 0.446, // n 771, f̂ 0.450
-    SP2: 0.436, // n 1534, f̂ 0.434
-    SRB1: 0.45, // n 981, f̂ 0.455
-    SUI1: 0.438, // n 760, f̂ 0.436
-    SUI2: 0.444, // n 593, f̂ 0.447
-    SVN1: 0.444, // n 583, f̂ 0.448
-    SWE1: 0.441, // n 899, f̂ 0.441
-    SWE2: 0.437, // n 908, f̂ 0.435
-    TUR1: 0.439, // n 1117, f̂ 0.438
-    TUR2: 0.446, // n 1208, f̂ 0.449
-    UCL: 0.444, // n 918, f̂ 0.446
-    UECL: 0.419, // n 1527, f̂ 0.413
-    UEL: 0.454, // n 848, f̂ 0.462
-    UNL: 0.443, // n 291, f̂ 0.448
-  };
+  // Emptied on 05/11: the per-league fraction measured worse than the 0.44
+  // constant against the Pinnacle half-time close (+0.00008 [+0.00004 ;
+  // +0.00011], docs/audits/2026-11-05/ML2B-MI-TEMPS.md), so the 7 % of grids
+  // without a half-time price keep FIRST_HALF_GOAL_FRACTION. The fitted map
+  // is in ml2b-mi-temps.txt if a better fallback is ever measured.
+  {};
 
 /**
  * Weight of each 1X2 outcome against one goal line in the least-squares fit,

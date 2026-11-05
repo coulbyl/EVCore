@@ -46,3 +46,7 @@ Sous la grille, les quatre canaux mi-temps (FIRST_HALF, OVER_UNDER_HT, HALF_TIME
 - **Le juge mi-temps** repose surtout sur octobre (septembre à novembre). HT/FT et « gagne une des deux mi-temps » ne sont jugés que sur leur calibration.
 - **Les périodes restent indépendantes**, sans ρ de mi-temps. HT/FT à 0,977 reste dans le bruit (IC ±0,10), à relire si le volume grandit.
 - **La fraction finale** est ajustée sur tout l'historique jusqu'au 03/11, comme la carte ρ de ML-2a. Le rejeu, lui, l'a mesurée en walk-forward.
+
+## Décision du 05/11 sur le repli
+
+La fraction par championnat, mesurée moins bonne que 0,44 contre la clôture Pinnacle MT, est vidée : seule la mi-temps ajustée sur les prix est expédiée ; les grilles sans prix MT gardent 0,44 (l'existant). Choix fait après les chiffres, dans le sens du retour à l'état antérieur.

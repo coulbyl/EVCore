@@ -224,7 +224,7 @@ PR https://github.com/coulbyl/EVCore/pull/282 ouverte (C–F). Avant la phase G,
 - [ ] **Clôture Pinnacle du plus/moins 2,5 stockée sans ligne** : les lignes `OVER`/`UNDER` (sans `_2_5` dans le pick ni `line`) ne sont pas retrouvées par les juges `OVER_2_5` des rejeux ML-1 et ML-2a ; les totaux n'ont donc pas été jugés contre Pinnacle. Corriger l'ingestion ou la lecture (ligne lue depuis le pick ou la colonne), puis rejouer le juge des totaux.
 - [ ] **Pinnacle BTTS plus relevé avant match depuis le 04/05** (seulement en HISTORICAL) : critère D2 de ML-2a non mesurable. Voir si API-Football le sert encore en prématch et le réingérer.
 - [ ] **ρ de la grille (ML-2a) en suivi** : nul réalisé contre la clôture Pinnacle par mois sur les matchs à ρ non nul ; relu le 10/12, retour à ρ = 0 si le biais repasse sous −0,01.
-- [ ] **Repli mi-temps de la grille (ML-2b)** : la fraction par championnat (`MARKET_GRID_FIRST_HALF_FRACTION`) n'apporte rien contre la clôture Pinnacle (+0,00008) ; décider de la vider (retour à 0,44 sur les 7 % de matchs sans prix MT). HT/FT à 0,977 [0,880 ; 1,074] à relire avec plus de volume.
+- [x] **Repli mi-temps de la grille (ML-2b)** : la fraction par championnat (`MARKET_GRID_FIRST_HALF_FRACTION`) était moins bonne que 0,44 contre la clôture Pinnacle (+0,00008). _Vidée le 05/11 (décision prudente du lead, retour à l'existant sur les 7 % de matchs sans prix MT) ; à confirmer par l'utilisateur._ HT/FT à 0,977 [0,880 ; 1,074] à relire avec plus de volume.
 
 ## À relire plus tard (hors lots)
 
