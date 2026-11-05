@@ -1,9 +1,9 @@
 import Decimal from "decimal.js";
-import { COMBO_COUPON_CLASS } from "./coupon-classes";
 
 /**
- * Combiné du jour sur les sélections du moteur (voir COMBO_COUPON_CLASS pour
- * la mesure). Reproduit exactement la sélection mise en avant par l'écran
+ * Combiné du jour v2 sur les sélections du moteur (jusqu'au 2026-11-04,
+ * remplacé par `composeReadingCombo` : le combiné part désormais des
+ * lectures). Gardé pour son rejeu (backtest-engine-combo-margin.ts). Reproduit exactement la sélection mise en avant par l'écran
  * Décisions (`primaryPick`, apps/web) — même pastille de confiance, mêmes
  * paliers — puis en garde une par championnat, les championnats dans
  * l'ordre de leur jambe la moins chère ; dans chacun, à chance égale, la
@@ -54,9 +54,11 @@ export type ComboConfig = {
 };
 
 export const COMBO_CONFIG: ComboConfig = {
-  legs: COMBO_COUPON_CLASS.maxLegs,
-  minLegOdds: COMBO_COUPON_CLASS.minLegOdds,
-  maxLegOdds: COMBO_COUPON_CLASS.maxLegOdds,
+  // Bande du v2, figée : la classe du combiné porte désormais celle des
+  // lectures (COMBO_COUPON_CLASS, 2026-11-05).
+  legs: 2,
+  minLegOdds: 1.2,
+  maxLegOdds: 1.5,
   minSample: 30,
   goodRatio: 0.85,
   badRatio: 0.7,
