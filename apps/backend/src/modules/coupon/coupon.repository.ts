@@ -597,9 +597,34 @@ export class CouponRepository {
   }
 
   /**
+   * Les matchs des jambes du coupon déjà publié d'un produit pour un jour
+   * (rang 1) : un chasseur lit ceux d'un autre pour ne pas jouer le même
+   * match (2026-11-05). Vide quand le produit n'a rien publié.
+   */
+  async findProposalFixtureIds(opts: {
+    forDate: Date;
+    source: CouponSource;
+    targetOddsMin: number;
+  }): Promise<readonly string[]> {
+    const legs = await this.prisma.client.couponProposalLeg.findMany({
+      where: {
+        couponProposal: {
+          forDate: startOfUtcDay(opts.forDate),
+          source: opts.source,
+          targetOddsMin: new Prisma.Decimal(opts.targetOddsMin),
+          rank: 1,
+        },
+      },
+      select: { fixtureId: true },
+    });
+    return legs.map((l) => l.fixtureId);
+  }
+
+  /**
    * Les avis joués par l'IA sur les matchs à venir de la plage (Combiné IA,
    * 2026-11-03) : son dernier avis par match, quand il joue, avec son pari.
    * Jamais un avis remplacé par une analyse plus récente qui ne joue pas.
+   * Hors matchs « Données suspectes », comme les autres produits (05/11).
    */
   async findAiPlays(opts: {
     from: Date;
@@ -628,6 +653,7 @@ export class CouponRepository {
       JOIN public.season se ON se.id = f."seasonId"
       JOIN public.competition c ON c.id = se."competitionId"
       WHERE l.status = 'SELECTED'
+        AND l."fixtureId" NOT IN (${calibrationAlertedFixtureIds(opts.from, opts.to)})
     `;
   }
 
